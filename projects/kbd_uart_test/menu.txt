@@ -1,0 +1,17 @@
+header=""
+
+menu=[ "Microb",
+       [ "Test1", 
+         [ "Pouet", 
+           [ "f1", "PORTB=0x01;" ],
+           [ "f6", "PORTB=0x02;" ],
+           [ "f2", "PORTB=0x03;" ] ],
+         [ "Pouet_f", "PORTB=0x04;" ] ],
+
+       [ "Test2", 
+         [ "Pouet3",
+           [ "f3", "PORTB=0x05;" ],
+           [ "f4", "PORTB=0x06;" ] ],
+         [ "Pouet_f2", "PORTB=0x07;" ] ] ]
+
+footer=""
