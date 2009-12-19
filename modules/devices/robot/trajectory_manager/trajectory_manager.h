@@ -44,6 +44,7 @@ enum trajectory_state {
 	RUNNING_XY_B_START,
 	RUNNING_XY_B_ANGLE,
 	RUNNING_XY_B_ANGLE_OK,
+	RUNNING_CIRCLE,
 };
 
 

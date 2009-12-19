@@ -176,6 +176,7 @@ static double modulo_2pi(double a)
 	return simple_modulo_2pi(res);
 }
 
+#include <aversive/wait.h>
 /** near the target (dist) ? */
 static uint8_t is_robot_in_dist_window(struct trajectory *traj, double d_win)
 {
@@ -527,8 +528,8 @@ static void trajectory_manager_event(void * param)
 	case RUNNING_XY_B_ANGLE:
 	case RUNNING_XY_B_ANGLE_OK:
 
-		/* process the command vector from absolute target and
-		 * current position */
+		/* process the command vector from current position to
+		 * absolute target, or to the center of the circle. */
 		v2cart_pos.x = traj->target.cart.x - x;
 		v2cart_pos.y = traj->target.cart.y - y;
 		vect2_cart2pol(&v2cart_pos, &v2pol_target);
@@ -553,6 +554,8 @@ static void trajectory_manager_event(void * param)
 				v2pol_target.theta = simple_modulo_2pi(v2pol_target.theta + M_PI);
 			}
 		}
+		
+		/* XXX circle */
 		
 		/* If the robot is correctly oriented to start moving in distance */
 		/* here limit dist speed depending on v2pol_target.theta */
@@ -639,4 +642,80 @@ static void trajectory_manager_event(void * param)
 		
 	cs_set_consign(traj->csm_angle, a_consign);
 	cs_set_consign(traj->csm_distance, d_consign);
+}
+
+/*********** *CIRCLE */
+
+/* 
+ * Compute the fastest distance and angle speeds matching the radius
+ * from current traj_speed
+ */
+/* static  */void circle_get_da_speed_from_radius(struct trajectory *traj,
+						  double radius_mm,
+						  double *speed_d,
+						  double *speed_a)
+{
+	/* speed_d = coef * speed_a */
+	double coef;
+	double speed_d2, speed_a2;
+
+	coef = 2. * radius_mm / traj->position->phys.track_mm;
+
+	speed_d2 = traj->a_speed * coef;
+	if (speed_d2 < traj->d_speed) {
+		*speed_d = speed_d2;
+		*speed_a = traj->a_speed;
+	}
+	else {
+		speed_a2 = traj->d_speed / coef;
+		*speed_d = traj->d_speed;
+		*speed_a = speed_a2;
+	}
+}
+
+/* return the distance in millimeters that corresponds to an angle in
+ * degree and a radius in mm */
+/* static  */double circle_get_dist_from_degrees(double radius_mm, double a_deg)
+{
+	double a_rad = RAD(a_deg);
+	return a_rad * radius_mm;
+}
+
+/*
+ * Start a circle of specified radius around the specified center
+ * (relative with d,a). The distance is specified in mm.
+ */
+void trajectory_circle(struct trajectory *traj,
+		       double center_d_mm, double center_a_rad,
+		       double radius_mm, double dist_mm)
+{
+/* 	double */
+
+/* 	DEBUG(E_TRAJECTORY, "CIRCLE to d=%f a_rad=%f", center_d_mm, */
+/* 	      center_a_rad); */
+/* 	delete_event(traj); */
+/* 	traj->state = RUNNING_CIRCLE; */
+
+	
+}
+
+/*
+ * Start a circle of specified radius around the specified center
+ * (absolute). The distance is specified in mm.
+ */
+void trajectory_circle_abs_dist_mm(struct trajectory *traj,
+				   double x_rel_mm, double y_rel_mm,
+				   double radius_mm, double dist_mm)
+{
+}
+
+/*
+ * Start a circle of specified radius around the specified center
+ * (absolute). The distance is specified in degrees.
+ */
+void trajectory_circle_abs_dist_deg(struct trajectory *traj,
+				    double x_rel_mm, double y_rel_mm,
+				    double radius_mm, double dist_degrees)
+{
+	
 }
