@@ -111,6 +111,10 @@ struct i2c_cmd_mechboard_set_mode {
 		} push_temple_disc;
 
 		struct {
+			uint8_t level;
+		} push_temple;
+
+		struct {
 			uint8_t level_left;
 			uint8_t level_right;
 			uint8_t count_left;

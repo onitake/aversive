@@ -14,6 +14,7 @@ ASRC =
 
 CFLAGS += -Wall -Werror
 #CFLAGS += -DHOMOLOGATION
+CFLAGS += -DTEST_BEACON
 LDFLAGS = -T ../common/avr6.x
 
 ########################################
