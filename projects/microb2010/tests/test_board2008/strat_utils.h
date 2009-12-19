@@ -1,0 +1,76 @@
+/*  
+ *  Copyright Droids Corporation, Microb Technology (2009)
+ * 
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ *  Revision : $Id: strat_utils.h,v 1.3 2009-04-24 19:30:41 zer0 Exp $
+ *
+ */
+
+
+#define DEG(x) (((double)(x)) * (180.0 / M_PI))
+#define RAD(x) (((double)(x)) * (M_PI / 180.0))
+#define M_2PI (2*M_PI)
+
+struct xy_point {
+	int16_t x;
+	int16_t y;
+};
+
+/* wait traj end flag or cond. return 0 if cond become true, else
+ * return the traj flag */
+#define WAIT_COND_OR_TRAJ_END(cond, mask)				\
+	({								\
+		uint8_t __err = 0;					\
+		while ( (! (cond)) && (__err == 0)) {			\
+			__err = test_traj_end(TRAJ_FLAGS_NO_NEAR);	\
+		}							\
+		__err;							\
+	})								\
+
+int16_t distance_between(int16_t x1, int16_t y1, int16_t x2, int16_t y2);
+int16_t distance_from_robot(int16_t x, int16_t y);
+int16_t simple_modulo_360(int16_t a);
+double simple_modulo_2pi(double a);
+int16_t angle_abs_to_rel(int16_t a_abs);
+void rel_da_to_abs_xy(double d_rel, double a_rel_rad, double *x_abs, double *y_abs);
+double norm(double x, double y);
+void rel_xy_to_abs_xy(double x_rel, double y_rel, double *x_abs, double *y_abs);
+void abs_xy_to_rel_da(double x_abs, double y_abs, double *d_rel, double *a_rel_rad);
+void rotate(double *x, double *y, double rot);
+uint8_t is_in_area(int16_t x, int16_t y, int16_t margin);
+uint8_t robot_is_in_area(int16_t margin);
+uint8_t robot_is_near_disc(void);
+uint8_t y_is_more_than(int16_t y);
+uint8_t x_is_more_than(int16_t x);
+int16_t fast_sin(int16_t deg);
+int16_t fast_cos(int16_t deg);
+uint8_t get_color(void);
+uint8_t get_opponent_color(void);
+int8_t get_opponent_xy(int16_t *x, int16_t *y);
+int8_t get_opponent_da(int16_t *d, int16_t *a);
+int8_t get_opponent_xyda(int16_t *x, int16_t *y, int16_t *d, int16_t *a);
+uint8_t get_column_count(void);
+uint8_t get_column_count_right(void);
+uint8_t get_column_count_left(void);
+uint8_t get_lintel_count(void);
+uint8_t get_mechboard_mode(void);
+uint8_t pump_left1_is_full(void);
+uint8_t pump_left2_is_full(void);
+uint8_t pump_right1_is_full(void);
+uint8_t pump_right2_is_full(void);
+uint8_t get_scanner_status(void);
+uint8_t wait_scan_done(uint16_t timeout);
+uint8_t opponent_is_behind(void);
