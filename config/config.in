@@ -357,10 +357,12 @@ dep_bool '  |-- Create Default encoders_spi config' CONFIG_MODULE_ENCODERS_SPI_C
 endmenu # (encoders)
 
 mainmenu_option next_comment
-comment 'Robot specific modules'
+comment 'Robot specific modules (fixed point lib may be needed)'
 
 #### ROBOT_SYSTEM
-dep_bool 'Robot System' CONFIG_MODULE_ROBOT_SYSTEM \
+bool 'Robot System' CONFIG_MODULE_ROBOT_SYSTEM
+
+dep_bool 'Use fixed point lib' CONFIG_MODULE_ROBOT_SYSTEM_USE_F64 \
 	$CONFIG_MODULE_FIXED_POINT
 
 dep_bool '  |-- Allow motor and external encoders' CONFIG_MODULE_ROBOT_SYSTEM_MOT_AND_EXT \
