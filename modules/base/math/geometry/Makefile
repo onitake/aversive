@@ -1,7 +1,7 @@
 TARGET = geometry
 
 # List C source files here. (C dependencies are automatically generated.)
-SRC = vect_base.c lines.c polygon.c
+SRC = vect_base.c lines.c polygon.c circles.c
 
 
 ###########################################

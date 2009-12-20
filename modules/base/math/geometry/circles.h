@@ -19,37 +19,29 @@
  *
  */
 
-#ifndef _LINES_H_
-#define _LINES_H_
+#ifndef _CIRCLES_H_
+#define _CIRCLES_H_
 
-typedef struct _line {
-	double a;
-	double b;
-	double c;
-} line_t;
+typedef struct _circle {
+	double x;
+	double y;
+	double r;
+} circle_t;
 
-
-void 
-pts2line(const point_t *p1, const point_t *p2, line_t *l);
-
-void
-proj_pt_line(const point_t * p, const line_t * l, point_t * p_out);
+/* return true if a point is in the disc */
+uint8_t pt_is_inside_circle(const point_t *p, circle_t *c);
 
 /*
  * return values:
  *  0 dont cross
- *  1 cross
- *  2 "parallel crossing"
+ *  1 one intersection point
+ *  2 two intersection points
  *
- *  p argument is the crossing point coordinates (dummy for 0 or 2
- *  result)
+ *  p1, p2 arguments are the crossing points coordinates. Both p1 and
+ *  p2 are dummy for 0 result. When result is 1, p1 and p2 are set to
+ *  the same value.
  */
-uint8_t
-intersect_line(const line_t *l1, const line_t *l2, point_t *p);
+uint8_t circle_intersect(const circle_t *c1, const circle_t *c2,
+			 point_t *p1, point_t *p2);
 
-uint8_t 
-intersect_segment(const point_t *s1, const point_t *s2, 
-		  const point_t *t1, const point_t *t2, 
-		  point_t *p);
-
-#endif /* _LINES_H_ */
+#endif /* _CIRCLES_H_ */
