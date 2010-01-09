@@ -26,7 +26,7 @@
 #include <aversive/pgmspace.h>
 #include <aversive/wait.h>
 #include <aversive/error.h>
-#include <avr/eeprom.h>
+#include <aversive/eeprom.h>
 
 #include <ax12.h>
 #include <uart.h>
