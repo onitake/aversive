@@ -47,6 +47,15 @@ enum trajectory_state {
 	RUNNING_CIRCLE,
 };
 
+struct circle_target {
+	vect2_cart center;   /**< center of the circle */
+	double radius;       /**< radius of the circle */
+	int32_t dest_angle;  /**< dst angle in inc */
+
+#define TRIGO   1 /* rotation is counterclockwise */
+#define FORWARD 2 /* go forward or backward */
+	uint8_t flags;   /**< flags for this trajectory */
+};
 
 struct trajectory {
 	enum trajectory_state state; /*<< describe the type of target, and if we reached the target */
@@ -54,6 +63,7 @@ struct trajectory {
 	union {
 		vect2_cart cart;     /**<< target, if it is a x,y vector */
 		struct rs_polar pol; /**<< target, if it is a d,a vector */
+		struct circle_target circle; /**<< target, if it is a circle */
 	} target;
 
 	double d_win; 	   /**<< distance window (for END_NEAR) */
@@ -159,5 +169,11 @@ void trajectory_goto_d_a_rel(struct trajectory *traj, double d, double a);
 
 /** go forward to a x,y relative point, using a trajectory event */
 void trajectory_goto_xy_rel(struct trajectory *traj, double x_rel_mm, double y_rel_mm);
+
+/** make the robot orbiting around (x,y) on a circle whose radius is
+ * radius_mm, and exit when relative destination angle is reached. The
+ * flags set if we go forward or backwards, and CW/CCW. */
+void trajectory_circle_rel(struct trajectory *traj, double x, double y,
+			   double radius_mm, double rel_a_deg, uint8_t flags);
 
 #endif //TRAJECTORY_MANAGER

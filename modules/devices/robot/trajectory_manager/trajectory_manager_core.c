@@ -46,6 +46,14 @@
 #define RESET_D  4
 #define RESET_A  8
 
+static uint8_t evt_debug_cpt = 0;
+#define EVT_DEBUG(args...) do {				\
+		if (((evt_debug_cpt ++) & 0x07) == 0) { \
+			DEBUG(args);			\
+		}					\
+	} while (0)
+
+
 /**
  * update angle and/or distance
  * this function is not called directly by the user
@@ -355,7 +363,7 @@ void trajectory_manager_xy_event(struct trajectory *traj)
 	case RUNNING_XY_B_ANGLE_OK:
 
 		/* process the command vector from current position to
-		 * absolute target, or to the center of the circle. */
+		 * absolute target. */
 		v2cart_pos.x = traj->target.cart.x - x;
 		v2cart_pos.y = traj->target.cart.y - y;
 		vect2_cart2pol(&v2cart_pos, &v2pol_target);
@@ -433,7 +441,7 @@ void trajectory_manager_xy_event(struct trajectory *traj)
 		q_a = traj->csm_angle->consign_filter_params;
 		/* if d_speed is not 0, we are in start_angle_win */
 		if (get_quadramp_distance_speed(traj)) {
-			if(is_robot_in_xy_window(traj, traj->d_win)) {
+			if (is_robot_in_xy_window(traj, traj->d_win)) {
 				delete_event(traj);
 			}
 			/* ANGLE -> ANGLE_OK */
@@ -447,7 +455,7 @@ void trajectory_manager_xy_event(struct trajectory *traj)
 	case RUNNING_XY_F_ANGLE_OK:
 	case RUNNING_XY_B_ANGLE_OK:
 		/* If we reached the destination */
-		if(is_robot_in_xy_window(traj, traj->d_win)) {
+		if (is_robot_in_xy_window(traj, traj->d_win)) {
 			delete_event(traj);
 		}
 	break;
@@ -458,10 +466,7 @@ void trajectory_manager_xy_event(struct trajectory *traj)
 
 	/* step 3 : send the processed commands to cs */
 
-	DEBUG(E_TRAJECTORY, "EVENT XY cur=(%f,%f,%f) cart=(%f,%f) pol=(%f,%f)",
-	      x, y, a, v2cart_pos.x, v2cart_pos.y, v2pol_target.r, v2pol_target.theta);
-
-	DEBUG(E_TRAJECTORY,"d_cur=%" PRIi32 ", d_consign=%" PRIi32 ", d_speed=%" PRIi32 ", "
+	EVT_DEBUG(E_TRAJECTORY,"EVENT XY d_cur=%" PRIi32 ", d_consign=%" PRIi32 ", d_speed=%" PRIi32 ", "
 	      "a_cur=%" PRIi32 ", a_consign=%" PRIi32 ", a_speed=%" PRIi32,
 	      rs_get_distance(traj->robot), d_consign, get_quadramp_distance_speed(traj),
 	      rs_get_angle(traj->robot), a_consign, get_quadramp_angle_speed(traj));
@@ -471,14 +476,82 @@ void trajectory_manager_xy_event(struct trajectory *traj)
 }
 
 /* trajectory event for circles */
+/* XXX static */
 void trajectory_manager_circle_event(struct trajectory *traj)
 {
-#if 0
+	double coef = 1.0;
 	double x = position_get_x_double(traj->position);
 	double y = position_get_y_double(traj->position);
 	double a = position_get_a_rad_double(traj->position);
-	int32_t d_consign=0, a_consign=0;
-#endif
+	int32_t d_consign = 0, a_consign = 0;
+	double angle_to_center_rad;
+
+	/* These vectors contain target position of the robot in
+	 * its own coordinates */
+	vect2_cart v2cart_pos;
+	vect2_pol v2pol_target;
+
+	/* step 1 : process new commands to quadramps */
+
+	/* process the command vector from current position to the
+	 * center of the circle. */
+	v2cart_pos.x = traj->target.circle.center.x - x;
+	v2cart_pos.y = traj->target.circle.center.y - y;
+	vect2_cart2pol(&v2cart_pos, &v2pol_target);
+	v2pol_target.theta = simple_modulo_2pi(v2pol_target.theta - a);
+
+	/* wanted direction of center of circle:
+	 * if we are far, go in the center direction,
+	 * if we are at radius, we want to see the center at 90°
+	 * if we are nearer than radius, angle to center is > 90° */
+	if (v2pol_target.r > traj->target.circle.radius * 2)
+		angle_to_center_rad = 0;
+	else {
+		angle_to_center_rad = 1. - (v2pol_target.r /
+					    (2 * traj->target.circle.radius));
+		angle_to_center_rad *= M_PI;
+	}
+
+	/* XXX check flags */
+	v2pol_target.theta -= angle_to_center_rad;
+
+	/* If the robot is correctly oriented to start moving in distance */
+	/* here limit dist speed depending on v2pol_target.theta */
+	if (ABS(v2pol_target.theta) > traj->a_start_rad)
+		set_quadramp_speed(traj, 0, traj->a_speed);
+	else {
+		coef = (traj->a_start_rad - ABS(v2pol_target.theta)) / traj->a_start_rad;
+		set_quadramp_speed(traj, traj->d_speed * coef, traj->a_speed);
+	}
+
+	/* XXX check flags */
+	d_consign = 40000 + rs_get_distance(traj->robot);
+
+	/* angle consign */
+	a_consign = (int32_t)(v2pol_target.theta *
+			      (traj->position->phys.distance_imp_per_mm) *
+			      (traj->position->phys.track_mm) / 2.0);
+	a_consign += rs_get_angle(traj->robot);
+
+	/* step 2 : update state, or delete event if we reached the
+	 * destination */
+
+	/* output angle -> delete event */
+	if (a_consign >= traj->target.circle.dest_angle) {
+		a_consign = traj->target.circle.dest_angle;
+		delete_event(traj);
+	}
+
+	/* step 3 : send the processed commands to cs */
+
+	EVT_DEBUG(E_TRAJECTORY,"EVENT CIRCLE d_cur=%" PRIi32 ", d_consign=%" PRIi32
+		  ", d_speed=%" PRIi32 ", a_cur=%" PRIi32 ", a_consign=%" PRIi32
+		  ", a_speed=%" PRIi32,
+	      rs_get_distance(traj->robot), d_consign, get_quadramp_distance_speed(traj),
+	      rs_get_angle(traj->robot), a_consign, get_quadramp_angle_speed(traj));
+
+	cs_set_consign(traj->csm_angle, a_consign);
+	cs_set_consign(traj->csm_distance, d_consign);
 }
 
 /* trajectory event */
@@ -509,6 +582,40 @@ void trajectory_manager_event(void * param)
 }
 
 /*********** *CIRCLE */
+
+/* make the robot orbiting around (x,y) on a circle whose radius is
+ * radius_mm, and exit when relative destination angle is reached. The
+ * flags set if we go forward or backwards, and CW/CCW. */
+void trajectory_circle_rel(struct trajectory *traj,
+			   double x, double y,
+			   double radius_mm,
+			   double rel_a_deg,
+			   uint8_t flags)
+{
+	double dst_angle;
+
+	delete_event(traj);
+
+	traj->target.circle.center.x = x;
+	traj->target.circle.center.y = y;
+	traj->target.circle.radius = radius_mm;
+	traj->target.circle.flags = flags;
+
+	/* convert in steps  */
+	dst_angle = RAD(rel_a_deg) *
+		(traj->position->phys.distance_imp_per_mm) *
+		(traj->position->phys.track_mm) / 2.0;
+
+	traj->target.circle.dest_angle = rs_get_angle(traj->robot);
+	traj->target.circle.dest_angle += dst_angle;
+
+	DEBUG(E_TRAJECTORY, "Circle rel (x,y)=%2.2f,%2.2f r=%2.2f flags=%x dst_angle=%"PRIi32"",
+	      x, y, radius_mm, flags, traj->target.circle.dest_angle);
+
+	traj->state = RUNNING_CIRCLE;
+	trajectory_manager_event(traj);
+	schedule_event(traj);
+}
 
 /*
  * Compute the fastest distance and angle speeds matching the radius
