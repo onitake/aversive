@@ -74,10 +74,17 @@ typedef enum {
  * For more information on SPI formats, please see your CPU datasheet.
  */
 typedef enum {	
+#ifdef HOST_VERSION
+	SPI_FORMAT_0,
+	SPI_FORMAT_1,
+	SPI_FORMAT_2,
+	SPI_FORMAT_3,
+#else
 	SPI_FORMAT_0 = 0x00,                  /* Sample rising  Setup falling */
 	SPI_FORMAT_1 = _BV(CPHA),             /* Setup rising   Sample falling */
 	SPI_FORMAT_2 = _BV(CPOL),             /* Sample falling Setup rising */
 	SPI_FORMAT_3 = _BV(CPHA) | _BV(CPOL), /* Setup falling  Sample rising*/
+#endif
 } spi_format_t;
 
 
