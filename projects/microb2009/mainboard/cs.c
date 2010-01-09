@@ -136,6 +136,13 @@ void dump_cs(const char *name, struct cs *cs)
 		 cs_get_out(cs));
 }
 
+uint32_t encmask = 0xFFFFFFFF;
+int32_t my_encoders_get_value(void *enc)
+{
+	int32_t tmp = encoders_spi_get_value(enc);
+	return tmp & encmask;
+}
+
 void dump_pid(const char *name, struct pid_filter *pid)
 {
 	printf_P(PSTR("%s P=% .8ld I=% .8ld D=% .8ld out=% .8ld\r\n"),
@@ -153,9 +160,9 @@ void microb_cs_init(void)
 	rs_set_left_pwm(&mainboard.rs, pwm_set_and_save, LEFT_PWM);
 	rs_set_right_pwm(&mainboard.rs,  pwm_set_and_save, RIGHT_PWM);
 	/* increase gain to decrease dist, increase left and it will turn more left */
-	rs_set_left_ext_encoder(&mainboard.rs, encoders_spi_get_value, 
+	rs_set_left_ext_encoder(&mainboard.rs, my_encoders_get_value, 
 				LEFT_ENCODER, IMP_COEF * 1.0015);
-	rs_set_right_ext_encoder(&mainboard.rs, encoders_spi_get_value, 
+	rs_set_right_ext_encoder(&mainboard.rs, my_encoders_get_value, 
 				 RIGHT_ENCODER, IMP_COEF * -1.006);
 	/* rs will use external encoders */
 	rs_set_flags(&mainboard.rs, RS_USE_EXT);

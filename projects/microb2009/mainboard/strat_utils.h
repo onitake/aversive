@@ -43,7 +43,6 @@ struct xy_point {
 int16_t distance_between(int16_t x1, int16_t y1, int16_t x2, int16_t y2);
 int16_t distance_from_robot(int16_t x, int16_t y);
 int16_t simple_modulo_360(int16_t a);
-double simple_modulo_2pi(double a);
 int16_t angle_abs_to_rel(int16_t a_abs);
 void rel_da_to_abs_xy(double d_rel, double a_rel_rad, double *x_abs, double *y_abs);
 double norm(double x, double y);

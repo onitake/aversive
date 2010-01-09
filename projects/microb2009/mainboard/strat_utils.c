@@ -86,18 +86,6 @@ int16_t simple_modulo_360(int16_t a)
 	return a;
 }
 
-/** do a modulo 2.pi -> [-Pi,+Pi], knowing that 'a' is in [-3Pi,+3Pi] */  
-double simple_modulo_2pi(double a)
-{
-	if (a < -M_PI) {
-		a += M_2PI;
-	}
-	else if (a > M_PI) {
-		a -= M_2PI;
-	}
-	return a;
-}
-
 /* return the distance to a point in the area */
 int16_t angle_abs_to_rel(int16_t a_abs)
 {

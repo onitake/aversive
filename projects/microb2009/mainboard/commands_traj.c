@@ -215,9 +215,9 @@ static void cmd_rs_gains_parsed(void * parsed_result, void * data)
 					 RIGHT_ENCODER, res->right); //en augmentant on tourne à droite
 	}
 	printf_P(PSTR("rs_gains set "));
-	f64_print(mainboard.rs.left_ext_gain);
+	//f64_print(mainboard.rs.left_ext_gain);
 	printf_P(PSTR(" "));
-	f64_print(mainboard.rs.right_ext_gain);
+	//f64_print(mainboard.rs.right_ext_gain);
 	printf_P(PSTR("\r\n"));
 }
 
