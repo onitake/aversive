@@ -504,8 +504,10 @@ void trajectory_manager_circle_event(struct trajectory *traj)
 	 * if we are far, go in the center direction,
 	 * if we are at radius, we want to see the center at 90°
 	 * if we are nearer than radius, angle to center is > 90° */
-	if (v2pol_target.r > traj->target.circle.radius * 2)
-		angle_to_center_rad = 0;
+	if (v2pol_target.r > traj->target.circle.radius) {
+		angle_to_center_rad = traj->target.circle.radius / v2pol_target.r;
+		angle_to_center_rad *= (M_PI / 2);
+	}
 	else {
 		angle_to_center_rad = 1. - (v2pol_target.r /
 					    (2 * traj->target.circle.radius));
