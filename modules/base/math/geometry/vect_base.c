@@ -59,12 +59,12 @@ vect_pvect_sign(vect_t *v, vect_t *w)
 	return z>0?1:-1;
 }
 
-float norm(float x1, float y1, float x2, float y2)
-{
-	float x = x2 - x1;
-	float y = y2 - y1;
-	return sqrt(x*x + y*y);
-}
+/* float norm(float x1, float y1, float x2, float y2) */
+/* { */
+/* 	float x = x2 - x1; */
+/* 	float y = y2 - y1; */
+/* 	return sqrt(x*x + y*y); */
+/* } */
 
 float pt_norm(point_t *p1, point_t *p2)
 {
