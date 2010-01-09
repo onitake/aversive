@@ -30,6 +30,12 @@
 
 #include "parse.h"
 
+#ifdef HOST_VERSION
+#define pgm_read_pgmptr(x) ((void *)(*(x)))
+#else
+#define pgm_read_pgmptr(x) (void *)pgm_read_word(x)
+#endif
+
 //#define CMDLINE_DEBUG
 //#define debug_printf printf
 #define debug_printf(args...) do {} while(0)
@@ -88,7 +94,7 @@ match_inst(parse_pgm_inst_t *inst, const char * buf, uint8_t nb_match_token,
 	int8_t n = 0;
 	struct token_hdr token_hdr;
 
-	token_p = (parse_pgm_token_hdr_t *)pgm_read_word(&inst->tokens[token_num]);
+	token_p = (parse_pgm_token_hdr_t *)pgm_read_pgmptr(&inst->tokens[token_num]);
 	if (token_p)
 		memcpy_P(&token_hdr, token_p, sizeof(token_hdr));
 	
@@ -112,7 +118,7 @@ match_inst(parse_pgm_inst_t *inst, const char * buf, uint8_t nb_match_token,
 		buf += n;
 		
 		token_num ++;
-		token_p = (parse_pgm_token_hdr_t *)pgm_read_word(&inst->tokens[token_num]);
+		token_p = (parse_pgm_token_hdr_t *)pgm_read_pgmptr(&inst->tokens[token_num]);
 		if (token_p)
 			memcpy_P(&token_hdr, token_p, sizeof(token_hdr));
 	}
@@ -204,7 +210,7 @@ parse(parse_pgm_ctx_t ctx[], const char * buf)
 #endif
 
 	/* parse it !! */
-	inst = (parse_pgm_inst_t *)pgm_read_word(ctx+inst_num);
+	inst = (parse_pgm_inst_t *)pgm_read_pgmptr(ctx+inst_num);
 	while (inst) {
 		debug_printf("INST\n");
 
@@ -238,7 +244,7 @@ parse(parse_pgm_ctx_t ctx[], const char * buf)
 		}
 			
 		inst_num ++;
-		inst = (parse_pgm_inst_t *)pgm_read_word(ctx+inst_num);
+		inst = (parse_pgm_inst_t *)pgm_read_pgmptr(ctx+inst_num);
 	}
 	
 	/* call func */
@@ -293,14 +299,14 @@ complete(parse_pgm_ctx_t ctx[], const char *buf, int16_t *state,
 		nb_completable = 0;
 		nb_non_completable = 0;
 		
-		inst = (parse_pgm_inst_t *)pgm_read_word(ctx+inst_num);
+		inst = (parse_pgm_inst_t *)pgm_read_pgmptr(ctx+inst_num);
 		while (inst) {
 			/* parse the first tokens of the inst */
 			if (nb_token && match_inst(inst, buf, nb_token, NULL))
 				goto next;
 			
 			debug_printf("instruction match \n");
-			token_p = (parse_pgm_token_hdr_t *) pgm_read_word(&inst->tokens[nb_token]);
+			token_p = (parse_pgm_token_hdr_t *) pgm_read_pgmptr(&inst->tokens[nb_token]);
 			if (token_p)
 				memcpy_P(&token_hdr, token_p, sizeof(token_hdr));
 
@@ -336,7 +342,7 @@ complete(parse_pgm_ctx_t ctx[], const char *buf, int16_t *state,
 			}		
 		next:
 			inst_num ++;
-			inst = (parse_pgm_inst_t *)pgm_read_word(ctx+inst_num);
+			inst = (parse_pgm_inst_t *)pgm_read_pgmptr(ctx+inst_num);
 		}
 
 		debug_printf("total choices %d for this completion\n", nb_completable);
@@ -366,15 +372,15 @@ complete(parse_pgm_ctx_t ctx[], const char *buf, int16_t *state,
 	debug_printf("Multiple choice STATE=%d\n", *state);
 
 	inst_num = 0;
-	inst = (parse_pgm_inst_t *)pgm_read_word(ctx+inst_num);
+	inst = (parse_pgm_inst_t *)pgm_read_pgmptr(ctx+inst_num);
 	while (inst) {
 		/* we need to redo it */
-		inst = (parse_pgm_inst_t *)pgm_read_word(ctx+inst_num);
+		inst = (parse_pgm_inst_t *)pgm_read_pgmptr(ctx+inst_num);
 		
 		if (nb_token && match_inst(inst, buf, nb_token, NULL))
 			goto next2;
 		
-		token_p = (parse_pgm_token_hdr_t *)pgm_read_word(&inst->tokens[nb_token]);
+		token_p = (parse_pgm_token_hdr_t *)pgm_read_pgmptr(&inst->tokens[nb_token]);
 		if (token_p)
 			memcpy_P(&token_hdr, token_p, sizeof(token_hdr));
 
@@ -390,9 +396,9 @@ complete(parse_pgm_ctx_t ctx[], const char *buf, int16_t *state,
 			(*state)++;
 			if (token_p && token_hdr.ops->get_help) {
 				token_hdr.ops->get_help(token_p, tmpbuf, sizeof(tmpbuf));
-				help_str = (prog_char *) pgm_read_word(&inst->help_str);
+				help_str = (prog_char *) pgm_read_pgmptr(&inst->help_str);
 				if (help_str)
-					snprintf_P(dst, size, PSTR("[%s]: %S"), tmpbuf, help_str);
+					snprintf_P(dst, size, PSTR("[%s]: "PGMS_FMT""), tmpbuf, help_str);
 				else
 					snprintf_P(dst, size, PSTR("[%s]: No help"), tmpbuf);
 			}
@@ -418,19 +424,19 @@ complete(parse_pgm_ctx_t ctx[], const char *buf, int16_t *state,
 				l=snprintf(dst, size, "%s", tmpbuf);
 				if (l>=0 && token_hdr.ops->get_help) {
 					token_hdr.ops->get_help(token_p, tmpbuf, sizeof(tmpbuf));
-					help_str = (prog_char *) pgm_read_word(&inst->help_str);
+					help_str = (prog_char *) pgm_read_pgmptr(&inst->help_str);
 					if (help_str)
-						snprintf_P(dst+l, size-l, PSTR("[%s]: %S"), tmpbuf, help_str);
+						snprintf_P(dst+l, size-l, PSTR("[%s]: "PGMS_FMT), tmpbuf, help_str);
 					else
 						snprintf_P(dst+l, size-l, PSTR("[%s]: No help"), tmpbuf);
 				}
-							      
+
 				return 1;
 			}
 		}
 	next2:
 		inst_num ++;
-		inst = (parse_pgm_inst_t *)pgm_read_word(ctx+inst_num);
+		inst = (parse_pgm_inst_t *)pgm_read_pgmptr(ctx+inst_num);
 	}
 	return 0;
 }
