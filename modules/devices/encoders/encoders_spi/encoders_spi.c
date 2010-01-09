@@ -24,6 +24,8 @@
  * interface. Basically, frames are formatted with 4 words of 16 bits,
  * describing the values of the 4 encoders. */
 
+#ifndef HOST_VERSION
+
 #include <string.h>
 
 #include <aversive.h>
@@ -101,3 +103,5 @@ void encoders_spi_set_value(void *encoder, int32_t val)
 	g_encoders_spi_values[(int)encoder] = val;
 	IRQ_UNLOCK(flags);
 }
+
+#endif
