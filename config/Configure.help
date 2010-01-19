@@ -50,6 +50,13 @@ CONFIG_MODULE_VECT2
   This module provides functions for converting 2D vectors from 
   polar to cartesian and vice versa.
 
+CONFIG_MODULE_HOSTSIM
+  AVR simulator. This code is used on host (PC for instance) to
+  generate a signal that will call other aversive modules like
+  scheduler or uart. The goal is to simulate the behaviour of
+  hardware interrupts in a unix application. This has no effect
+  when compiling for AVR.
+
 
 CONFIG_MODULE_SCHEDULER
   The 'scheduler' module is NOT a scheduler in the same way than in

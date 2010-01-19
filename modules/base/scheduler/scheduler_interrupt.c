@@ -45,13 +45,13 @@ void scheduler_enable_restore(uint8_t old_prio)
 	priority_running = old_prio;
 }
 
-/** 
+/**
  *  this function is called from a timer interruption. If an event has
  *  to be scheduled, it will execute the fonction (IRQ are allowed
  *  during the execution of the function). This interruption can be
  *  interrupted by itself too, in this case only events with a higher
  *  priority can be scheduled.
- * 
+ *
  *  We assume that this function is called from a SIGNAL(), with
  *  global interrupt flag disabled --> that's why we can use cli() and
  *  sei() instead of IRQ_LOCK(flags).

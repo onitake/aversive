@@ -14,8 +14,8 @@ SRC += uart_send9.c uart_send9_nowait.c
 SRC += uart_recv9.c uart_recv9_nowait.c
 endif
 
-else # is it ok ??
-SRC = uart_host.c
+else
+SRC = uart_host.c uart_events.c
 endif
 
 include $(AVERSIVE_DIR)/mk/aversive_module.mk

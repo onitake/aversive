@@ -23,6 +23,8 @@
 #include <aversive/wait.h>
 #include <stdio.h>
 #include <uart.h>
+//#include <timer.h>
+#include <hostsim.h>
 
 uint8_t event_id;
 
@@ -45,7 +47,7 @@ void f3(void * nothing)
 
 void supp(void * nothing)
 {
-  scheduler_del_event(event_id);
+	scheduler_del_event(event_id);
 }
 
 int main(void)
@@ -67,17 +69,18 @@ int main(void)
 	wait_ms(2000);
 	printf("init3\n");
 
+#ifdef HOST_VERSION
+	hostsim_init();
+#endif
+
 	event_id = scheduler_add_periodical_event_priority(f1, NULL, 500000l/SCHEDULER_UNIT, 200);
 	scheduler_add_periodical_event_priority(f2, NULL, 500000l/SCHEDULER_UNIT, 100);
 	scheduler_add_periodical_event(f3, NULL, 1000000l/SCHEDULER_UNIT);
-	
-	//  scheduler_add_single_event(supp,65);
-	
 
-#ifdef HOST_VERSION
-	for (i=0 ; i<50000 ; i++)
-		scheduler_interrupt();
-#endif
+	scheduler_add_single_event(supp, NULL, 5000000l/SCHEDULER_UNIT);
+
+	while (1);
+
 	return 0;
 }
 

@@ -101,7 +101,7 @@ ifeq ($(HOST),avr)
 LDFLAGS += -mmcu=$(MCU) $(PRINTF_LDFLAGS)
 LDFLAGS += -Wl,-Map=$(addprefix compiler_files/,$(TARGET).map),--cref
 else
-LDFLAGS += 
+LDFLAGS += $(PTHREAD_LDFLAGS)
 endif
 
 LDFLAGS += $(MATH_LIB)

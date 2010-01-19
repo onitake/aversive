@@ -33,9 +33,11 @@
 
 #ifdef HOST_VERSION
 
-#define wait_3cyc(n) do {} while(0)
-#define wait_4cyc(n) do {} while(0)
-#define wait_ms(n) do {} while(0)
+#include <unistd.h>
+
+#define wait_3cyc(n) do { volatile int a = 0; a++; } while (0)
+#define wait_4cyc(n) do { volatile int a = 0; a++; } while (0)
+#define wait_ms(n) host_wait_ms(n)
 
 #else /* HOST_VERSION */
 
