@@ -99,6 +99,8 @@ extern parse_pgm_inst_t cmd_traj_speed;
 extern parse_pgm_inst_t cmd_traj_speed_show;
 extern parse_pgm_inst_t cmd_trajectory;
 extern parse_pgm_inst_t cmd_trajectory_show;
+extern parse_pgm_inst_t cmd_circle_coef;
+extern parse_pgm_inst_t cmd_circle_coef_show;
 extern parse_pgm_inst_t cmd_rs_gains;
 extern parse_pgm_inst_t cmd_rs_gains_show;
 extern parse_pgm_inst_t cmd_track;
@@ -197,6 +199,8 @@ parse_pgm_ctx_t main_ctx[] = {
 	(parse_pgm_inst_t *)&cmd_traj_speed_show,
 	(parse_pgm_inst_t *)&cmd_trajectory,
 	(parse_pgm_inst_t *)&cmd_trajectory_show,
+	(parse_pgm_inst_t *)&cmd_circle_coef,
+	(parse_pgm_inst_t *)&cmd_circle_coef_show,
 	(parse_pgm_inst_t *)&cmd_rs_gains,
 	(parse_pgm_inst_t *)&cmd_rs_gains_show,
 	(parse_pgm_inst_t *)&cmd_track,

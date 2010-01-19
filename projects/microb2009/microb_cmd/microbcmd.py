@@ -12,6 +12,7 @@ import numpy
 import shlex
 import time
 import math
+import re
 import warnings
 warnings.filterwarnings("ignore","tempnam",RuntimeWarning, __name__)
 
@@ -898,6 +899,39 @@ class Interp(cmd.Cmd):
             self.ser.write("pwm s3(3C) 200\n")
             time.sleep(1)
             self.ser.write("pwm s3(3C) 250\n")
+
+    def do_circle(self, arg):
+        arg = re.sub("  *", " ", arg)
+        arg = arg.strip()
+        arg = arg.split(" ")
+        if len(arg)!=4:
+            print "radius coef dspeed aspeed"
+            return
+        r = int(arg[0])
+        c = float(arg[1])
+        dspeed = int(arg[2])
+        aspeed = int(arg[3])
+
+        self.ser.write("event cs on\n")
+        time.sleep(0.3)
+
+        self.ser.write("traj_speed distance %d\n"%dspeed)
+        time.sleep(0.3)
+        self.ser.write("traj_speed angle %d\n"%aspeed)
+        time.sleep(0.3)
+
+        self.ser.write("goto d_rel 300\n")
+        time.sleep(3)
+
+        self.ser.write("position reset\n")
+        time.sleep(0.3)
+        self.ser.write("circle_coef set %f\n"%c)
+        time.sleep(0.3)
+
+        self.ser.write("goto circle_rel 700 460 %d 360\n"%r)
+        self.ser.flushInput()
+        time.sleep(0.3)
+
 
 if __name__ == "__main__":
     try:

@@ -70,7 +70,8 @@ struct trajectory {
 	double a_win_rad;  /**<< angle window (for END_NEAR) */
 	double a_start_rad;/**<< in xy consigns, start to move in distance
 			    *    when a_target < a_start */
-  
+	double circle_coef;/**<< corrective circle coef */
+
 	uint16_t d_speed;  /**<< distance speed consign */
 	uint16_t a_speed;  /**<< angle speed consign */
 
@@ -78,7 +79,7 @@ struct trajectory {
 	struct robot_system *robot;      /**<< associated robot_system */
 	struct cs *csm_angle;     /**<< associated control system (angle) */
 	struct cs *csm_distance;  /**<< associated control system (distance) */
-  
+
 	int8_t scheduler_task;    /**<< id of current task (-1 if no running task) */
 };
 
@@ -107,6 +108,12 @@ void trajectory_set_speed(struct trajectory *traj, int16_t d_speed, int16_t a_sp
  */
 void trajectory_set_windows(struct trajectory *traj, double d_win, 
 			    double a_win_deg, double a_start_deg);
+
+/**
+ * Set coef for circle trajectory. The objective of this value is to
+ * fix the radius of the circle which is not correctly what we asked.
+ */
+void trajectory_set_circle_coef(struct trajectory *traj, double coef);
 
 /** return true if the position consign is equal to the filtered
  * position consign (after quadramp filter), for angle and

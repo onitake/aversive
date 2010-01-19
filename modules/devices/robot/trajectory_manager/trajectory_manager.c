@@ -77,7 +77,7 @@ void trajectory_set_robot_params(struct trajectory *traj,
 }
 
 /** set speed consign */
-void trajectory_set_speed( struct trajectory *traj, int16_t d_speed, int16_t a_speed)
+void trajectory_set_speed(struct trajectory *traj, int16_t d_speed, int16_t a_speed)
 {
 	uint8_t flags;
 	IRQ_LOCK(flags);
@@ -98,5 +98,11 @@ void trajectory_set_windows(struct trajectory *traj, double d_win,
 	IRQ_UNLOCK(flags);
 }
 
-
-
+/** set corrective coef for circle */
+void trajectory_set_circle_coef(struct trajectory *traj, double coef)
+{
+	uint8_t flags;
+	IRQ_LOCK(flags);
+	traj->circle_coef = coef ;
+	IRQ_UNLOCK(flags);
+}
