@@ -1,6 +1,7 @@
 TARGET = timer
 
 # List C source files here. (C dependencies are automatically generated.)
+ifeq ($(HOST),avr)
 SRC = timer_init.c \
 timer_intr.c \
 timer_conf_check.c \
@@ -40,5 +41,8 @@ timer2_prescaler.c \
 timer3_prescaler.c \
 timer4_prescaler.c \
 timer5_prescaler.c
+else
+SRC = timer_host.c
+endif
 
 include $(AVERSIVE_DIR)/mk/aversive_module.mk

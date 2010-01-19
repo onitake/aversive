@@ -131,6 +131,9 @@ dep_bool 'Vect2 lib' CONFIG_MODULE_VECT2 \
 dep_bool 'Geometry lib' CONFIG_MODULE_GEOMETRY \
 	$CONFIG_MATH_LIB
 
+#### Hostsim
+bool 'Hostsim' CONFIG_MODULE_HOSTSIM
+
 #### SCHEDULER
 bool 'Scheduler' CONFIG_MODULE_SCHEDULER
 
