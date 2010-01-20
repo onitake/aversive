@@ -71,7 +71,6 @@ int main(void)
 	hostsim_init();
 	robotsim_init();
 #endif
-	time_init(TIME_PRIO);
 
 
 	microb_cs_init();
@@ -83,9 +82,9 @@ int main(void)
 		DO_POS | DO_POWER | DO_BD | DO_CS;
 
 	trajectory_d_rel(&mainboard.traj, 1000);
-	time_wait_ms(2000);
+	wait_ms(2000);
 	trajectory_goto_xy_abs(&mainboard.traj, 1500, 2000);
-	time_wait_ms(2000);
+	wait_ms(2000);
 	return 0;
 }
 
