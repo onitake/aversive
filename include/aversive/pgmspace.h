@@ -39,6 +39,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <string.h>
 
 typedef void prog_void;
 typedef char prog_char;
@@ -111,7 +112,7 @@ static inline int vsprintf_P(char *buf, const prog_char *s,
 #define PGM_P const char *
 #define PSTR(x) x
 #define PROGMEM
-#define printf_P(arg...) printf(args)
+#define printf_P(args...) printf(args)
 #define sprintf_P(buf, args...) sprintf(buf, args)
 #define snprintf_P(buf, n, args...) snprintf(buf, n, args)
 

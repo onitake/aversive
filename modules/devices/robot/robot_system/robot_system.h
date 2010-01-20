@@ -27,8 +27,9 @@
  */
 
 #include <aversive.h>
+#ifdef CONFIG_MODULE_ROBOT_SYSTEM_USE_F64
 #include <f64.h>
-
+#endif
 #include "angle_distance.h"
 
 #ifndef _ROBOT_SYSTEM_H_
