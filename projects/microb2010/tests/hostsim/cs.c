@@ -113,6 +113,9 @@ static void do_cs(void *dummy)
 		BRAKE_ON();
 #endif
 	cpt++;
+
+	if ((cpt & 8) == 0)
+		robotsim_dump();
 	//dump_cs("distance", &mainboard.distance.cs);
 	//dump_cs("angle", &mainboard.angle.cs);
 }

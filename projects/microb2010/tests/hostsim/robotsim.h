@@ -22,3 +22,5 @@
 void robotsim_update(void);
 void robotsim_pwm(void *arg, int32_t val);
 int32_t robotsim_encoder_get(void *arg);
+int robotsim_init(void);
+void robotsim_dump(void);

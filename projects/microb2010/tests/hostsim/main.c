@@ -69,6 +69,7 @@ int main(void)
 
 #ifdef HOST_VERSION
 	hostsim_init();
+	robotsim_init();
 #endif
 	time_init(TIME_PRIO);
 
@@ -81,9 +82,10 @@ int main(void)
 	mainboard.flags = DO_ENCODERS | DO_RS |
 		DO_POS | DO_POWER | DO_BD | DO_CS;
 
-	trajectory_d_rel(&mainboard.traj, 100);
-
-	time_wait_ms(1000);
+	trajectory_d_rel(&mainboard.traj, 1000);
+	time_wait_ms(2000);
+	trajectory_goto_xy_abs(&mainboard.traj, 1500, 2000);
+	time_wait_ms(2000);
 	return 0;
 }
 

@@ -22,6 +22,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include <aversive.h>
 #include <aversive/error.h>
@@ -46,8 +49,10 @@
 static int32_t l_pwm, r_pwm;
 static int32_t l_enc, r_enc;
 
+static int fd;
+
 /* */
-#define FILTER  98
+#define FILTER  97
 #define FILTER2 (100-FILTER)
 
 /* must be called periodically */
@@ -60,6 +65,18 @@ void robotsim_update(void)
 	l_enc += (l_speed / 1000);
 	r_speed = ((r_speed * FILTER) / 100) + ((r_pwm * 1000 * FILTER2)/1000);
 	r_enc += (r_speed / 1000);
+}
+
+void robotsim_dump(void)
+{
+	char buf[BUFSIZ];
+	int len;
+
+	len =snprintf(buf, sizeof(buf), "%d %d %d\n",
+		      position_get_x_s16(&mainboard.pos),
+		      position_get_y_s16(&mainboard.pos),
+		      position_get_a_deg_s16(&mainboard.pos));
+	write(fd, buf, len);
 }
 
 void robotsim_pwm(void *arg, int32_t val)
@@ -77,5 +94,14 @@ int32_t robotsim_encoder_get(void *arg)
 		return l_enc;
 	else if (arg == RIGHT_ENCODER)
 		return r_enc;
+	return 0;
+}
+
+int robotsim_init(void)
+{
+	mkfifo("/tmp/.robot", 0600);
+	fd = open("/tmp/.robot", O_WRONLY, 0);
+	if (fd < 0)
+		return -1;
 	return 0;
 }
