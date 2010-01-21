@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
+#include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fcntl.h>
@@ -72,11 +73,13 @@ void robotsim_dump(void)
 	char buf[BUFSIZ];
 	int len;
 
-	len =snprintf(buf, sizeof(buf), "%d %d %d\n",
+	len = snprintf(buf, sizeof(buf), "%d %d %d\n",
 		      position_get_x_s16(&mainboard.pos),
 		      position_get_y_s16(&mainboard.pos),
 		      position_get_a_deg_s16(&mainboard.pos));
+	hostsim_lock();
 	write(fd, buf, len);
+	hostsim_unlock();
 }
 
 void robotsim_pwm(void *arg, int32_t val)

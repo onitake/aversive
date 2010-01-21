@@ -44,7 +44,7 @@
 #include <scheduler.h>
 #endif
 
-pthread_mutex_t mut;
+static pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
 static volatile int cpt = 0;
 
 #ifdef SA_SIGINFO
@@ -60,6 +60,26 @@ void sigusr1(__attribute__((unused)) int sig)
 #ifdef CONFIG_MODULE_SCHEDULER
 	scheduler_interrupt();
 #endif
+}
+
+static int lock_count = 0;
+
+void hostsim_lock(void)
+{
+	if (lock_count++)
+		return;
+	pthread_mutex_lock(&mut);
+}
+
+void hostsim_unlock(void)
+{
+	if (lock_count-- == 1)
+		pthread_mutex_unlock(&mut);
+}
+
+int hostsim_islocked(void)
+{
+	return lock_count;
 }
 
 void host_wait_ms(int ms)
@@ -121,12 +141,10 @@ int hostsim_init(void)
 	pthread_t parent_id, child_id;
 	int ret;
 
-	pthread_mutex_init(&mut, NULL);
-
 	parent_id = pthread_self();
 
 	pthread_mutex_lock(&mut);
-	ret = pthread_create(&child_id, NULL, parent, (void *)&parent_id);
+	ret = pthread_create(&child_id, NULL, parent, (void *)parent_id);
 	if (ret) {
 		printf("pthread_create() returned %d\n", ret);
 		pthread_mutex_unlock(&mut);
@@ -144,6 +162,7 @@ int hostsim_init(void)
 	if (siginterrupt (SIGUSR1, 0) != 0)
 		return -1;
 
+	printf("hostsim_init()\n", ret);
 	pthread_mutex_unlock(&mut);
 
 	return 0;

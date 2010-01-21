@@ -28,7 +28,6 @@
 
 #include <timer.h>
 #include <scheduler.h>
-#include <time.h>
 
 #include <pid.h>
 #include <quadramp.h>
@@ -42,6 +41,7 @@
 #include <rdline.h>
 
 #include <uart.h>
+#include <clock_time.h>
 //#include <timer.h>
 #include <hostsim.h>
 
@@ -53,25 +53,13 @@ struct mainboard mainboard;
 
 int main(void)
 {
-#ifndef HOST_VERSION
-	uart_init();
-	fdevopen(uart0_dev_send, uart0_dev_recv);
-	sei();
-#else
-	int i;
-#endif
-
-#ifdef CONFIG_MODULE_TIMER
-	timer_init();
-#endif
-	scheduler_init();
 	printf("init\n");
 
-#ifdef HOST_VERSION
+	scheduler_init();
+	time_init(TIME_PRIO);
+
 	hostsim_init();
 	robotsim_init();
-#endif
-
 
 	microb_cs_init();
 
@@ -81,10 +69,13 @@ int main(void)
 	mainboard.flags = DO_ENCODERS | DO_RS |
 		DO_POS | DO_POWER | DO_BD | DO_CS;
 
+	time_wait_ms(1000);
+	printf("init\n");
 	trajectory_d_rel(&mainboard.traj, 1000);
-	wait_ms(2000);
+	time_wait_ms(2000);
+	printf("init\n");
 	trajectory_goto_xy_abs(&mainboard.traj, 1500, 2000);
-	wait_ms(2000);
+	time_wait_ms(2000);
 	return 0;
 }
 
