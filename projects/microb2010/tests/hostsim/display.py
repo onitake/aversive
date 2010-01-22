@@ -14,12 +14,24 @@ robot = box(pos = (0, 0, 150),
             size = (300,300,300),
             color = (1, 0, 0) )
 
+last_pos = robot.pos.x, robot.pos.y, robot.pos.z
+robot_trail = curve()
+max_trail = 500
+
 def set_robot(x, y, a):
-    global robot
+    global robot, last_pos
     robot.pos = (x - AREA_X/2, y - AREA_Y/2, 150)
     robot.axis = (math.cos(a*math.pi/180) * 300,
                   math.sin(a*math.pi/180) * 300,
                   0)
+
+    pos = robot.pos.x, robot.pos.y, robot.pos.z
+    if pos != last_pos:
+        robot_trail.append(pos)
+        last_pos = pos
+    robot_trail_l = len(robot_trail.pos)
+    if robot_trail_l> max_trail:
+        robot_trail.pos = robot_trail.pos[robot_trail_l - max_trail:]
 
 while True:
     try:
