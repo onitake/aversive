@@ -143,13 +143,6 @@ struct mainboard {
 extern struct genboard gen;
 extern struct mainboard mainboard;
 
-#define SPEED_DIST_FAST 2500
-#define SPEED_ANGLE_FAST 2000
-#define SPEED_DIST_SLOW 1000
-#define SPEED_ANGLE_SLOW 1000
-#define SPEED_DIST_VERY_SLOW 400
-#define SPEED_ANGLE_VERY_SLOW 400
-
 #define WAIT_COND_OR_TIMEOUT(cond, timeout)                   \
 ({                                                            \
         microseconds __us = time_get_us2();                   \

@@ -46,6 +46,7 @@
 #include <hostsim.h>
 
 #include "cs.h"
+#include "cmdline.h"
 #include "main.h"
 
 struct genboard gen;
@@ -53,13 +54,22 @@ struct mainboard mainboard;
 
 int main(void)
 {
-#ifndef HOST_VERSION
 	uart_init();
+	uart_register_rx_event(CMDLINE_UART, emergency);
+#ifndef HOST_VERSION
 	fdevopen(uart0_dev_send, uart0_dev_recv);
 	sei();
-#else
-	int i;
 #endif
+
+	memset(&gen, 0, sizeof(gen));
+	memset(&mainboard, 0, sizeof(mainboard));
+
+	/* LOGS */
+	error_register_emerg(mylog);
+	error_register_error(mylog);
+	error_register_warning(mylog);
+	error_register_notice(mylog);
+	error_register_debug(mylog);
 
 #ifdef CONFIG_MODULE_TIMER
 	timer_init();
@@ -71,21 +81,24 @@ int main(void)
 	hostsim_init();
 	robotsim_init();
 #endif
-	time_init(TIME_PRIO);
-
-
 	microb_cs_init();
 
- 	gen.logs[0] = E_USER_CS;
- 	gen.log_level = 5;
+	time_init(TIME_PRIO);
+
+	printf_P(PSTR("\r\n"));
+	printf_P(PSTR("Respect et robustesse.\r\n"));
 
 	mainboard.flags = DO_ENCODERS | DO_RS |
 		DO_POS | DO_POWER | DO_BD | DO_CS;
+	strat_reset_pos(1000, 1000, 0);
 
-	trajectory_d_rel(&mainboard.traj, 1000);
-	time_wait_ms(2000);
-	trajectory_goto_xy_abs(&mainboard.traj, 1500, 2000);
-	time_wait_ms(2000);
+	cmdline_interact();
+
+/* 	trajectory_d_rel(&mainboard.traj, 1000); */
+/* 	time_wait_ms(2000); */
+/* 	trajectory_circle_rel(&mainboard.traj, 1500, 1000, */
+/* 			      250, 360, 0); */
+/* 	time_wait_ms(15000); */
 	return 0;
 }
 

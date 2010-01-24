@@ -19,63 +19,7 @@
  *
  */
 
-/* Olivier MATZ, Droids-corp 2004 - 2009 */
+/* Olivier MATZ, Droids-corp 2004 - 2010 */
 
-#include <uart.h>
-#include <uart_private.h>
-
-/* this file os a stub for host */
-
-void uart_init(void)
-{
-}
-
-/* global vars are initialized to 0 (NULL) */
-event *rx_event[UART_HW_NUM];
-event *tx_event[UART_HW_NUM];
-
-void uart_host_rx_event(char c)
-{
-	/* only one uart */
-	if (rx_event[0])
-		rx_event[0](c);
-}
-
-void uart_host_tx_event(char c)
-{
-	/* only one uart */
-	if (tx_event[0])
-		tx_event[0](c);
-}
-
-int8_t uart_setconf(uint8_t num, struct uart_config *u)
-{
-	/* XXX todo */
-	return 0;
-}
-
-void uart_getconf(uint8_t num, struct uart_config *u)
-{
-	return;
-}
-
-int uart_recv(uint8_t num)
-{
-	return getchar();
-}
-
-/* XXX should not wait */
-int uart_recv_nowait(uint8_t num)
-{
-	return getchar();
-}
-
-int uart_send_nowait(uint8_t num, char c)
-{
-	return putchar(c);
-}
-
-int uart_send(uint8_t num, char c)
-{
-	return putchar(c);
-}
+void uart_host_rx_event(char c);
+void uart_host_tx_event(char c);

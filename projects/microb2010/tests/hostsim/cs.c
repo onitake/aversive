@@ -43,6 +43,8 @@
 #include <rdline.h>
 
 #include "robotsim.h"
+#include "strat.h"
+#include "actuator.h"
 #include "main.h"
 
 /* called every 5 ms */
@@ -88,11 +90,11 @@ static void do_cs(void *dummy)
 		 * compensation) */
 		position_manage(&mainboard.pos);
 	}
-#if 0
 	if (mainboard.flags & DO_BD) {
 		bd_manage_from_cs(&mainboard.angle.bd, &mainboard.angle.cs);
 		bd_manage_from_cs(&mainboard.distance.bd, &mainboard.distance.cs);
 	}
+#if 0
 	if (mainboard.flags & DO_TIMER) {
 		uint8_t second;
 		/* the robot should stop correctly in the strat, but
@@ -152,8 +154,8 @@ void microb_cs_init(void)
 {
 	/* ROBOT_SYSTEM */
 	rs_init(&mainboard.rs);
-	rs_set_left_pwm(&mainboard.rs, robotsim_pwm, LEFT_PWM);
-	rs_set_right_pwm(&mainboard.rs,  robotsim_pwm, RIGHT_PWM);
+	rs_set_left_pwm(&mainboard.rs, pwm_set_and_save, LEFT_PWM);
+	rs_set_right_pwm(&mainboard.rs,  pwm_set_and_save, RIGHT_PWM);
 	/* increase gain to decrease dist, increase left and it will turn more left */
 	rs_set_left_ext_encoder(&mainboard.rs, robotsim_encoder_get,
 				LEFT_ENCODER, IMP_COEF);

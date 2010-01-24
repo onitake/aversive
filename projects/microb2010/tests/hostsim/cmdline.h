@@ -1,7 +1,7 @@
-/*
+/*  
  *  Copyright Droids Corporation
  *  Olivier Matz <zer0@droids-corp.org>
- *
+ * 
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -16,13 +16,29 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- *  Revision : $Id: main.c,v 1.10 2009-11-08 17:24:33 zer0 Exp $
+ *  Revision : $Id: cmdline.h,v 1.4 2009-11-08 17:24:33 zer0 Exp $
  *
  */
 
-/* initialize / exit hostsim framework */
-int hostsim_init(void);
-int hostsim_exit(void);
+#define CMDLINE_UART 0
 
-/* replacement for wait_ms() */
-void host_wait_ms(int ms);
+/* uart rx callback for reset() */
+void emergency(char c);
+
+/* log function */
+void mylog(struct error * e, ...);
+
+/* launch cmdline */
+int cmdline_interact(void);
+
+static inline uint8_t cmdline_keypressed(void) {
+	return (uart_recv_nowait(CMDLINE_UART) != -1);
+}
+
+static inline int16_t cmdline_getchar(void) {
+	return uart_recv_nowait(CMDLINE_UART);
+}
+
+static inline uint8_t cmdline_getchar_wait(void) {
+	return uart_recv(CMDLINE_UART);
+}

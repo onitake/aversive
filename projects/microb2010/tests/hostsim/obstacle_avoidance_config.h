@@ -1,7 +1,6 @@
-/*
- *  Copyright Droids Corporation
- *  Olivier Matz <zer0@droids-corp.org>
- *
+/*  
+ *  Copyright Droids Corporation, Microb Technology (2009)
+ * 
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -16,13 +15,12 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- *  Revision : $Id: main.c,v 1.10 2009-11-08 17:24:33 zer0 Exp $
+ *  Revision : $Id: obstacle_avoidance_config.h,v 1.1.2.1 2009-05-02 10:00:35 zer0 Exp $
  *
  */
 
-/* initialize / exit hostsim framework */
-int hostsim_init(void);
-int hostsim_exit(void);
-
-/* replacement for wait_ms() */
-void host_wait_ms(int ms);
+#define MAX_POLY 3
+#define MAX_PTS 10
+#define MAX_RAYS 100
+#define MAX_CHKPOINTS 5
+#define OA_COEF 30000

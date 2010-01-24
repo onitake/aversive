@@ -4,7 +4,10 @@ TARGET = main
 AVERSIVE_DIR = ../../../..
 
 # List C source files here. (C dependencies are automatically generated.)
-SRC = $(TARGET).c cs.c robotsim.c
+SRC := $(TARGET).c cs.c robotsim.c cmdline.c commands.c
+SRC += commands_cs.c commands_gen.c commands_mainboard.c
+SRC += commands_traj.c strat.c strat_base.c strat_utils.c
+SRC += actuator.c strat_avoid.c
 
 # List Assembler source files here.
 # Make them always end in a capital .S.  Files ending in a lowercase .s

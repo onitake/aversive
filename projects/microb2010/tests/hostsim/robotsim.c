@@ -25,6 +25,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 #include <aversive.h>
 #include <aversive/error.h>
@@ -44,6 +45,8 @@
 #include <parse.h>
 #include <rdline.h>
 
+#include "strat.h"
+#include "strat_utils.h"
 #include "main.h"
 
 static int32_t l_pwm, r_pwm;
@@ -59,11 +62,47 @@ static int fd;
 void robotsim_update(void)
 {
 	static int32_t l_speed, r_speed;
+	double x, y, a, a2, d;
+
+	/* corners of the robot */
+	double xfl, yfl; /* front left */
+	double xrl, yrl; /* rear left */
+	double xrr, yrr; /* rear right */
+	double xfr, yfr; /* front right */
+
+	x = position_get_x_double(&mainboard.pos);
+	y = position_get_y_double(&mainboard.pos);
+	a = position_get_a_rad_double(&mainboard.pos);
+
+	l_speed = ((l_speed * FILTER) / 100) + ((l_pwm * 1000 * FILTER2)/1000);
+	r_speed = ((r_speed * FILTER) / 100) + ((r_pwm * 1000 * FILTER2)/1000);
+
+	/* basic collision detection */
+	a2 = atan2(ROBOT_WIDTH/2, ROBOT_LENGTH/2);
+	d = norm(ROBOT_WIDTH/2, ROBOT_LENGTH/2);
+
+	xfl = x + cos(a+a2) * d;
+	yfl = y + sin(a+a2) * d;
+	if (!is_in_area(xfl, yfl, 0) && l_speed > 0)
+		l_speed = 0;
+
+	xrl = x + cos(a+M_PI-a2) * d;
+	yrl = y + sin(a+M_PI-a2) * d;
+	if (!is_in_area(xrl, yrl, 0) && l_speed < 0)
+		l_speed = 0;
+
+	xrr = x + cos(a+M_PI+a2) * d;
+	yrr = y + sin(a+M_PI+a2) * d;
+	if (!is_in_area(xrr, yrr, 0) && r_speed < 0)
+		r_speed = 0;
+
+	xfr = x + cos(a-a2) * d;
+	yfr = y + sin(a-a2) * d;
+	if (!is_in_area(xfr, yfr, 0) && r_speed > 0)
+		r_speed = 0;
 
 	/* XXX should lock */
-	l_speed = ((l_speed * FILTER) / 100) + ((l_pwm * 1000 * FILTER2)/1000);
 	l_enc += (l_speed / 1000);
-	r_speed = ((r_speed * FILTER) / 100) + ((r_pwm * 1000 * FILTER2)/1000);
 	r_enc += (r_speed / 1000);
 }
 
