@@ -48,7 +48,7 @@ while True:
             set_robot(x,y,a)
         f.close()
 
-
+    """
     k = scene.kb.getkey()
     x,y,z = scene.center
     if k == "left":
@@ -59,5 +59,4 @@ while True:
         scene.center = x,y+10,z
     elif k == "down":
         scene.center = x,y-10,z
-    elif k == "k":
-        robot_trail.pos = robot_trail.pos[0:0]
+    """
