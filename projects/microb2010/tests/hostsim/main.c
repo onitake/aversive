@@ -72,10 +72,19 @@ int main(void)
 	time_wait_ms(1000);
 	printf("init\n");
 	trajectory_d_rel(&mainboard.traj, 1000);
-	time_wait_ms(2000);
+	time_wait_ms(1300);
+	/*
 	printf("init\n");
 	trajectory_goto_xy_abs(&mainboard.traj, 1500, 2000);
 	time_wait_ms(2000);
+	*/
+	trajectory_circle_rel(&mainboard.traj,
+			      1000, 500,
+			      500,
+			      400,
+			      0);
+
+	time_wait_ms(10000);
 	return 0;
 }
 

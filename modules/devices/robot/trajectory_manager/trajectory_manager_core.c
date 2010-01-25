@@ -504,12 +504,17 @@ void trajectory_manager_circle_event(struct trajectory *traj)
 	int32_t delta_d, delta_a;
 	double coef_deriv = traj->circle_coef;
 	double new_radius;
+	double new_angle;
 	struct  quadramp_filter * q_d, * q_a;
 
 	q_d = traj->csm_distance->consign_filter_params;
 	q_a = traj->csm_angle->consign_filter_params;
+	/*
 	delta_a = a_speed;//q_a->previous_var;
 	delta_d = d_speed;//q_d->previous_var;
+	*/
+	delta_a = q_a->previous_var;
+	delta_d = q_d->previous_var;
 
 	/* step 1 : process new commands to quadramps */
 
@@ -520,6 +525,7 @@ void trajectory_manager_circle_event(struct trajectory *traj)
 	vect2_cart2pol(&v2cart_pos, &v2pol_target);
 	v2pol_target.theta = simple_modulo_2pi(v2pol_target.theta - a);
 
+#if 0
 	/* pas trop mal, mais oscille */
 	//new_radius = traj->target.circle.radius - delta_a * delta_d * coef_deriv;
 	if (v2pol_target.r > traj->target.circle.radius/2)
@@ -568,6 +574,53 @@ void trajectory_manager_circle_event(struct trajectory *traj)
 			      (traj->position->phys.distance_imp_per_mm) *
 			      (traj->position->phys.track_mm) / 2.0);
 	a_consign += rs_get_angle(traj->robot);
+
+#endif
+
+	d_speed/=100;
+	if (d_speed > v2pol_target.r)
+		d_speed = v2pol_target.r/2;
+	if (d_speed == 0)
+		d_speed = v2pol_target.r/2;
+	new_angle = (d_speed * d_speed);
+	new_angle += (v2pol_target.r * v2pol_target.r);
+	new_angle -= (traj->target.circle.radius * traj->target.circle.radius);
+	new_angle /= 2 * d_speed * v2pol_target.r;
+
+	printf("robot %f %f dspeed %d polr %f pola %f cnewa %f\n",
+	       x, y,
+	       d_speed,
+	       v2pol_target.r, v2pol_target.theta * 180 / M_PI,
+	       new_angle);
+
+	if (new_angle < -1)
+		new_angle = -1;
+
+	if (new_angle > 1)
+		new_angle = 1;
+
+
+	new_angle = acos(new_angle);
+	printf("new_a: %f\n", new_angle*180/M_PI);
+
+	new_angle = v2pol_target.theta - new_angle;
+	a_consign = (int32_t)(new_angle *
+			      (traj->position->phys.distance_imp_per_mm) *
+			      (traj->position->phys.track_mm) / 2.0);
+	a_consign += rs_get_angle(traj->robot);
+
+
+	/* XXX check flags */
+	d_consign = 40000 + rs_get_distance(traj->robot);
+
+
+
+
+
+
+
+
+
 
 	/* step 2 : update state, or delete event if we reached the
 	 * destination */
