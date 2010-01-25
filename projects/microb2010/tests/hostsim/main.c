@@ -62,7 +62,6 @@ int main(void)
 #ifndef HOST_VERSION
 	fdevopen(uart0_dev_send, uart0_dev_recv);
 	sei();
-	test
 #endif
 
 	memset(&gen, 0, sizeof(gen));
