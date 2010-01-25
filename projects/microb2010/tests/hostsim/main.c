@@ -28,7 +28,6 @@
 
 #include <timer.h>
 #include <scheduler.h>
-#include <time.h>
 
 #include <pid.h>
 #include <quadramp.h>
@@ -42,11 +41,15 @@
 #include <rdline.h>
 
 #include <uart.h>
+#include <clock_time.h>
 //#include <timer.h>
 #include <hostsim.h>
 
 #include "cs.h"
 #include "cmdline.h"
+#include "robotsim.h"
+#include "strat.h"
+#include "strat_base.h"
 #include "main.h"
 
 struct genboard gen;
@@ -74,13 +77,14 @@ int main(void)
 #ifdef CONFIG_MODULE_TIMER
 	timer_init();
 #endif
-	scheduler_init();
+
 	printf("init\n");
 
-#ifdef HOST_VERSION
+	scheduler_init();
+
 	hostsim_init();
 	robotsim_init();
-#endif
+
 	microb_cs_init();
 
 	time_init(TIME_PRIO);
@@ -94,11 +98,6 @@ int main(void)
 
 	cmdline_interact();
 
-/* 	trajectory_d_rel(&mainboard.traj, 1000); */
-/* 	time_wait_ms(2000); */
-/* 	trajectory_circle_rel(&mainboard.traj, 1500, 1000, */
-/* 			      250, 360, 0); */
-/* 	time_wait_ms(15000); */
 	return 0;
 }
 

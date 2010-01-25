@@ -31,15 +31,14 @@
  *  times)
  */
 
-#ifndef _TIME_H_
-#define _TIME_H_
+#ifndef _CLOCK_TIME_H_
+#define _CLOCK_TIME_H_
 
 #include <aversive.h>
 
 /* a 16 bit variable cannot cover one day */
 typedef int32_t seconds; 
 typedef int32_t microseconds;
-
 
 /** the time structure */
 typedef struct 

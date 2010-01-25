@@ -30,7 +30,7 @@
 #include <aversive/eeprom.h>
 
 #include <uart.h>
-#include <time.h>
+#include <clock_time.h>
 
 #include <pid.h>
 #include <quadramp.h>

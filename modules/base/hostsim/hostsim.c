@@ -49,7 +49,7 @@
 #include <uart_host.h>
 #endif
 
-pthread_mutex_t mut;
+static pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
 static volatile int cpt = 0;
 
 static struct termios oldterm;
@@ -97,6 +97,26 @@ void sigusr1(__attribute__((unused)) int sig)
 		pthread_mutex_unlock(&mut);
 	}
 #endif
+}
+
+static int lock_count = 0;
+
+void hostsim_lock(void)
+{
+	if (lock_count++)
+		return;
+	pthread_mutex_lock(&mut);
+}
+
+void hostsim_unlock(void)
+{
+	if (lock_count-- == 1)
+		pthread_mutex_unlock(&mut);
+}
+
+int hostsim_islocked(void)
+{
+	return lock_count;
 }
 
 void host_wait_ms(int ms)
@@ -245,8 +265,6 @@ int hostsim_init(void)
 	pthread_t parent_id, child_id, child2_id, child3_id;
 	int ret;
 
-	pthread_mutex_init(&mut, NULL);
-
 	parent_id = pthread_self();
 
 	pthread_mutex_lock(&mut);
@@ -291,10 +309,11 @@ int hostsim_init(void)
 	return 0;
 }
 
-void hostsim_exit(void)
+int hostsim_exit(void)
 {
 #ifdef CONFIG_MODULE_UART
 	tcsetattr(0, TCSANOW, &oldterm);
 #endif
+	return 0;
 }
 #endif /* HOST_VERSION */

@@ -26,3 +26,7 @@ int hostsim_exit(void);
 
 /* replacement for wait_ms() */
 void host_wait_ms(int ms);
+
+void hostsim_lock(void);
+void hostsim_unlock(void);
+int hostsim_islocked(void);

@@ -402,7 +402,7 @@ uint8_t wait_scan_done(uint16_t timeout)
 uint8_t opponent_is_behind(void)
 {
 	int8_t opp_there;
-	int16_t opp_d, opp_a;
+	int16_t opp_d = 0, opp_a = 0;
 
 	opp_there = get_opponent_da(&opp_d, &opp_a);
 	if (opp_there && (opp_a < 215 && opp_a > 145) && opp_d < 600)

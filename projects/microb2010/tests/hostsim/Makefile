@@ -18,6 +18,8 @@ SRC += actuator.c strat_avoid.c
 # care about how the name is spelled on its command-line.
 ASRC = 
 
+CFLAGS += -Wall -Werror
+
 -include .aversive_conf
 include $(AVERSIVE_DIR)/mk/aversive_project.mk
 
