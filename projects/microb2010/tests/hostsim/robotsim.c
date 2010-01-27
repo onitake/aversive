@@ -53,17 +53,38 @@
 static int32_t l_pwm, r_pwm;
 static int32_t l_enc, r_enc;
 
-static int fd;
+static int fdr, fdw;
 
 /* */
 #define FILTER  97
 #define FILTER2 (100-FILTER)
+#define SHIFT   4
+
+void robotsim_dump(void)
+{
+	char buf[BUFSIZ];
+	int len;
+
+	len = snprintf(buf, sizeof(buf), "%d %d %d\n",
+		      position_get_x_s16(&mainboard.pos),
+		      position_get_y_s16(&mainboard.pos),
+		      position_get_a_deg_s16(&mainboard.pos));
+	hostsim_lock();
+	write(fdw, buf, len);
+	hostsim_unlock();
+}
 
 /* must be called periodically */
 void robotsim_update(void)
 {
+	static int32_t l_pwm_shift[SHIFT];
+	static int32_t r_pwm_shift[SHIFT];
 	static int32_t l_speed, r_speed;
+	static unsigned i = 0;
+	static unsigned cpt = 0;
+	int32_t local_l_pwm, local_r_pwm;
 	double x, y, a, a2, d;
+	char cmd = 0;
 
 	/* corners of the robot */
 	double xfl, yfl; /* front left */
@@ -71,12 +92,28 @@ void robotsim_update(void)
 	double xrr, yrr; /* rear right */
 	double xfr, yfr; /* front right */
 
+	/* time shift the command */
+	l_pwm_shift[i] = l_pwm;
+	r_pwm_shift[i] = r_pwm;
+	i ++;
+	i %= SHIFT;
+	local_l_pwm = l_pwm_shift[i];
+	local_r_pwm = r_pwm_shift[i];
+
+	/* read command */
+	if (((cpt ++) & 0x7) == 0) {
+		if (read(fdr, &cmd, 1) != 1)
+			cmd = 0;
+	}
+
 	x = position_get_x_double(&mainboard.pos);
 	y = position_get_y_double(&mainboard.pos);
 	a = position_get_a_rad_double(&mainboard.pos);
 
-	l_speed = ((l_speed * FILTER) / 100) + ((l_pwm * 1000 * FILTER2)/1000);
-	r_speed = ((r_speed * FILTER) / 100) + ((r_pwm * 1000 * FILTER2)/1000);
+	l_speed = ((l_speed * FILTER) / 100) +
+		((local_l_pwm * 1000 * FILTER2)/1000);
+	r_speed = ((r_speed * FILTER) / 100) +
+		((local_r_pwm * 1000 * FILTER2)/1000);
 
 	/* basic collision detection */
 	a2 = atan2(ROBOT_WIDTH/2, ROBOT_LENGTH/2);
@@ -102,23 +139,15 @@ void robotsim_update(void)
 	if (!is_in_area(xfr, yfr, 0) && r_speed > 0)
 		r_speed = 0;
 
+	/* perturbation */
+	if (cmd == 'l')
+		l_enc += 5000; /* push 1 cm */
+	if (cmd == 'r')
+		r_enc += 5000; /* push 1 cm */
+
 	/* XXX should lock */
 	l_enc += (l_speed / 1000);
 	r_enc += (r_speed / 1000);
-}
-
-void robotsim_dump(void)
-{
-	char buf[BUFSIZ];
-	int len;
-
-	len = snprintf(buf, sizeof(buf), "%d %d %d\n",
-		      position_get_x_s16(&mainboard.pos),
-		      position_get_y_s16(&mainboard.pos),
-		      position_get_a_deg_s16(&mainboard.pos));
-	hostsim_lock();
-	write(fd, buf, len);
-	hostsim_unlock();
 }
 
 void robotsim_pwm(void *arg, int32_t val)
@@ -141,9 +170,15 @@ int32_t robotsim_encoder_get(void *arg)
 
 int robotsim_init(void)
 {
-	mkfifo("/tmp/.robot", 0600);
-	fd = open("/tmp/.robot", O_WRONLY, 0);
-	if (fd < 0)
+	mkfifo("/tmp/.robot_sim2dis", 0600);
+	mkfifo("/tmp/.robot_dis2sim", 0600);
+	fdw = open("/tmp/.robot_sim2dis", O_WRONLY, 0);
+	if (fdw < 0)
 		return -1;
+	fdr = open("/tmp/.robot_dis2sim", O_RDONLY | O_NONBLOCK, 0);
+	if (fdr < 0) {
+		close(fdw);
+		return -1;
+	}
 	return 0;
 }

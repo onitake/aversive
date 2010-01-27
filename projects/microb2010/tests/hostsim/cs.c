@@ -116,7 +116,7 @@ static void do_cs(void *dummy)
 #endif
 	cpt++;
 
-	if ((cpt & 8) == 0)
+	if ((cpt & 7) == 0)
 		robotsim_dump();
 	//dump_cs("distance", &mainboard.distance.cs);
 	//dump_cs("angle", &mainboard.angle.cs);

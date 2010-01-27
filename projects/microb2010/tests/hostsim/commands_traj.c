@@ -141,7 +141,7 @@ static void cmd_circle_coef_parsed(void *parsed_result, void *data)
 		trajectory_set_circle_coef(&mainboard.traj, res->circle_coef);
 	}
 
-	printf_P(PSTR("circle_coef %2.2f\r\n"), mainboard.traj.circle_coef);
+	printf_P(PSTR("circle_coef set %2.2f\r\n"), mainboard.traj.circle_coef);
 }
 
 prog_char str_circle_coef_arg0[] = "circle_coef";
@@ -441,9 +441,14 @@ static void cmd_pt_list_parsed(void * parsed_result, void * data)
 		printf_P(PSTR("List empty\r\n"));
 		return;
 	}
+ restart:
 	for (i=0 ; i<pt_list_len ; i++) {
 		printf_P(PSTR("%d: x=%d y=%d\r\n"), i, pt_list[i].x, pt_list[i].y);
 		if (!strcmp_P(res->arg1, PSTR("start"))) {
+			trajectory_goto_xy_abs(&mainboard.traj, pt_list[i].x, pt_list[i].y);
+			why = wait_traj_end(0xFF); /* all */
+		}
+		else if (!strcmp_P(res->arg1, PSTR("loop_start"))) {
 			trajectory_goto_xy_abs(&mainboard.traj, pt_list[i].x, pt_list[i].y);
 			why = wait_traj_end(0xFF); /* all */
 		}
@@ -457,7 +462,13 @@ static void cmd_pt_list_parsed(void * parsed_result, void * data)
 		}
 		if (why & (~(END_TRAJ | END_NEAR)))
 			trajectory_stop(&mainboard.traj);
+		if (why & END_INTR)
+			break;
 	}
+	if (why & END_INTR)
+		return;
+	if (!strcmp_P(res->arg1, PSTR("loop_start")))
+		goto restart;
 }
 
 prog_char str_pt_list_arg0[] = "pt_list";
@@ -521,7 +532,7 @@ parse_pgm_inst_t cmd_pt_list_del = {
 };
 /* show */
 
-prog_char str_pt_list_show_arg[] = "show#reset#start#avoid_start";
+prog_char str_pt_list_show_arg[] = "show#reset#start#avoid_start#loop_start";
 parse_pgm_token_string_t cmd_pt_list_show_arg = TOKEN_STRING_INITIALIZER(struct cmd_pt_list_result, arg1, str_pt_list_show_arg);
 
 prog_char help_pt_list_show[] = "Show, start or reset pt_list";
@@ -548,6 +559,7 @@ struct cmd_goto_result {
 	int32_t arg2;
 	int32_t arg3;
 	int32_t arg4;
+	int32_t arg5;
 };
 
 /* function called when cmd_goto is parsed successfully */
@@ -598,6 +610,11 @@ static void cmd_goto_parsed(void * parsed_result, void * data)
 	else if (!strcmp_P(res->arg1, PSTR("da_rel"))) {
 		trajectory_d_a_rel(&mainboard.traj, res->arg2, res->arg3);
 	}
+	else if (!strcmp_P(res->arg1, PSTR("circle_rel"))) {
+		trajectory_circle_rel(&mainboard.traj, res->arg2, res->arg3,
+				      res->arg4, res->arg5, 0);
+		return; /* XXX */
+	}
 	t1 = time_get_us2();
 	while ((err = test_traj_end(0xFF)) == 0) {
 		t2 = time_get_us2();
@@ -647,6 +664,28 @@ parse_pgm_inst_t cmd_goto2 = {
 		(prog_void *)&cmd_goto_arg1_b, 
 		(prog_void *)&cmd_goto_arg2,
 		(prog_void *)&cmd_goto_arg3, 
+		NULL,
+	},
+};
+
+prog_char str_goto_arg1_c[] = "circle_rel";
+parse_pgm_token_string_t cmd_goto_arg1_c = TOKEN_STRING_INITIALIZER(struct cmd_goto_result, arg1, str_goto_arg1_c);
+parse_pgm_token_num_t cmd_goto_arg4 = TOKEN_NUM_INITIALIZER(struct cmd_goto_result, arg4, INT32);
+parse_pgm_token_num_t cmd_goto_arg5 = TOKEN_NUM_INITIALIZER(struct cmd_goto_result, arg5, INT32);
+
+/* 4 params */
+prog_char help_goto4[] = "Do a circle: (x,y, radius, angle)";
+parse_pgm_inst_t cmd_goto4 = {
+	.f = cmd_goto_parsed,  /* function to call */
+	.data = NULL,      /* 2nd arg of func */
+	.help_str = help_goto4,
+	.tokens = {        /* token list, NULL terminated */
+		(prog_void *)&cmd_goto_arg0,
+		(prog_void *)&cmd_goto_arg1_c,
+		(prog_void *)&cmd_goto_arg2,
+		(prog_void *)&cmd_goto_arg3,
+		(prog_void *)&cmd_goto_arg4,
+		(prog_void *)&cmd_goto_arg5,
 		NULL,
 	},
 };

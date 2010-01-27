@@ -2214,9 +2214,17 @@ static void cmd_test_parsed(void *parsed_result, void *data)
 {
 	struct cmd_test_result *res = parsed_result;
 	double d,a;
+	uint8_t err;
+
+	strat_reset_pos(1000, 500, 0);
 	strat_set_speed(SPEED_DIST_SLOW, SPEED_ANGLE_SLOW);
 	circle_get_da_speed_from_radius(&mainboard.traj, res->radius, &d, &a);
-	printf_P(PSTR("d=%2.2f a=%2.2f\r\n"), d, a);
+	trajectory_d_rel(&mainboard.traj, 1000);
+	err = WAIT_COND_OR_TRAJ_END(position_get_x_double(&mainboard.pos) > 1500, 0xFF);
+	if (err)
+		return;
+	strat_set_speed(d, a);
+	trajectory_d_a_rel(&mainboard.traj, 10000, 1000);
 }
 
 prog_char str_test_arg0[] = "test";

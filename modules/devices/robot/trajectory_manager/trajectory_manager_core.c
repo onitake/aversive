@@ -479,37 +479,17 @@ void trajectory_manager_xy_event(struct trajectory *traj)
 /* XXX static */
 void trajectory_manager_circle_event(struct trajectory *traj)
 {
-	double coef = 1.0;
+	double radius;
 	double x = position_get_x_double(traj->position);
 	double y = position_get_y_double(traj->position);
 	double a = position_get_a_rad_double(traj->position);
 	int32_t d_consign = 0, a_consign = 0;
 	double angle_to_center_rad;
-	static int32_t d_prev, a_prev;
-	int32_t d_speed, a_speed;
-	int32_t d_pos, a_pos;
-
-	d_pos = rs_get_distance(traj->robot);
-	a_pos = rs_get_angle(traj->robot);
-	d_speed = d_pos - d_prev;
-	a_speed = a_pos - a_prev;
-	d_prev = d_pos;
-	a_prev = a_pos;
 
 	/* These vectors contain target position of the robot in
 	 * its own coordinates */
 	vect2_cart v2cart_pos;
 	vect2_pol v2pol_target;
-
-	int32_t delta_d, delta_a;
-	double coef_deriv = traj->circle_coef;
-	double new_radius;
-	struct  quadramp_filter * q_d, * q_a;
-
-	q_d = traj->csm_distance->consign_filter_params;
-	q_a = traj->csm_angle->consign_filter_params;
-	delta_a = a_speed;//q_a->previous_var;
-	delta_d = d_speed;//q_d->previous_var;
 
 	/* step 1 : process new commands to quadramps */
 
@@ -520,31 +500,18 @@ void trajectory_manager_circle_event(struct trajectory *traj)
 	vect2_cart2pol(&v2cart_pos, &v2pol_target);
 	v2pol_target.theta = simple_modulo_2pi(v2pol_target.theta - a);
 
-	/* pas trop mal, mais oscille */
-	//new_radius = traj->target.circle.radius - delta_a * delta_d * coef_deriv;
-	if (v2pol_target.r > traj->target.circle.radius/2)
-		new_radius = traj->target.circle.radius - delta_a * delta_d * coef_deriv * traj->target.circle.radius / v2pol_target.r;
-	else
-		new_radius = traj->target.circle.radius - delta_a * delta_d * coef_deriv ;
-
-	/* oscille a mort */
-	//new_radius = traj->target.circle.radius - traj->target.circle.radius   * delta_a * delta_a * coef_deriv;
-
-	/* ? */
-	//new_radius = traj->target.circle.radius - traj->target.circle.radius   * delta_a * coef_deriv;
-
-
 	/* wanted direction of center of circle:
 	 * if we are far, go in the center direction,
 	 * if we are at radius, we want to see the center at 90°
 	 * if we are nearer than radius, angle to center is > 90° */
-	if (v2pol_target.r > new_radius) {
-		angle_to_center_rad = new_radius / v2pol_target.r;
+	radius = traj->target.circle.radius;
+	if (v2pol_target.r > radius) {
+		angle_to_center_rad = radius / v2pol_target.r;
 		angle_to_center_rad *= (M_PI / 2);
 	}
 	else {
 		angle_to_center_rad = 1. - (v2pol_target.r /
-					    (2 * new_radius));
+					    (2 * radius));
 		angle_to_center_rad *= M_PI;
 	}
 
@@ -556,8 +523,7 @@ void trajectory_manager_circle_event(struct trajectory *traj)
 	if (ABS(v2pol_target.theta) > traj->a_start_rad)
 		set_quadramp_speed(traj, 0, traj->a_speed);
 	else {
-		coef = (traj->a_start_rad - ABS(v2pol_target.theta)) / traj->a_start_rad;
-		set_quadramp_speed(traj, traj->d_speed * coef, traj->a_speed);
+		set_quadramp_speed(traj, traj->d_speed, traj->a_speed);
 	}
 
 	/* XXX check flags */
@@ -585,7 +551,7 @@ void trajectory_manager_circle_event(struct trajectory *traj)
 		  ", a_speed=%" PRIi32 "radius = %f",
 		  rs_get_distance(traj->robot), d_consign, get_quadramp_distance_speed(traj),
 		  rs_get_angle(traj->robot), a_consign, get_quadramp_angle_speed(traj),
-		  new_radius);
+		  radius);
 
 	cs_set_consign(traj->csm_angle, a_consign);
 	cs_set_consign(traj->csm_distance, d_consign);
