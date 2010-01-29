@@ -94,7 +94,7 @@ int main(void)
 
 	mainboard.flags = DO_ENCODERS | DO_RS |
 		DO_POS | DO_POWER | DO_BD | DO_CS;
-	strat_reset_pos(1000, 1000, 0);
+	strat_reset_pos(1000, 1000, -90);
 
 	cmdline_interact();
 

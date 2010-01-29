@@ -33,7 +33,7 @@ def square(sz):
     return sq
 
 sq1 = square(250)
-sq1 = square(500)
+sq2 = square(500)
 
 robot_trail = curve()
 robot_trail_list = []
@@ -49,7 +49,7 @@ def set_robot(x, y, a):
                   0)
 
     # save position
-    save_pos.append(robot.pos.x, robot.pos, a)
+    save_pos.append((robot.pos.x, robot.pos, a))
 
     pos = robot.pos.x, robot.pos.y, 0.3
     if pos != last_pos:

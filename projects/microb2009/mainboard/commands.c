@@ -92,6 +92,7 @@ extern parse_pgm_inst_t cmd_build_z1;
 #ifdef TEST_BEACON
 extern parse_pgm_inst_t cmd_beacon_opp_dump;
 #endif
+extern parse_pgm_inst_t cmd_circle_radius;
 extern parse_pgm_inst_t cmd_test;
 
 /* commands_traj.c */
@@ -193,6 +194,7 @@ parse_pgm_ctx_t main_ctx[] = {
 #ifdef TEST_BEACON
 	(parse_pgm_inst_t *)&cmd_beacon_opp_dump,
 #endif
+	(parse_pgm_inst_t *)&cmd_circle_radius,
 	(parse_pgm_inst_t *)&cmd_test,
 
 	/* commands_traj.c */

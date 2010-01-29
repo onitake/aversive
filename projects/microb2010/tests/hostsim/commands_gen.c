@@ -471,7 +471,7 @@ prog_char str_log_arg0[] = "log";
 parse_pgm_token_string_t cmd_log_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_log_result, arg0, str_log_arg0);
 prog_char str_log_arg1[] = "level";
 parse_pgm_token_string_t cmd_log_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_log_result, arg1, str_log_arg1);
-parse_pgm_token_num_t cmd_log_arg2 = TOKEN_NUM_INITIALIZER(struct cmd_log_result, arg2, INT32);
+parse_pgm_token_num_t cmd_log_arg2 = TOKEN_NUM_INITIALIZER(struct cmd_log_result, arg2, INT8);
 
 prog_char help_log[] = "Set log options: level (0 -> 5)";
 parse_pgm_inst_t cmd_log = {

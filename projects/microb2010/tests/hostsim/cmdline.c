@@ -115,7 +115,7 @@ void mylog(struct error * e, ...)
 	if (e->severity > ERROR_SEVERITY_ERROR) {
 		if (gen.log_level < e->severity)
 			return;
-		
+
 		for (i=0; i<NB_LOGS+1; i++)
 			if (gen.logs[i] == e->err_num)
 				break;
@@ -126,12 +126,12 @@ void mylog(struct error * e, ...)
 	va_start(ap, e);
 	tv = time_get_time();
 	printf_P(PSTR("%d.%.3d: "), (int)tv.s, (int)(tv.us/1000UL));
-	
+
 	printf_P(PSTR("(%d,%d,%d) "),
 		 position_get_x_s16(&mainboard.pos),
 		 position_get_y_s16(&mainboard.pos),
 		 position_get_a_deg_s16(&mainboard.pos));
-	
+
 	vfprintf_P(stdout, e->text, ap);
 	printf_P(PSTR("\r\n"));
 	va_end(ap);

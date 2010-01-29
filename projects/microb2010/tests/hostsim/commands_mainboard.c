@@ -2198,6 +2198,44 @@ parse_pgm_inst_t cmd_beacon_opp_dump = {
 #endif
 
 /**********************************************************/
+/* Circle_Radius */
+
+/* this structure is filled when cmd_circle_radius is parsed successfully */
+struct cmd_circle_radius_result {
+	fixed_string_t arg0;
+	int32_t radius;
+};
+void circle_get_da_speed_from_radius(struct trajectory *traj,
+				double radius_mm,
+				double *speed_d,
+				double *speed_a);
+/* function called when cmd_circle_radius is parsed successfully */
+static void cmd_circle_radius_parsed(void *parsed_result, void *data)
+{
+	struct cmd_circle_radius_result *res = parsed_result;
+	double d,a;
+	strat_set_speed(SPEED_DIST_SLOW, SPEED_ANGLE_SLOW);
+	circle_get_da_speed_from_radius(&mainboard.traj, res->radius, &d, &a);
+	printf_P(PSTR("d=%2.2f a=%2.2f\r\n"), d, a);
+}
+
+prog_char str_circle_radius_arg0[] = "circle_radius";
+parse_pgm_token_string_t cmd_circle_radius_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_circle_radius_result, arg0, str_circle_radius_arg0);
+parse_pgm_token_num_t cmd_circle_radius_arg1 = TOKEN_NUM_INITIALIZER(struct cmd_circle_radius_result, radius, INT32);
+
+prog_char help_circle_radius[] = "Circle_Radius function";
+parse_pgm_inst_t cmd_circle_radius = {
+	.f = cmd_circle_radius_parsed,  /* function to call */
+	.data = NULL,      /* 2nd arg of func */
+	.help_str = help_circle_radius,
+	.tokens = {        /* token list, NULL terminated */
+		(prog_void *)&cmd_circle_radius_arg0,
+		(prog_void *)&cmd_circle_radius_arg1,
+		NULL,
+	},
+};
+
+/**********************************************************/
 /* Test */
 
 /* this structure is filled when cmd_test is parsed successfully */
