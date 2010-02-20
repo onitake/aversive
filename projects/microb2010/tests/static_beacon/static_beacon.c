@@ -23,6 +23,8 @@
 #include <aversive.h>
 #include <aversive/wait.h>
 
+#include <uart.h>
+
 /*
  * Leds: PD5 -> PD7
  * Photodiodes: PC0 PC1
@@ -67,8 +69,10 @@
 #define IR_BIT  1
 
 /* FRAME must be odd */
-#define FRAME 0x0B /* in little endian 1-1-0-1 */
-#define FRAME_LEN 4
+/* #define FRAME 0x0B /\* in little endian 1-1-0-1 *\/ */
+/* #define FRAME_LEN 4 */
+#define FRAME 0xAA5B /* in little endian */
+#define FRAME_LEN 16
 
 /* pin returns 1 when nothing, and 0 when laser is on photodiode */
 #define PHOTO_PIN PINC
@@ -93,25 +97,34 @@
 /* in ms */
 #define INTER_LASER_TIME 10
 
-#define WAIT_LASER
+#define NO_MODULATION
+//#define WAIT_LASER
 
 /* basic functions to transmit on IR */
 
 static inline void xmit_0(void)
 {
 	uint8_t t = ((N_CYCLES_PERIOD * N_PERIODS) / 3);
+#ifdef NO_MODULATION
+	cbi(IR_PORT, IR_BIT);
+#else
 	TCCR1B = 0;
 	TCCR1A = 0;
+#endif
 	_delay_loop_1(t); /* 3 cycles per loop */
 }
 
 static inline void xmit_1(void)
 {
 	uint8_t t = ((N_CYCLES_PERIOD * N_PERIODS) / 3);
+#ifdef NO_MODULATION
+	sbi(IR_PORT, IR_BIT);
+#else
 	TCCR1B = _BV(WGM13) | _BV(WGM12);
 	TCNT1 = N_CYCLES_PERIOD-1;
 	TCCR1A = _BV(COM1A1) | _BV(WGM11);
 	TCCR1B = _BV(WGM13) | _BV(WGM12) | _BV(CS10);
+#endif
 	_delay_loop_1(t); /* 3 cycles per loop */
 }
 
@@ -131,23 +144,18 @@ static inline void xmit_manchester_1(void)
 
 /* transmit a full frame. Each byte is lsb first. */
 
-static void xmit_bits(uint8_t *buf, uint8_t nbit)
+static void xmit_bits(uint32_t frame, uint8_t nbit)
 {
 	uint8_t i;
-	uint8_t byte = *buf;
 
 	for (i=0; i<nbit; i++) {
-		if (byte & 1)
+		if (frame & 1)
 			xmit_manchester_1();
 		else
 			xmit_manchester_0();
 
 		/* next bit */
-		byte >>= 1;
-
-		/* next byte */
-		if (((i & 0x07) == 0) && (i != 0))
-			byte = *(++buf);
+		frame >>= 1UL;
 	}
 	xmit_0();
 }
@@ -216,15 +224,23 @@ static inline int8_t wait_laser(void)
 int main(void)
 {
 	/* must be odd */
-	uint8_t frame = FRAME;
+	uint32_t frame = FRAME;
 	int8_t ret;
+	int16_t c;
 
 	/* LEDS */
 	LED_DDR = _BV(LED1_BIT) | _BV(LED2_BIT) | _BV(LED3_BIT);
 	IR_DDR |= _BV(IR_BIT);
 
+	uart_init();
+ 	fdevopen(uart0_dev_send, uart0_dev_recv);
+	sei();
+
 #if 0
 	while (1) {
+		c = uart_recv_nowait(0);
+		if (c != -1) 
+			printf("%c", (char)(c+1));
 		LED1_ON();
 		wait_ms(500);
 		LED1_OFF();
@@ -241,11 +257,13 @@ int main(void)
 	}
 #endif
 
+#ifndef NO_MODULATION
 	/* configure PWM */
 	ICR1 = N_CYCLES_PERIOD;
 	OCR1A = N_CYCLES_1;
 	TCCR1A = _BV(COM1A1) | _BV(WGM11);
 	TCCR1B = _BV(WGM13) | _BV(WGM12);
+#endif
 
 	/* configure timer 0, prescaler = 64 */
 	TCCR0 = _BV(CS01) | _BV(CS00);
@@ -265,7 +283,7 @@ int main(void)
 #if 1
 		LED3_ON();
 		/* ok, transmit frame */
-		xmit_bits(&frame, FRAME_LEN);
+		xmit_bits(frame, FRAME_LEN);
 		
 		/* don't watch a laser during this time */
 		wait_ms(INTER_LASER_TIME);
