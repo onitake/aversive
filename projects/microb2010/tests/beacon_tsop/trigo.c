@@ -102,14 +102,14 @@ int8_t angle_to_circles(circle_t *c1, circle_t *c2,
 	if (c1) {
 		c1->x = O.x + v.x;
 		c1->y = O.y + v.y;
-		c1->r = norm(b1->x, b1->y, c1->x, c1->y);
+		c1->r = xy_norm(b1->x, b1->y, c1->x, c1->y);
 	}
 
 	/* get the circle c2 */
 	if (c2) {
 		c2->x = O.x - v.x;
 		c2->y = O.y - v.y;
-		c2->r = norm(b1->x, b1->y, c1->x, c1->y);
+		c2->r = xy_norm(b1->x, b1->y, c1->x, c1->y);
 	}
 
 	return 0;
@@ -148,9 +148,9 @@ int8_t angles_to_posxy(point_t *pos, double a01, double a12, double a20)
 	dprintf("p2: x=%2.2f y=%2.2f\n", p2.x, p2.y);
 	dprintf("p3: x=%2.2f y=%2.2f\n", p3.x, p3.y);
 
-	/* if (norm(p1.x, p1.y, p2.x, p2.y) > POS_ACCURACY || */
-	/*     norm(p2.x, p2.y, p3.x, p3.y) > POS_ACCURACY || */
-	/*     norm(p3.x, p3.y, p1.x, p1.y) > POS_ACCURACY) */
+	/* if (xy_norm(p1.x, p1.y, p2.x, p2.y) > POS_ACCURACY || */
+	/*     xy_norm(p2.x, p2.y, p3.x, p3.y) > POS_ACCURACY || */
+	/*     xy_norm(p3.x, p3.y, p1.x, p1.y) > POS_ACCURACY) */
 	/* 	return -1; */
 
 	pos->x = (p1.x + p2.x + p3.x) / 3.0;

@@ -32,7 +32,11 @@
 #include <parse.h>
 #include <rdline.h>
 #include <parse_string.h>
+#include <vect_base.h>
+#include <lines.h>
+#include <circles.h>
 
+#include "trigo.h"
 #include "main.h"
 
 /**********************************************************/
@@ -158,7 +162,24 @@ struct cmd_test_result {
 static void cmd_test_parsed(__attribute__((unused)) void *parsed_result,
 			     __attribute__((unused)) void *data)
 {
+	point_t pos;
+	double a01 = 1.65;
+	double a12 = 2.12;
+	double a20 = 2.53;
+	uint16_t time1, time2;
 
+	cli();
+	time1 = TCNT3;
+	sei();
+
+	if (angles_to_posxy(&pos, a01, a12, a20) < 0)
+		printf_P(PSTR("error\n"));
+
+	cli();
+	time2 = TCNT3;
+	sei();
+
+	printf_P(PSTR("%2.2f %2.2f (t=%d)\n"), pos.x, pos.y, time2-time1);
 }
 
 prog_char str_test_arg0[] = "test";

@@ -314,8 +314,8 @@ calc_rays(poly_t *polys, uint8_t npolys, uint8_t *rays)
  * possiblity path: If we have 3 checpoint aligned in a path (say A,
  * B, C) the algorithm will prefer (A, C) instead of (A, B, C) */
 void 
-calc_rays_weight(poly_t *polys, uint8_t npolys, uint8_t *rays, 
-		 uint8_t ray_n, uint16_t *weight)
+calc_rays_weight(poly_t *polys, __attribute__((unused)) uint8_t npolys,
+		 uint8_t *rays, uint8_t ray_n, uint16_t *weight)
 {
 	uint8_t i;
 	vect_t v;

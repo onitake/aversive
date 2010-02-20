@@ -49,7 +49,7 @@ int8_t
 vect_pvect_sign(vect_t *v, vect_t *w);
 
 /* norm of a vector */
-//float norm(float x1, float y1, float x2, float y2);
+float xy_norm(float x1, float y1, float x2, float y2);
 float pt_norm(point_t *p1, point_t *p2);
 float vect_norm(vect_t *v);
 void vect_rot_trigo(vect_t *v);

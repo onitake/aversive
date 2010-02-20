@@ -16,7 +16,7 @@ ASRC =
 
 AVRDUDE_DELAY=30
 
-CFLAGS += -W
+CFLAGS += -W -Wall -Werror
 
 ########################################
 
