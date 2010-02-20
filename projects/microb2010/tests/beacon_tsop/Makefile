@@ -3,7 +3,7 @@ TARGET = beacon_tsop
 AVERSIVE_DIR = ../../../..
 
 # List C source files here. (C dependencies are automatically generated.)
-SRC = main.c commands.c cmdline.c
+SRC = main.c commands.c cmdline.c trigo.c
 
 # List Assembler source files here.
 # Make them always end in a capital .S.  Files ending in a lowercase .s

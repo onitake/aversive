@@ -147,6 +147,35 @@ parse_pgm_inst_t cmd_debug_speed = {
 };
 
 /**********************************************************/
+/* Test */
+
+/* this structure is filled when cmd_test is parsed successfully */
+struct cmd_test_result {
+	fixed_string_t arg0;
+};
+
+/* function called when cmd_test is parsed successfully */
+static void cmd_test_parsed(__attribute__((unused)) void *parsed_result,
+			     __attribute__((unused)) void *data)
+{
+
+}
+
+prog_char str_test_arg0[] = "test";
+parse_pgm_token_string_t cmd_test_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_test_result, arg0, str_test_arg0);
+
+prog_char help_test[] = "Test the board";
+parse_pgm_inst_t cmd_test = {
+	.f = cmd_test_parsed,  /* function to call */
+	.data = NULL,      /* 2nd arg of func */
+	.help_str = help_test,
+	.tokens = {        /* token list, NULL terminated */
+		(prog_void *)&cmd_test_arg0, 
+		NULL,
+	},
+};
+
+/**********************************************************/
 
 /* in progmem */
 parse_pgm_ctx_t main_ctx[] = {
@@ -155,5 +184,6 @@ parse_pgm_ctx_t main_ctx[] = {
 	(parse_pgm_inst_t *)&cmd_reset,
 	(parse_pgm_inst_t *)&cmd_debug_frame,
 	(parse_pgm_inst_t *)&cmd_debug_speed,
+	(parse_pgm_inst_t *)&cmd_test,
 	NULL,
 };
