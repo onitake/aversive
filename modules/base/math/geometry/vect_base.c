@@ -22,23 +22,23 @@
 #include <stdint.h>
 #include <math.h>
 #include <vect_base.h>
- 
+
 /* Return scalar product */
-float 
+float
 vect_pscal(vect_t *v, vect_t *w)
 {
 	return v->x * w->x + v->y * w->y;
 }
 
 /* Return Z of vectorial product */
-float 
+float
 vect_pvect(vect_t *v, vect_t *w)
 {
 	return v->x*w->y - v->y*w->x;
 }
 
 /* Return scalar product */
-int8_t 
+int8_t
 vect_pscal_sign(vect_t *v, vect_t *w)
 {
 	float z;
@@ -49,7 +49,7 @@ vect_pscal_sign(vect_t *v, vect_t *w)
 }
 
 /* Return Z of vectorial product */
-int8_t 
+int8_t
 vect_pvect_sign(vect_t *v, vect_t *w)
 {
 	float z;
@@ -66,7 +66,7 @@ float xy_norm(float x1, float y1, float x2, float y2)
 	return sqrt(x*x + y*y);
 }
 
-float pt_norm(point_t *p1, point_t *p2)
+float pt_norm(const point_t *p1, const point_t *p2)
 {
 	float x = p2->x - p1->x;
 	float y = p2->y - p1->y;
@@ -74,8 +74,7 @@ float pt_norm(point_t *p1, point_t *p2)
 }
 
 /* norm of a vector */
-float
-vect_norm(vect_t *v)
+float vect_norm(const vect_t *v)
 {
 	return sqrt(v->x*v->x+v->y*v->y);
 }
@@ -83,30 +82,30 @@ vect_norm(vect_t *v)
 void vect_rot_trigo(vect_t *v)
 {
 	float s;
-    
+
 	s = v->x;
 	v->x= -v->y;
 	v->y = s;
-}    
+}
 
 void vect_rot_retro(vect_t *v)
 {
 	float s;
-    
+
 	s = v->x;
 	v->x= v->y;
 	v->y = -s;
-}    
+}
 
 
 float vect_get_angle(vect_t *v, vect_t *w)
 {
 	float ps;
 	float n;
-	
+
 	ps = vect_pscal(v, w);
 	n = vect_norm(v) * vect_norm(w);
-	
+
 	return acos((float)ps/n);
 }
 

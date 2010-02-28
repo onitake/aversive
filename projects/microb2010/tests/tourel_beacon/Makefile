@@ -1,7 +1,6 @@
 TARGET = main
 
-# repertoire des modules
-AVERSIVE_DIR =../..# VALUE, absolute or relative path : example ../.. #
+AVERSIVE_DIR = ../../../..
 
 # List C source files here. (C dependencies are automatically generated.)
 SRC = $(TARGET).c

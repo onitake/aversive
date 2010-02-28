@@ -205,7 +205,7 @@ def build_area(ax):
             y = OFFSET_CORN_Y + STEP_CORN_Y/2
         j = 0
         while y < 2100:
-            
+
             if waypoints[i][j] == TYPE_WHITE_CORN:
                 wcorn.append(Circle((x, y), 25))
             if waypoints[i][j] == TYPE_BLACK_CORN:

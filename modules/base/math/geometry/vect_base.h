@@ -33,25 +33,21 @@ typedef struct _point_t {
 } point_t;
 
 /* Return scalar product */
-float 
-vect_pscal(vect_t *v, vect_t *w);
+float vect_pscal(vect_t *v, vect_t *w);
 
 /* Return Z of vectorial product */
-float 
-vect_pvect(vect_t *v, vect_t *w);
+float vect_pvect(vect_t *v, vect_t *w);
 
 /* Return scalar product */
-int8_t 
-vect_pscal_sign(vect_t *v, vect_t *w);
+int8_t vect_pscal_sign(vect_t *v, vect_t *w);
 
 /* Return Z of vectorial product */
-int8_t 
-vect_pvect_sign(vect_t *v, vect_t *w);
+int8_t vect_pvect_sign(vect_t *v, vect_t *w);
 
 /* norm of a vector */
 float xy_norm(float x1, float y1, float x2, float y2);
-float pt_norm(point_t *p1, point_t *p2);
-float vect_norm(vect_t *v);
+float pt_norm(const point_t *p1, const point_t *p2);
+float vect_norm(const vect_t *v);
 void vect_rot_trigo(vect_t *v);
 void vect_rot_retro(vect_t *v);
 float vect_get_angle(vect_t *v, vect_t *w);
