@@ -1,7 +1,7 @@
-/*  
+/*
  *  Copyright Droids Corporation (2009)
  *  Olivier Matz <zer0@droids-corp.org>
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -33,7 +33,7 @@
 
 /*
  * hfuse:  RSTDISBL=1 WTDON=1 SPIEN=0 CKOPT=0 EESAVE=1 BOOTSZ1=0 BOOTSZ0=0 BOOTRST=1
- * lfuse:  BODLEVEL=1 BODEN=1 SUT1=1 SUT0=1 CKSEL3=1 CKSEL2=1 CKSEL1=1 CKSEL0=1 
+ * lfuse:  BODLEVEL=1 BODEN=1 SUT1=1 SUT0=1 CKSEL3=1 CKSEL2=1 CKSEL1=1 CKSEL0=1
  */
 
 #define N_PERIODS   10
@@ -74,31 +74,23 @@
 #define FRAME 0xAA5B /* in little endian */
 #define FRAME_LEN 16
 
-/* pin returns 1 when nothing, and 0 when laser is on photodiode */
+/* pin returns !0 when nothing, and 0 when laser is on photodiode */
 #define PHOTO_PIN PINC
-#define PHOTO1_BIT 0
-#define PHOTO2_BIT 1
-#define READ_PHOTOS() (PHOTO_PIN & (_BV(PHOTO1_BIT) | _BV(PHOTO2_BIT)))
-#define READ_PHOTO1() (PHOTO_PIN & _BV(PHOTO1_BIT))
-#define READ_PHOTO2() (PHOTO_PIN & _BV(PHOTO2_BIT))
-
-#define PHOTOS_ALL_OFF (_BV(PHOTO1_BIT) | _BV(PHOTO2_BIT))
-#define PHOTOS_ALL_ON (0)
-#define PHOTOS_1ON_2OFF (_BV(PHOTO2_BIT))
-#define PHOTOS_1OFF_2ON (_BV(PHOTO1_BIT))
-
+#define PHOTO_BIT 0
+#define READ_PHOTO() (!!(PHOTO_PIN & (_BV(PHOTO_BIT))))
 
 /* in cycles/64 (unit is 4 us at 16Mhz) */
 #define MAX_PHOTO_TIME ((uint8_t)25)  /* t=100us len=5mm rps=40Hz dist=20cm */
 
+/* XXX to be recalculated */
 #define MIN_INTER_TIME ((uint8_t)12)  /* t=50us len=50mm rps=40Hz dist=350cm */
 #define MAX_INTER_TIME ((uint8_t)250) /* t=1000us len=50mm rps=40Hz dist=20cm */
 
 /* in ms */
 #define INTER_LASER_TIME 10
 
-#define NO_MODULATION
-//#define WAIT_LASER
+//#define NO_MODULATION
+#define WAIT_LASER
 
 /* basic functions to transmit on IR */
 
@@ -164,56 +156,54 @@ static void xmit_bits(uint32_t frame, uint8_t nbit)
 static inline int8_t wait_laser(void)
 {
 	uint8_t photos;
-	uint8_t time;
+	uint8_t time1, time2;
 	uint8_t diff;
 
+	/*
+	  wait photo on
+	  wait photo off
+	  wait photo on or timeout
+	  wait photo off
+	  should return the amount of time to wait
+	 */
+
 	/* wait until all is off */
-	while (READ_PHOTOS() != PHOTOS_ALL_OFF);
+	while (READ_PHOTO() != 0);
 
-	/* wait an event, it must be photo1 on */
-	while ((photos = READ_PHOTOS()) == PHOTOS_ALL_OFF);
-
-	if (photos != PHOTOS_1ON_2OFF)
-		return -1;
-	time = TCNT0;
+	/* wait until photo is on */
+	while (READ_PHOTO() != 1);
+	time1 = TCNT0;
 	LED1_ON();
 
-	/* wait an event, it must be photo1 off */
-	while ((photos = READ_PHOTOS()) == PHOTOS_1ON_2OFF) {
-		diff = TCNT0 - time;
+	/* wait until photo is off, if it takes too long time,
+	 * return. */
+	while (READ_PHOTO() != 0) {
+		diff = TCNT0 - time1;
 		if (diff > MAX_PHOTO_TIME)
 			return -1;
 	}
-	if (photos != PHOTOS_ALL_OFF)
-		return -1;
-	//time = TCNT0;
 
-	/* wait an event, it must be photo2 on */
-	while ((photos = READ_PHOTOS()) == PHOTOS_ALL_OFF) {
-		diff = TCNT0 - time;
+	/* wait photo on. */
+	while (READ_PHOTO() != 1) {
+		diff = TCNT0 - time1;
 		if (diff > MAX_INTER_TIME)
 			return -1;
 	}
-	LED2_ON();
-	
-	diff = TCNT0 - time;
-	if (diff < MIN_INTER_TIME)
-		return -1;
-	if (photos != PHOTOS_1OFF_2ON)
-		return -1;
+	time2 = TCNT0;
 
-#if 0	
-	time = TCNT0;
-
-	/* wait an event, it must be photo2 off */
-	while ((photos = READ_PHOTOS()) == PHOTOS_1OFF_2ON) {
-		diff = TCNT0 - time;
+	/* wait until photo is off, if it takes too long time,
+	 * return. */
+	while (READ_PHOTO() != 0) {
+		diff = TCNT0 - time2;
 		if (diff > MAX_PHOTO_TIME)
 			return -1;
 	}
-	if (photos != PHOTOS_ALL_OFF)
+
+	LED2_ON();
+
+	diff = time2 - time1;
+	if (diff < MIN_INTER_TIME)
 		return -1;
-#endif
 
 	/* laser ok */
 	return 0;
@@ -239,7 +229,7 @@ int main(void)
 #if 0
 	while (1) {
 		c = uart_recv_nowait(0);
-		if (c != -1) 
+		if (c != -1)
 			printf("%c", (char)(c+1));
 		LED1_ON();
 		wait_ms(500);
@@ -272,19 +262,19 @@ int main(void)
 
 #ifdef WAIT_LASER
 		ret = wait_laser();
-		
+
 		LED1_OFF();
 		LED2_OFF();
 
 		if (ret)
 			continue;
 #endif
-		
+
 #if 1
 		LED3_ON();
 		/* ok, transmit frame */
 		xmit_bits(frame, FRAME_LEN);
-		
+
 		/* don't watch a laser during this time */
 		wait_ms(INTER_LASER_TIME);
 		LED3_OFF();
