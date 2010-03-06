@@ -32,6 +32,12 @@
 #include "cmdline.h"
 #include "main.h"
 
+/* beacon identifier: must be odd, 3 bits */
+#define BEACON_ID_MASK 0x7
+#define BEACON_ID_SHIFT 0
+#define FRAME_DATA_MASK  0xFFF8
+#define FRAME_DATA_SHIFT 3
+
 /******************* TSOP */
 
 #define EICRx_TSOP EICRB /* EICRA is not ok, cannot do intr on any edge */
@@ -40,18 +46,27 @@
 #define ISCx0_TSOP ISC60
 #define ISCx1_TSOP ISC61
 #define SIG_TSOP   SIG_INTERRUPT6
-#define TSOP_READ() (PINE & 0x40)
+#define TSOP_READ() (!(PINE & 0x40))
 #else
 #define INTx_TSOP  INT4
 #define ISCx0_TSOP ISC40
 #define ISCx1_TSOP ISC41
 #define SIG_TSOP   SIG_INTERRUPT4
-#define TSOP_READ() (PINE & 0x10)
+#define TSOP_READ() (!(PINE & 0x10))
 #endif
 
+//#define MODUL_455KHZ
+#define MODUL_38KHZ
+
+#if (defined MODUL_455KHZ)
 #define TSOP_FREQ_MHZ 0.455
-#define TSOP_PERIOD_US (1./TSOP_FREQ_MHZ)
 #define N_PERIODS   10.
+#else
+#define TSOP_FREQ_MHZ 0.038
+#define N_PERIODS   15.
+#endif
+
+#define TSOP_PERIOD_US (1./TSOP_FREQ_MHZ)
 
 #define TSOP_TIME_SHORT_US (1.5 * N_PERIODS * TSOP_PERIOD_US)
 #define TSOP_TIME_LONG_US  (2.5 * N_PERIODS * TSOP_PERIOD_US)
@@ -60,6 +75,7 @@
 #define TSOP_TIME_LONG  ((uint16_t)(TSOP_TIME_LONG_US*2))
 
 #define FRAME_LEN 16
+#define FRAME_MASK ((1UL << FRAME_LEN) - 1)
 
 /* frame */
 static uint16_t start_angle_time;
@@ -149,8 +165,13 @@ SIGNAL(SIG_TSOP) {
 	cur_tsop = TSOP_READ();
 	diff_time = cur_time - prev_time;
 
+	if (cur_tsop)
+		LED2_ON();
+	else
+		LED2_OFF();
+
 	/* first rising edge */
-	if (cur_tsop && diff_time > TSOP_TIME_LONG) {
+	if (len == 0 && cur_tsop && diff_time > TSOP_TIME_LONG) {
 		len = 1;
 		val = 1;
 		frame = 0;
@@ -158,7 +179,7 @@ SIGNAL(SIG_TSOP) {
 		mask = 1;
 	}
 	/* any short edge */
-	else if (diff_time < TSOP_TIME_SHORT) {
+	else if (len != 0 && diff_time < TSOP_TIME_SHORT) {
 		if (len & 1) {
 			if (val)
 				frame |= mask;
@@ -167,23 +188,27 @@ SIGNAL(SIG_TSOP) {
 		len ++;
 	}
 	/* any long edge */
-	else if (diff_time < TSOP_TIME_LONG) {
+	else if (len != 0 && diff_time < TSOP_TIME_LONG) {
 		val = !val;
 		if (val)
 			frame |= mask;
 		mask <<= 1;
 		len += 2;
 	}
+	/* error case, reset */
+	else {
+		len = 0;
+	}
 
 	/* end of frame */
 	if (len == FRAME_LEN*2) {
 		uint8_t tail_next = (frame_ring_tail+1) & FRAME_RING_MASK;
 		if (tail_next != frame_ring_head) {
-			frame_ring[frame_ring_tail].frame = frame;
+			frame_ring[frame_ring_tail].frame = (frame & FRAME_MASK);
 			frame_ring[frame_ring_tail].time = start_angle_time;
 			frame_ring_tail = tail_next;
 		}
-		if (led_cpt & 0x8)
+		if ((led_cpt & 0x7) == 0)
 			LED3_TOGGLE();
 		led_cpt ++;
 	}
@@ -314,7 +339,7 @@ int main(void)
 			sei();
 			ETIFR = _BV(ICF3);
 
-			LED2_TOGGLE();
+			//LED2_TOGGLE();
 			diff_icr = (icr - prev_icr);
 			cpt_icr = cpt;
 			prev_icr = icr;
@@ -373,10 +398,21 @@ int main(void)
 		/* after CS, check if we have a new frame in ring */
 		if (frame_ring_head != frame_ring_tail) {
 			uint8_t head_next;
+			uint32_t frame;
 			head_next = (frame_ring_head+1) & FRAME_RING_MASK;
-			if (beacon_tsop.debug_frame)
-				printf("%x %d\n", frame_ring[frame_ring_head].frame,
+			frame = frame_ring[frame_ring_head].frame;
+
+			/* display if needed */
+			if (beacon_tsop.debug_frame) {
+				uint8_t beacon_id;
+				uint16_t data;
+				
+				beacon_id = (frame >> BEACON_ID_SHIFT) & BEACON_ID_MASK;
+				data = (frame >> FRAME_DATA_SHIFT) & FRAME_DATA_MASK;
+				printf("ID=%d data=%d time=%d\r\n",
+				       beacon_id, data,
 				       frame_ring[frame_ring_head].time);
+			}
 			frame_ring_head = head_next;
 		}
 
