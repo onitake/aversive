@@ -36,9 +36,39 @@
  * lfuse:  BODLEVEL=1 BODEN=1 SUT1=1 SUT0=1 CKSEL3=1 CKSEL2=1 CKSEL1=1 CKSEL0=1
  */
 
+//#define NO_MODULATION
+#define WAIT_LASER
+//#define MODUL_455KHZ
+//#define MODUL_56KHZ
+#define MODUL_38KHZ
+//#define SPEED_40RPS
+#define SPEED_10RPS
+
+/* beacon identifier: must be odd, 3 bits */
+#define BEACON_ID 0x1
+#define BEACON_ID_MASK 0x7
+#define BEACON_ID_SHIFT 0
+
+/* */
+#define FRAME_DATA_MASK  0xFFF8
+#define FRAME_DATA_SHIFT 3
+
+#if (defined MODUL_455KHZ)
 #define N_PERIODS   10
 #define N_CYCLES_0  17
 #define N_CYCLES_1  17
+#elif (defined MODUL_56KHZ)
+#define N_PERIODS   15
+#define N_CYCLES_0  143
+#define N_CYCLES_1  143
+#elif (defined MODUL_38KHZ)
+#define N_PERIODS   15
+#define N_CYCLES_0  210
+#define N_CYCLES_1  210
+#else
+#error "no freq defined"
+#endif
+
 #define N_CYCLES_PERIOD (N_CYCLES_0 + N_CYCLES_1)
 
 #define LED_PORT PORTD
@@ -48,11 +78,11 @@
 #define LED3_BIT  7
 
 #define LED_TOGGLE(port, bit) do {		\
-		if (port & _BV(bit))		\
-			port &= ~_BV(bit);	\
-		else				\
-			port |= _BV(bit);	\
-	} while(0)
+	  if (port & _BV(bit))			\
+		  port &= ~_BV(bit);		\
+	  else					\
+		  port |= _BV(bit);		\
+  } while(0)
 
 #define LED1_ON()  sbi(LED_PORT, LED1_BIT)
 #define LED1_OFF() cbi(LED_PORT, LED1_BIT)
@@ -75,48 +105,52 @@
 #define FRAME_LEN 16
 
 /* pin returns !0 when nothing, and 0 when laser is on photodiode */
-#define PHOTO_PIN PINC
+#define PHOTO_PIN PINB
 #define PHOTO_BIT 0
 #define READ_PHOTO() (!!(PHOTO_PIN & (_BV(PHOTO_BIT))))
 
-#define MIN_INTER_TIME (50*16)  /* t~=50us dist=350cm */
-#define MAX_INTER_TIME (2000*16) /* t=2ms dist=20cm */
-
-/* xmit 2ms after virtual laser: must be < 32768 */
-#define IR_DELAY (2000*16)
-
-/* in ms */
-#define INTER_LASER_TIME 10
-
-//#define NO_MODULATION
-#define WAIT_LASER
+/* IR_DELAY **must** be < 32768 */
+#if (defined SPEED_10RPS)
+#define MIN_INTER_TIME    ((uint16_t)(160*2))  /* t~=160us dist=350cm */
+#define MAX_INTER_TIME    ((uint16_t)(8000*2)) /* t=8ms dist=10cm */
+#define IR_DELAY          ((uint16_t)(8000*2))
+#define INTER_LASER_TIME   30 /* in ms */
+#elif (defined SPEED_40RPS)
+#define MIN_INTER_TIME    ((uint16_t)(40*16))  /* t~=40us dist=350cm */
+#define MAX_INTER_TIME    ((uint16_t)(2000*16)) /* t=2ms dist=10cm */
+#define IR_DELAY          ((uint16_t)(2000*16))
+#define INTER_LASER_TIME   10 /* in ms */
+#else
+#error "speed not defined"
+#endif
 
 /* basic functions to transmit on IR */
 
 static inline void xmit_0(void)
 {
-	uint8_t t = ((N_CYCLES_PERIOD * N_PERIODS) / 3);
+	uint16_t t = ((N_CYCLES_PERIOD * N_PERIODS) / 4);
 #ifdef NO_MODULATION
 	cbi(IR_PORT, IR_BIT);
 #else
 	TCCR1B = 0;
 	TCCR1A = 0;
 #endif
-	_delay_loop_1(t); /* 3 cycles per loop */
+	_delay_loop_2(t); /* 4 cycles per loop */
 }
 
 static inline void xmit_1(void)
 {
-	uint8_t t = ((N_CYCLES_PERIOD * N_PERIODS) / 3);
+	uint16_t t = ((N_CYCLES_PERIOD * N_PERIODS) / 4);
 #ifdef NO_MODULATION
 	sbi(IR_PORT, IR_BIT);
 #else
 	TCCR1B = _BV(WGM13) | _BV(WGM12);
 	TCNT1 = N_CYCLES_PERIOD-1;
 	TCCR1A = _BV(COM1A1) | _BV(WGM11);
+	ICR1 = N_CYCLES_PERIOD;
 	TCCR1B = _BV(WGM13) | _BV(WGM12) | _BV(CS10);
 #endif
-	_delay_loop_1(t); /* 3 cycles per loop */
+	_delay_loop_2(t); /* 4 cycles per loop */
 }
 
 /* transmit in manchester code */
@@ -151,46 +185,74 @@ static void xmit_bits(uint32_t frame, uint8_t nbit)
 	xmit_0();
 }
 
+#ifdef WAIT_LASER
+/* get the frame from laser time difference */
+static uint32_t get_frame(uint16_t laserdiff)
+{
+	uint32_t frame = 0;
+	frame |= ((uint32_t)BEACON_ID << BEACON_ID_SHIFT);
+	frame |= ((uint32_t)(laserdiff & FRAME_DATA_MASK) << FRAME_DATA_SHIFT);
+	return frame;
+}
+
 /* Wait 2 consecutive rising edges on photodiode. Return 0 on success,
  * in this case, the 'when' pointed area is assigned to the time when
- * IR signal should be sent. */
-static inline int8_t wait_laser(uint16_t *when)
+ * IR signal should be sent. The 'laserdiff' pointer is the time
+ * between the 2 lasers, in timer unit. */
+static inline int8_t wait_laser(uint16_t *when, uint16_t *laserdiff)
 {
 	uint16_t time1, time2;
 	uint16_t diff;
 
+#ifdef SPEED_40RPS
 	/* set timer to 16Mhz, we will use ICP */
 	TCCR1A = 0;
 	TCCR1B = _BV(CS10);
+#else /* 10 RPS */
+	/* set timer to 2Mhz, we will use ICP */
+	TCCR1A = 0;
+	TCCR1B = _BV(CS11);
+#endif
 
-	/* wait until all is off */
-	while (READ_PHOTO() != 0);
+	/* wait until all is off (inverted logic)  */
+	while (READ_PHOTO() == 0);
 	TIFR = _BV(ICF1);
 
-	/* wait rising edge */
+	/* wait falling edge */
 	while ((TIFR & _BV(ICF1)) == 0);
 	time1 = ICR1;
+
+	LED1_ON();
+
+	/* wait a bit to avoid oscillations */
+	while ((uint16_t)(TCNT1-time1) < MIN_INTER_TIME);
 	TIFR = _BV(ICF1);
 
-	/* wait next rising edge + timeout */
+	/* wait next falling edge + timeout */
 	while ((TIFR & _BV(ICF1)) == 0) {
 		diff = TCNT1 - time1;
 		if (diff > MAX_INTER_TIME)
 			return -1;
 	}
 
+	LED2_ON();
+
+	/* get time of 2nd laser */
 	time2 = ICR1;
 	TIFR = _BV(ICF1);
 
+	/* process time difference */
 	diff = time2 - time1;
 	if (diff < MIN_INTER_TIME)
 		return -1;
 
 	*when = time1 + (diff/2) + IR_DELAY;
+	*laserdiff = diff;
 
 	/* laser ok */
 	return 0;
 }
+#endif
 
 /* */
 
@@ -198,9 +260,11 @@ int main(void)
 {
 	/* must be odd */
 	uint32_t frame = FRAME;
+#ifdef WAIT_LASER
 	int8_t ret;
 	uint16_t when = 0;
-
+	uint16_t diff = 0;
+#endif
 	/* LEDS */
 	LED_DDR = _BV(LED1_BIT) | _BV(LED2_BIT) | _BV(LED3_BIT);
 	IR_DDR |= _BV(IR_BIT);
@@ -239,13 +303,25 @@ int main(void)
 	TCCR1B = _BV(WGM13) | _BV(WGM12);
 #endif
 
+#if 0
+	/* test freq */
+	ICR1 = N_CYCLES_PERIOD;
+	OCR1A = N_CYCLES_1;
+	TCCR1B = _BV(WGM13) | _BV(WGM12);
+	TCNT1 = N_CYCLES_PERIOD-1;
+	TCCR1A = _BV(COM1A1) | _BV(WGM11);
+	TCCR1B = _BV(WGM13) | _BV(WGM12) | _BV(CS10);
+	while (1);
+#endif
+
+
 	/* configure timer 0, prescaler = 64 */
 	TCCR0 = _BV(CS01) | _BV(CS00);
 
 	while (1) {
 
 #ifdef WAIT_LASER
-		ret = wait_laser(&when);
+		ret = wait_laser(&when, &diff);
 
 		LED1_OFF();
 		LED2_OFF();
@@ -253,23 +329,20 @@ int main(void)
 		if (ret)
 			continue;
 
+		frame = get_frame(diff);
+
 		/* wait before IR xmit */
 		while ((int16_t)(when-TCNT1) > 0);
 #endif
 
-#if 1
 		LED3_ON();
 		/* ok, transmit frame */
 		xmit_bits(frame, FRAME_LEN);
 
+		LED3_OFF();
+
 		/* don't watch a laser during this time */
 		wait_ms(INTER_LASER_TIME);
-		LED3_OFF();
-#else
-		LED1_ON();
-		wait_ms(1);
-		LED1_OFF();
-#endif
 	}
 	return 0;
 }
