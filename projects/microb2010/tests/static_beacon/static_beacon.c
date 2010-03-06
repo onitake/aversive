@@ -79,12 +79,11 @@
 #define PHOTO_BIT 0
 #define READ_PHOTO() (!!(PHOTO_PIN & (_BV(PHOTO_BIT))))
 
-/* in cycles/64 (unit is 4 us at 16Mhz) */
-#define MAX_PHOTO_TIME ((uint8_t)25)  /* t=100us len=5mm rps=40Hz dist=20cm */
+#define MIN_INTER_TIME (50*16)  /* t~=50us dist=350cm */
+#define MAX_INTER_TIME (2000*16) /* t=2ms dist=20cm */
 
-/* XXX to be recalculated */
-#define MIN_INTER_TIME ((uint8_t)12)  /* t=50us len=50mm rps=40Hz dist=350cm */
-#define MAX_INTER_TIME ((uint8_t)250) /* t=1000us len=50mm rps=40Hz dist=20cm */
+/* xmit 2ms after virtual laser: must be < 32768 */
+#define IR_DELAY (2000*16)
 
 /* in ms */
 #define INTER_LASER_TIME 10
@@ -152,58 +151,42 @@ static void xmit_bits(uint32_t frame, uint8_t nbit)
 	xmit_0();
 }
 
-/* */
-static inline int8_t wait_laser(void)
+/* Wait 2 consecutive rising edges on photodiode. Return 0 on success,
+ * in this case, the 'when' pointed area is assigned to the time when
+ * IR signal should be sent. */
+static inline int8_t wait_laser(uint16_t *when)
 {
-	uint8_t photos;
-	uint8_t time1, time2;
-	uint8_t diff;
+	uint16_t time1, time2;
+	uint16_t diff;
 
-	/*
-	  wait photo on
-	  wait photo off
-	  wait photo on or timeout
-	  wait photo off
-	  should return the amount of time to wait
-	 */
+	/* set timer to 16Mhz, we will use ICP */
+	TCCR1A = 0;
+	TCCR1B = _BV(CS10);
 
 	/* wait until all is off */
 	while (READ_PHOTO() != 0);
+	TIFR = _BV(ICF1);
 
-	/* wait until photo is on */
-	while (READ_PHOTO() != 1);
-	time1 = TCNT0;
-	LED1_ON();
+	/* wait rising edge */
+	while ((TIFR & _BV(ICF1)) == 0);
+	time1 = ICR1;
+	TIFR = _BV(ICF1);
 
-	/* wait until photo is off, if it takes too long time,
-	 * return. */
-	while (READ_PHOTO() != 0) {
-		diff = TCNT0 - time1;
-		if (diff > MAX_PHOTO_TIME)
-			return -1;
-	}
-
-	/* wait photo on. */
-	while (READ_PHOTO() != 1) {
-		diff = TCNT0 - time1;
+	/* wait next rising edge + timeout */
+	while ((TIFR & _BV(ICF1)) == 0) {
+		diff = TCNT1 - time1;
 		if (diff > MAX_INTER_TIME)
 			return -1;
 	}
-	time2 = TCNT0;
 
-	/* wait until photo is off, if it takes too long time,
-	 * return. */
-	while (READ_PHOTO() != 0) {
-		diff = TCNT0 - time2;
-		if (diff > MAX_PHOTO_TIME)
-			return -1;
-	}
-
-	LED2_ON();
+	time2 = ICR1;
+	TIFR = _BV(ICF1);
 
 	diff = time2 - time1;
 	if (diff < MIN_INTER_TIME)
 		return -1;
+
+	*when = time1 + (diff/2) + IR_DELAY;
 
 	/* laser ok */
 	return 0;
@@ -216,7 +199,7 @@ int main(void)
 	/* must be odd */
 	uint32_t frame = FRAME;
 	int8_t ret;
-	int16_t c;
+	uint16_t when = 0;
 
 	/* LEDS */
 	LED_DDR = _BV(LED1_BIT) | _BV(LED2_BIT) | _BV(LED3_BIT);
@@ -228,6 +211,7 @@ int main(void)
 
 #if 0
 	while (1) {
+		int16_t c;
 		c = uart_recv_nowait(0);
 		if (c != -1)
 			printf("%c", (char)(c+1));
@@ -240,7 +224,7 @@ int main(void)
 
 #if 0
 	while (1) {
-		if (READ_PHOTO() & _BV(PHOTO1_BIT))
+		if (READ_PHOTO())
 			LED1_ON();
 		else
 			LED1_OFF();
@@ -261,13 +245,16 @@ int main(void)
 	while (1) {
 
 #ifdef WAIT_LASER
-		ret = wait_laser();
+		ret = wait_laser(&when);
 
 		LED1_OFF();
 		LED2_OFF();
 
 		if (ret)
 			continue;
+
+		/* wait before IR xmit */
+		while ((int16_t)(when-TCNT1) > 0);
 #endif
 
 #if 1

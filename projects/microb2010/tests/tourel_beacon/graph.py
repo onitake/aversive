@@ -76,7 +76,8 @@ def graph_da(filename, real_x, real_y, real_a):
     a1,ea1 = get_angle((real_x, real_y), beacons[1])
     a0 -=  real_a
     a1 -=  real_a
-    text  = "a0 = %2.2f (%+2.2f deg)\n"%(a0, ea0*(180./math.pi))
+    text =  "real_pt = %2.2f, %2.2f, %2.2f\n"%(real_x, real_y, real_a)
+    text += "a0 = %2.2f (%+2.2f deg)\n"%(a0, ea0*(180./math.pi))
     text += "a1 = %2.2f (%+2.2f deg)\n"%(a1, ea1*(180./math.pi))
     d0,ed0 = get_distance((real_x, real_y), beacons[0])
     d1,ed1 = get_distance((real_x, real_y), beacons[1])
@@ -108,6 +109,7 @@ def graph_da(filename, real_x, real_y, real_a):
     ax.plot(x, y, 'g-')
 
     result_pt = (-1, -1)
+    result_x, result_y, result_a = -1, -1, -1
     patches = []
     for l in s.split("\n"):
         m = re.match("circle: x=%s y=%s r=%s"%(FLOAT, FLOAT, FLOAT), l)
@@ -121,7 +123,9 @@ def graph_da(filename, real_x, real_y, real_a):
                         float(m.groups()[2]), float(m.groups()[3]))
             if (n == 0):
                 patches += [ Circle((x, y), 20, alpha=0.4, facecolor="yellow") ]
-                result_pt = (x, y)
+                result_x, result_y = (x, y)
+                result_pt = (x,y)
+                result_a = a
             text += l + "\n"
 
     pcol.append(PatchCollection(patches, facecolor="none", alpha = 0.6))
@@ -135,8 +139,14 @@ def graph_da(filename, real_x, real_y, real_a):
          (2200., 1800.), (2200., 500.)]
     l.sort(cmp=lambda p1,p2: (dist(p1,real_pt)<dist(p2,real_pt)) and 1 or -1)
     x,y = l[0]
-    text += "real_pt: x=%2.2f, y=%2.2f\n"%(real_x, real_y)
-    text += "error = %2.2f mm"%(dist(real_pt, result_pt))
+    text += "result_pt: x=%2.2f, y=%2.2f, a=%2.2f\n"%(result_x, result_y, result_a)
+    error_dist = dist(real_pt, result_pt)
+    error_a = result_a - real_a
+    if error_a > math.pi:
+        error_a -= 2*math.pi
+    if error_a < -math.pi:
+        error_a += 2*math.pi
+    text += "error = %2.2f mm, %2.2f deg"%(error_dist, error_a * 180. / math.pi)
     matplotlib.pyplot.text(x, y, text, size=8,
              ha="center", va="center",
              bbox = dict(boxstyle="round",
@@ -257,7 +267,7 @@ def do_random_test():
         print "---- random %d"%i
         x = random.randint(0, 3000)
         y = random.randint(0, 2100)
-        a = random.random()*2*math.pi
+        a = random.random()*2*math.pi - math.pi
         graph("test%d.png"%i, x, y, a)
         graph_da("test_da%d.png"%i, x, y, a)
 
@@ -275,7 +285,7 @@ def do_graph_2d(data, filename, title):
     fig.savefig(filename)
 
 def get_data(cmd, sat=0):
-    data = np.array([[0.]*210]*300)
+    data = np.array([[50.]*210]*300)
     oo,ii = popen2.popen2(cmd)
     ii.close()
     while True:
@@ -313,11 +323,11 @@ def do_graph_2d_simple_error():
             do_graph_2d(data, "error_a%d_%s.png"%(i,j), title)
 
 def do_graph_2d_ad_error():
-    for d in ["0.0", "0.1", "0.5"]:
-        for a in ["0.0", "0.1", "0.5"]:
+    for d in ["0.0", "0.1", "0.5", "1.0"]:
+        for a in ["0.0", "0.1", "0.5", "1.0"]:
             for i in ["0", "1", "2"]:
                 print "do_graph_2d_ad_error %s %s %s"%(i, d, a)
-                data = get_data("./main da_error %s %s %s"%(i, d, a))
+                data = get_data("./main da_error %s %s -%s"%(i, d, a))
                 title  = 'Erreur de position en mm, pour une erreur\n'
                 title += "d'angle de %s deg et dist de %s %% (algo %s)"%(a, d, i)
                 do_graph_2d(data, "error_da_%s_%s_%s.png"%(i, d, a), title)
@@ -345,7 +355,7 @@ def do_graph_2d_move_error():
                 "En rouge, l'erreur de mesure est > 2cm (pour un deplacement\n"
                 'a %2.2f m/s vers %d deg et une periode tourelle = %d ms)'%(speed, angle_deg, period))
 
-do_random_test()
-do_graph_2d_simple_error()
-do_graph_2d_move_error()
+#do_random_test()
+#do_graph_2d_simple_error()
+#do_graph_2d_move_error()
 do_graph_2d_ad_error()
