@@ -29,7 +29,7 @@
 #include <pwm_ng.h>
 #include <timer.h>
 #include <scheduler.h>
-#include <time.h>
+#include <clock_time.h>
 
 #include <pid.h>
 #include <quadramp.h>
@@ -51,7 +51,7 @@
 
 static volatile uint8_t fessor_state = OFF;
 static volatile uint32_t fessor_pos_up =  35000;
-static volatile uint32_t fessor_pos_down = 63500;
+static volatile uint32_t fessor_pos_down = 0;
 static volatile uint32_t fessor_delay_up = 500;
 static volatile uint32_t fessor_delay_down = 2000;
 static volatile uint32_t delay = 0;

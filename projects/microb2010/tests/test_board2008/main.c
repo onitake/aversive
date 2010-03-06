@@ -33,7 +33,7 @@
 #include <pwm_ng.h>
 #include <timer.h>
 #include <scheduler.h>
-#include <time.h>
+#include <clock_time.h>
 #include <adc.h>
 
 #include <pid.h>

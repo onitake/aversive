@@ -31,7 +31,7 @@
 #include <pwm_ng.h>
 #include <timer.h>
 #include <scheduler.h>
-#include <time.h>
+#include <clock_time.h>
 #include <adc.h>
 
 #include <pid.h>
@@ -99,15 +99,16 @@ static void do_cs(void *dummy)
 			cs_manage(&mainboard.angle.cs);
 		if (mainboard.distance.on)
 			cs_manage(&mainboard.distance.cs);
-		if (mainboard.fessor.on)
+		if (mainboard.fessor.on) {
 			cs_manage(&mainboard.fessor.cs);
+			fessor_manage();
+		}
 		if (mainboard.wheel.on)
 			cs_manage(&mainboard.wheel.cs);
-		if (mainboard.elevator.on)
+		if (mainboard.elevator.on) {
 			cs_manage(&mainboard.elevator.cs);
-
-		fessor_manage();
-		elevator_manage();
+			elevator_manage();
+		}
 	}
 	if ((cpt & 1) && (mainboard.flags & DO_POS)) {
 		/* about 1.5ms (worst case without centrifugal force
@@ -305,7 +306,7 @@ void microb_cs_init(void)
 	mainboard.angle.on = 0;
 	mainboard.distance.on = 0;
 	mainboard.fessor.on = 1;
-	mainboard.elevator.on = 1;
+	mainboard.elevator.on = 0;
 	mainboard.wheel.on = 1;
 	mainboard.flags |= DO_CS;
 

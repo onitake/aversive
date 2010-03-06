@@ -29,7 +29,7 @@
 
 #include <uart.h>
 #include <pwm_ng.h>
-#include <time.h>
+#include <clock_time.h>
 #include <encoders_microb.h>
 #include <adc.h>
 
