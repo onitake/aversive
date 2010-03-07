@@ -263,13 +263,13 @@ def graph(filename, real_x, real_y, real_a):
 
 def do_random_test():
     random.seed(0)
-    for i in range(21):
+    for i in range(100):
         print "---- random %d"%i
         x = random.randint(0, 3000)
         y = random.randint(0, 2100)
         a = random.random()*2*math.pi - math.pi
-        graph("test%d.png"%i, x, y, a)
-        graph_da("test_da%d.png"%i, x, y, a)
+        graph("angle/test%d.png"%i, x, y, a)
+        graph_da("da/test_da%d.png"%i, x, y, a)
 
 def do_graph_2d(data, filename, title):
     # Make plot with vertical (default) colorbar
@@ -320,7 +320,7 @@ def do_graph_2d_simple_error():
             else:
                 title  = 'Erreur de position en mm, pour une erreur\n'
                 title += 'de mesure de %s deg sur les 3 balises'%(j)
-            do_graph_2d(data, "error_a%d_%s.png"%(i,j), title)
+            do_graph_2d(data, "simple_error/error_a%d_%s.png"%(i,j), title)
 
 def do_graph_2d_ad_error():
     for d in ["0.0", "0.1", "0.5", "1.0"]:
@@ -330,7 +330,7 @@ def do_graph_2d_ad_error():
                 data = get_data("./main da_error %s %s -%s"%(i, d, a))
                 title  = 'Erreur de position en mm, pour une erreur\n'
                 title += "d'angle de %s deg et dist de %s %% (algo %s)"%(a, d, i)
-                do_graph_2d(data, "error_da_%s_%s_%s.png"%(i, d, a), title)
+                do_graph_2d(data, "da_error/error_da_%s_%s_%s.png"%(i, d, a), title)
 
 def do_graph_2d_ad_error_mm():
     for d in ["5", "10", "20"]:
@@ -339,7 +339,7 @@ def do_graph_2d_ad_error_mm():
             data = get_data("./main da_error_mm 0 %s -%s"%(d, a))
             title  = 'Erreur de position en mm, pour une erreur\n'
             title += "d'angle de %s deg et dist de %s mm"%(a, d)
-            do_graph_2d(data, "error_da_%smm_%s.png"%(d, a), title)
+            do_graph_2d(data, "da_error_mm/error_da_%smm_%s.png"%(d, a), title)
 
 def do_graph_2d_move_error():
     i = 0
@@ -350,7 +350,7 @@ def do_graph_2d_move_error():
             while angle_deg < 360:
                 angle_rad = angle_deg * (math.pi/180.)
                 data = get_data("./main move_error %f %f %f"%(speed, period, angle_rad))
-                do_graph_2d(data, "error_move_error_%d.png"%(i),
+                do_graph_2d(data, "move_error/error_move_error_%d.png"%(i),
                             'Erreur de mesure si le robot se deplace a %2.2f m/s\n'
                             'vers %d deg (periode tourelle = %d ms)'%(speed, angle_deg, period))
                 angle_deg += 45
