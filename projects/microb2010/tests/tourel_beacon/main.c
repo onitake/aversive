@@ -529,14 +529,17 @@ int main(int argc, char **argv)
 	}
 
 	/* da_error algo errpercent errdeg */
-	if (argc == 5 && strcmp(mode, "da_error") == 0) {
+	if ((argc == 5 && strcmp(mode, "da_error") == 0) ||
+	    (argc == 5 && strcmp(mode, "da_error_mm") == 0)) {
 		int x, y, algo;
 		double err_val_deg;
 		double err_val_percent;
+		double err_val_mm;
 		double err, d0, d1, a;
 
 		algo = atoi(argv[2]);
 		err_val_percent = atof(argv[3]); /* how many % of error for dist */
+		err_val_mm = atof(argv[3]); /* how many mm of error for dist */
 		err_val_deg = atof(argv[4]); /* how many degrees of error */
 
 		for (x=0; x<300; x++) {
@@ -547,9 +550,15 @@ int main(int argc, char **argv)
 				posxy_to_abs_angles(pos, &a0, &a1, &a2,
 						    0, err_val_deg);
 				d0 = pt_norm(&pos, &beacon0);
-				d0 += d0 * err_val_percent / 100.;
 				d1 = pt_norm(&pos, &beacon1);
-				d1 += d1 * err_val_percent / 100.;
+				if (strcmp(mode, "da_error") == 0) {
+					d0 += d0 * err_val_percent / 100.;
+					d1 += d1 * err_val_percent / 100.;
+				}
+				else {
+					d0 += err_val_mm;
+					d1 += err_val_mm;
+				}
 
 				if (ad_to_posxya(&tmp, &a, algo, &beacon0, &beacon1,
 						 a0, a1, d0, d1) < 0)
