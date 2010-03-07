@@ -332,6 +332,15 @@ def do_graph_2d_ad_error():
                 title += "d'angle de %s deg et dist de %s %% (algo %s)"%(a, d, i)
                 do_graph_2d(data, "error_da_%s_%s_%s.png"%(i, d, a), title)
 
+def do_graph_2d_ad_error_mm():
+    for d in ["5", "10", "20"]:
+        for a in ["0.0", "0.1", "0.5", "1.0"]:
+            print "do_graph_2d_ad_error_mm 0 %s %s"%(d, a)
+            data = get_data("./main da_error_mm 0 %s -%s"%(d, a))
+            title  = 'Erreur de position en mm, pour une erreur\n'
+            title += "d'angle de %s deg et dist de %s mm"%(a, d)
+            do_graph_2d(data, "error_da_%smm_%s.png"%(d, a), title)
+
 def do_graph_2d_move_error():
     i = 0
     for period in [ 20, 40 ]:
@@ -358,4 +367,5 @@ def do_graph_2d_move_error():
 #do_random_test()
 #do_graph_2d_simple_error()
 #do_graph_2d_move_error()
-do_graph_2d_ad_error()
+#do_graph_2d_ad_error()
+do_graph_2d_ad_error_mm()
