@@ -146,6 +146,31 @@ void debug_tsop(void)
 #endif
 }
 
+#if 0
+/* val is 16 bits, including 4 bits-cksum in MSB, return 0xFFFF is
+ * cksum is wrong, or the 12 bits value on success. */
+static uint16_t verify_cksum(uint16_t val)
+{
+	uint16_t x, cksum;
+
+	x = (val & 0xfff);
+	/* add the four 4-bits blocks of val together */
+	cksum = val & 0xf;
+	val = val >> 4;
+	cksum += val & 0xf;
+	cksum = (cksum & 0xf) + ((cksum & 0xf0) >> 4);
+	val = val >> 4;
+	cksum += val & 0xf;
+	cksum = (cksum & 0xf) + ((cksum & 0xf0) >> 4);
+	val = val >> 4;
+	cksum += val & 0xf;
+	cksum = (cksum & 0xf) + ((cksum & 0xf0) >> 4);
+	if (cksum == 0xf)
+		return x;
+	return 0xffff; /* wrong cksum */
+}
+#endif
+
 /* decode frame */
 SIGNAL(SIG_TSOP) {
 	static uint8_t led_cpt = 0;

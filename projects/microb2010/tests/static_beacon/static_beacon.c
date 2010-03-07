@@ -20,6 +20,8 @@
  *
  */
 
+#include <math.h>
+
 #include <aversive.h>
 #include <aversive/wait.h>
 
@@ -50,7 +52,7 @@
 #define BEACON_ID_SHIFT 0
 
 /* */
-#define FRAME_DATA_MASK  0xFFF8
+#define FRAME_DATA_MASK  0x0FF8
 #define FRAME_DATA_SHIFT 3
 
 #if (defined MODUL_455KHZ)
@@ -68,6 +70,10 @@
 #else
 #error "no freq defined"
 #endif
+
+#define MIN_DIST 150.
+#define MAX_DIST 3600.
+#define LASER_DIST 25.
 
 #define N_CYCLES_PERIOD (N_CYCLES_0 + N_CYCLES_1)
 
@@ -186,13 +192,62 @@ static void xmit_bits(uint32_t frame, uint8_t nbit)
 }
 
 #ifdef WAIT_LASER
-/* get the frame from laser time difference */
+/* val is 12 bits. Return the 16 bits value that includes the 4 bits
+ * cksum in MSB. */
+static uint16_t do_cksum(uint16_t val)
+{
+	uint16_t x, cksum;
+
+	x = (val & 0xfff);
+	/* add the three 4-bits blocks of x together */
+	cksum = x & 0xf;
+	x = x >> 4;
+	cksum += x & 0xf;
+	cksum = (cksum & 0xf) + ((cksum & 0xf0) >> 4);
+	x = x >> 4;
+	cksum += x & 0xf;
+	cksum = (cksum & 0xf) + ((cksum & 0xf0) >> 4);
+	cksum = (~cksum) & 0xf;
+	return (cksum << 12) + (val & 0xfff);
+}
+
+/* get the frame from laser time difference, return 0 on error (this
+ * frame cannot be sent). */
 static uint32_t get_frame(uint16_t laserdiff)
 {
 	uint32_t frame = 0;
+	double a, d;
+	uint16_t frame_dist;
+
 	frame |= ((uint32_t)BEACON_ID << BEACON_ID_SHIFT);
-	frame |= ((uint32_t)(laserdiff & FRAME_DATA_MASK) << FRAME_DATA_SHIFT);
-	return frame;
+
+	/* process angle from laserdiff time */
+#ifdef SPEED_10RPS
+	/* timer = 2Mhz */
+	a = ((double)laserdiff / (2000000./10.)) * 2. * M_PI;
+#else
+	/* timer = 16Mhz */
+	a = ((double)laserdiff / (16000000./40.)) * 2. * M_PI;
+#endif
+	/* get distance from angle */
+	d = LASER_DIST / sin(a/2);
+
+	/* scale it between 0 and 511 */
+	if (d <= MIN_DIST)
+		return 0;
+	if (d >= MAX_DIST)
+		return 0;
+	d -= MIN_DIST;
+	d /= (MAX_DIST-MIN_DIST);
+	d *= 512;
+	frame_dist = (uint16_t)d;
+	if (frame_dist >= 512) /* should not happen... */
+		return 0;
+
+	frame |= ((uint32_t)(frame_dist & FRAME_DATA_MASK) << FRAME_DATA_SHIFT);
+
+	/* process cksum and return */
+	return do_cksum(frame);
 }
 
 /* Wait 2 consecutive rising edges on photodiode. Return 0 on success,
@@ -330,6 +385,11 @@ int main(void)
 			continue;
 
 		frame = get_frame(diff);
+		/* cannot convert into frame... skip it */
+		if (frame == 0) {
+			wait_ms(INTER_LASER_TIME);
+			continue;
+		}
 
 		/* wait before IR xmit */
 		while ((int16_t)(when-TCNT1) > 0);
