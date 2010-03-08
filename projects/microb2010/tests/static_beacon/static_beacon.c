@@ -24,6 +24,7 @@
 
 #include <aversive.h>
 #include <aversive/wait.h>
+#include <aversive/pgmspace.h>
 
 #include <uart.h>
 
@@ -130,6 +131,7 @@
 #error "speed not defined"
 #endif
 
+extern prog_uint16_t framedist_table[];
 /* basic functions to transmit on IR */
 
 static inline void xmit_0(void)
@@ -216,33 +218,20 @@ static uint16_t do_cksum(uint16_t val)
 static uint32_t get_frame(uint16_t laserdiff)
 {
 	uint32_t frame = 0;
-	double a, d;
-	uint16_t frame_dist;
+	uint16_t frame_dist = 256;
+	uint16_t step, val;
 
-	frame |= ((uint32_t)BEACON_ID << BEACON_ID_SHIFT);
+	/* for calibration, return the time */
+	if (0)
+		return laserdiff;
 
-	/* process angle from laserdiff time */
-#ifdef SPEED_10RPS
-	/* timer = 2Mhz */
-	a = ((double)laserdiff / (2000000./10.)) * 2. * M_PI;
-#else
-	/* timer = 16Mhz */
-	a = ((double)laserdiff / (16000000./40.)) * 2. * M_PI;
-#endif
-	/* get distance from angle */
-	d = LASER_DIST / sin(a/2);
-
-	/* scale it between 0 and 511 */
-	if (d <= MIN_DIST)
-		return 0;
-	if (d >= MAX_DIST)
-		return 0;
-	d -= MIN_DIST;
-	d /= (MAX_DIST-MIN_DIST);
-	d *= 512;
-	frame_dist = (uint16_t)d;
-	if (frame_dist >= 512) /* should not happen... */
-		return 0;
+	for (step = 128; step != 0; step /= 2) {
+		val = pgm_read_word(&framedist_table[frame_dist]);
+		if (laserdiff > val)
+			frame_dist -= step;
+		else
+			frame_dist += step;
+	}
 
 	frame |= ((uint32_t)(frame_dist & FRAME_DATA_MASK) << FRAME_DATA_SHIFT);
 

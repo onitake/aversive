@@ -35,7 +35,7 @@
 /* beacon identifier: must be odd, 3 bits */
 #define BEACON_ID_MASK 0x7
 #define BEACON_ID_SHIFT 0
-#define FRAME_DATA_MASK  0xFFF8
+#define FRAME_DATA_MASK  0xFF8
 #define FRAME_DATA_SHIFT 3
 
 /******************* TSOP */
@@ -77,24 +77,32 @@
 #define FRAME_LEN 16
 #define FRAME_MASK ((1UL << FRAME_LEN) - 1)
 
-/* frame */
-static uint16_t start_angle_time;
-static uint16_t frame;
-static uint16_t mask;
-static uint8_t len;
-static uint8_t val;
-
 struct detected_frame {
 	uint16_t frame;
 	uint16_t time;
 };
 
+/* frame */
+struct frame_status {
+	uint8_t led_cpt;
+	uint16_t start_angle_time;
+	uint16_t frame;
+	uint16_t mask;
+	uint16_t prev_time;
+	uint8_t prev_tsop;
+	uint8_t len;
+	uint8_t val;
 #define FRAME_RING_ORDER 4
 #define FRAME_RING_SIZE  (1<<FRAME_RING_ORDER)
 #define FRAME_RING_MASK  (FRAME_RING_SIZE-1)
-static uint8_t frame_ring_head = 0;
-static uint8_t frame_ring_tail = 0;
-static struct detected_frame frame_ring[FRAME_RING_SIZE];
+	uint8_t head;
+	uint8_t tail;
+	struct detected_frame ring[FRAME_RING_SIZE];
+};
+
+static struct frame_status static_beacon;
+
+
 
 /********************** CS */
 
@@ -146,7 +154,6 @@ void debug_tsop(void)
 #endif
 }
 
-#if 0
 /* val is 16 bits, including 4 bits-cksum in MSB, return 0xFFFF is
  * cksum is wrong, or the 12 bits value on success. */
 static uint16_t verify_cksum(uint16_t val)
@@ -169,77 +176,88 @@ static uint16_t verify_cksum(uint16_t val)
 		return x;
 	return 0xffff; /* wrong cksum */
 }
-#endif
+
+static inline void decode_frame(struct frame_status *status,
+				uint16_t ref_time, uint16_t cur_time, uint8_t cur_tsop)
+{
+	uint16_t diff_time = cur_time - status->prev_time;
+
+	/* first rising edge */
+	if (status->len == 0 && cur_tsop && diff_time > TSOP_TIME_LONG) {
+		status->len = 1;
+		status->val = 1;
+		status->frame = 0;
+		status->start_angle_time = cur_time - ref_time;
+		status->mask = 1;
+	}
+	/* any short edge */
+	else if (status->len != 0 && diff_time < TSOP_TIME_SHORT) {
+		if (status->len & 1) {
+			if (status->val)
+				status->frame |= status->mask;
+			status->mask <<= 1;
+		}
+		status->len ++;
+	}
+	/* any long edge */
+	else if (status->len != 0 && diff_time < TSOP_TIME_LONG) {
+		status->val = !status->val;
+		if (status->val)
+			status->frame |= status->mask;
+		status->mask <<= 1;
+		status->len += 2;
+	}
+	/* error case, reset */
+	else {
+		status->len = 0;
+	}
+
+	/* end of frame */
+	if (status->len == FRAME_LEN*2) {
+		uint8_t tail_next = (status->tail+1) & FRAME_RING_MASK;
+
+		if (tail_next != status->head) {
+			status->ring[status->tail].frame = (status->frame & FRAME_MASK);
+			status->ring[status->tail].time = status->start_angle_time;
+			status->tail = tail_next;
+			if ((status->led_cpt & 0x7) == 0)
+				LED3_TOGGLE();
+			status->led_cpt ++;
+		}
+		status->len = 0;
+	}
+
+	status->prev_time = cur_time;
+	status->prev_tsop = cur_tsop;
+}
 
 /* decode frame */
 SIGNAL(SIG_TSOP) {
-	static uint8_t led_cpt = 0;
+	static uint8_t running = 0;
 
 	/* tsop status */
-	static uint8_t prev_tsop = 0;
 	uint8_t cur_tsop;
-
-	/* time */
-	static uint16_t prev_time;
 	uint16_t ref_time;
 	uint16_t cur_time;
-	uint16_t diff_time;
 
 	ref_time = ICR3;
 	cur_time = TCNT3;
 	cur_tsop = TSOP_READ();
-	diff_time = cur_time - prev_time;
+
+	/* avoid interruption stacking */
+	if (running)
+		return;
+	running = 1;
+	sei();
 
 	if (cur_tsop)
 		LED2_ON();
 	else
 		LED2_OFF();
 
-	/* first rising edge */
-	if (len == 0 && cur_tsop && diff_time > TSOP_TIME_LONG) {
-		len = 1;
-		val = 1;
-		frame = 0;
-		start_angle_time = cur_time - ref_time;
-		mask = 1;
-	}
-	/* any short edge */
-	else if (len != 0 && diff_time < TSOP_TIME_SHORT) {
-		if (len & 1) {
-			if (val)
-				frame |= mask;
-			mask <<= 1;
-		}
-		len ++;
-	}
-	/* any long edge */
-	else if (len != 0 && diff_time < TSOP_TIME_LONG) {
-		val = !val;
-		if (val)
-			frame |= mask;
-		mask <<= 1;
-		len += 2;
-	}
-	/* error case, reset */
-	else {
-		len = 0;
-	}
+	decode_frame(&static_beacon, ref_time, cur_time, cur_tsop);
 
-	/* end of frame */
-	if (len == FRAME_LEN*2) {
-		uint8_t tail_next = (frame_ring_tail+1) & FRAME_RING_MASK;
-		if (tail_next != frame_ring_head) {
-			frame_ring[frame_ring_tail].frame = (frame & FRAME_MASK);
-			frame_ring[frame_ring_tail].time = start_angle_time;
-			frame_ring_tail = tail_next;
-		}
-		if ((led_cpt & 0x7) == 0)
-			LED3_TOGGLE();
-		led_cpt ++;
-	}
-
-	prev_time = cur_time;
-	prev_tsop = cur_tsop;
+	running = 0;
 }
 
 /* absolute value */
@@ -289,6 +307,36 @@ static inline int32_t get_speed(uint8_t icr_cpt, uint16_t icr_diff)
 	/* real time difference in 1/2 us */
 	diff = (best_cpt * 16384L) + (icr_diff & 0x3fff);
 	return 2000000000L/diff;
+}
+
+/* process the received frame ring */
+void process_ring(struct frame_status *status)
+{
+	uint8_t head_next;
+	uint32_t frame;
+
+	/* after CS, check if we have a new frame in ring */
+	while (status->head != status->tail) {
+		head_next = (status->head+1) & FRAME_RING_MASK;
+		frame = status->ring[status->head].frame;
+
+		/* display if needed */
+		if (beacon_tsop.debug_frame) {
+			uint8_t beacon_id;
+			uint16_t data;
+				
+			/* ignore bad cksum */
+			if (verify_cksum(frame) == 0xFFFF)
+				continue;
+
+			beacon_id = (frame >> BEACON_ID_SHIFT) & BEACON_ID_MASK;
+			data = (frame >> FRAME_DATA_SHIFT) & FRAME_DATA_MASK;
+			printf("ID=%d data=%d time=%d\r\n",
+			       beacon_id, data,
+			       status->ring[status->head].time);
+		}
+		status->head = head_next;
+	}
 }
 
 int main(void)
@@ -420,27 +468,7 @@ int main(void)
 		if (cpt < CPT_ICR_MAX)
 			cpt ++;
 
-		/* after CS, check if we have a new frame in ring */
-		if (frame_ring_head != frame_ring_tail) {
-			uint8_t head_next;
-			uint32_t frame;
-			head_next = (frame_ring_head+1) & FRAME_RING_MASK;
-			frame = frame_ring[frame_ring_head].frame;
-
-			/* display if needed */
-			if (beacon_tsop.debug_frame) {
-				uint8_t beacon_id;
-				uint16_t data;
-				
-				beacon_id = (frame >> BEACON_ID_SHIFT) & BEACON_ID_MASK;
-				data = (frame >> FRAME_DATA_SHIFT) & FRAME_DATA_MASK;
-				printf("ID=%d data=%d time=%d\r\n",
-				       beacon_id, data,
-				       frame_ring[frame_ring_head].time);
-			}
-			frame_ring_head = head_next;
-		}
-
+		process_ring(&static_beacon);
 	}
 
 	return 0;
