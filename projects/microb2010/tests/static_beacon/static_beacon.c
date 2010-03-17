@@ -358,6 +358,23 @@ int main(void)
 	while (1);
 #endif
 
+#if 1
+	/* test freq ~ 400khz */
+	ICR1 = 38;
+	OCR1A = 19;
+	TCCR1B = _BV(WGM13) | _BV(WGM12);
+	TCNT1 = 37;
+	TCCR1A = _BV(COM1A1) | _BV(WGM11);
+	TCCR1B = _BV(WGM13) | _BV(WGM12) | _BV(CS10);
+
+	/* motor PWM 50%, 8khz */
+	DDRB |= 0x08;
+	OCR2 = 50;
+	TCCR2 = _BV(WGM21) | _BV(WGM20) | _BV(COM21) | _BV(CS21) ;
+	
+	while (1);
+#endif
+
 
 	/* configure timer 0, prescaler = 64 */
 	TCCR0 = _BV(CS01) | _BV(CS00);

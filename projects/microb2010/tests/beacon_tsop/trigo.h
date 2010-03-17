@@ -18,5 +18,16 @@
  *  Olivier MATZ <zer0@droids-corp.org>
  */
 
+extern const point_t beacon0;
+extern const point_t beacon1;
+extern const point_t beacon2;
+
 /* get the position of the robot from the angle of the 3 beacons */
 int8_t angles_to_posxy(point_t *pos, double a01, double a12, double a20);
+
+/* get the position and angle of the robot from the angle of the 2
+ * beacons, and the distance of 2 beacons */
+int8_t ad_to_posxya(point_t *pos, double *a, int algo,
+		    const point_t *b0, const point_t *b1, /* beacon position */
+		    double a0, double a1, /* seen angle of beacons */
+		    double d0, double d1 /* distance to beacons */ );

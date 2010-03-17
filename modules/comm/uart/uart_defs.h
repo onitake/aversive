@@ -115,6 +115,9 @@
 #ifndef TXC 
 #define TXC TXC0
 #endif
+#ifndef RXC 
+#define RXC RXC0
+#endif
 #ifndef RXB8
 #define RXB8 RXB80
 #endif

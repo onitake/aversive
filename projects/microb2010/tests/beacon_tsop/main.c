@@ -1,5 +1,5 @@
 /*  
- *  Copyright Droids Corporation (2009)
+ *  Copyright Droids Corporation (2010)
  *  Olivier Matz <zer0@droids-corp.org>
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -20,6 +20,8 @@
  *
  */
 
+#include <math.h>
+
 #include <aversive.h>
 #include <aversive/wait.h>
 
@@ -28,69 +30,39 @@
 #include <pwm_ng.h>
 #include <parse.h>
 #include <rdline.h>
+#include <vect_base.h>
+#include <lines.h>
+#include <circles.h>
 
 #include "cmdline.h"
+#include "uart_proto.h"
+#include "trigo.h"
 #include "main.h"
-
-/* beacon identifier: must be odd, 3 bits */
-#define BEACON_ID_MASK 0x7
-#define BEACON_ID_SHIFT 0
-#define FRAME_DATA_MASK  0xFF8
-#define FRAME_DATA_SHIFT 3
+#include "board2006.h"
+//#include "board2010.h"
 
 /******************* TSOP */
 
-#define EICRx_TSOP EICRB /* EICRA is not ok, cannot do intr on any edge */
-#ifdef BOARD2006
-#define INTx_TSOP  INT6
-#define ISCx0_TSOP ISC60
-#define ISCx1_TSOP ISC61
-#define SIG_TSOP   SIG_INTERRUPT6
-#define TSOP_READ() (!(PINE & 0x40))
-#else
-#define INTx_TSOP  INT4
-#define ISCx0_TSOP ISC40
-#define ISCx1_TSOP ISC41
-#define SIG_TSOP   SIG_INTERRUPT4
-#define TSOP_READ() (!(PINE & 0x10))
-#endif
-
-//#define MODUL_455KHZ
-#define MODUL_38KHZ
-
-#if (defined MODUL_455KHZ)
-#define TSOP_FREQ_MHZ 0.455
-#define N_PERIODS   10.
-#else
-#define TSOP_FREQ_MHZ 0.038
-#define N_PERIODS   15.
-#endif
-
-#define TSOP_PERIOD_US (1./TSOP_FREQ_MHZ)
-
-#define TSOP_TIME_SHORT_US (1.5 * N_PERIODS * TSOP_PERIOD_US)
-#define TSOP_TIME_LONG_US  (2.5 * N_PERIODS * TSOP_PERIOD_US)
-
-#define TSOP_TIME_SHORT ((uint16_t)(TSOP_TIME_SHORT_US*2))
-#define TSOP_TIME_LONG  ((uint16_t)(TSOP_TIME_LONG_US*2))
-
-#define FRAME_LEN 16
-#define FRAME_MASK ((1UL << FRAME_LEN) - 1)
-
 struct detected_frame {
 	uint16_t frame;
+	uint16_t ref_time;
 	uint16_t time;
+	uint16_t tick;
 };
 
 /* frame */
 struct frame_status {
 	uint8_t led_cpt;
-	uint16_t start_angle_time;
+	uint16_t ref_time;
+	uint16_t start_time;
 	uint16_t frame;
 	uint16_t mask;
 	uint16_t prev_time;
+	uint16_t time_long;
+	uint16_t time_short;
 	uint8_t prev_tsop;
 	uint8_t len;
+	uint8_t frame_len;
 	uint8_t val;
 #define FRAME_RING_ORDER 4
 #define FRAME_RING_SIZE  (1<<FRAME_RING_ORDER)
@@ -101,8 +73,14 @@ struct frame_status {
 };
 
 static struct frame_status static_beacon;
+static struct frame_status opp_beacon;
+static uint16_t tick = 0;
 
+#define MIN_DIST 200.
+#define MAX_DIST 3500.
 
+/* in ticks (=CS_PERIOD), age before the entry is removed from ring */
+#define MAX_CAP_AGE 30
 
 /********************** CS */
 
@@ -113,7 +91,12 @@ static struct frame_status static_beacon;
 #define CPT_ICR_MIN (uint8_t)((10000UL/(uint32_t)CS_PERIOD_US))   /* too fast = 100 tr/s */
 
 /* in tr / 1000s */
-#define CS_CONSIGN (25 * 1000L)
+#define CS_CONSIGN (10 * 1000L)
+
+/* 5% tolerance to validate captures, period is in  */
+#define TIM3_UNIT 250000000L
+#define MOTOR_PERIOD_MIN ((uint32_t)((250000000L/CS_CONSIGN) * 0.95))
+#define MOTOR_PERIOD_MAX ((uint32_t)((250000000L/CS_CONSIGN) * 1.05))
 
 /* pwm for laser:
  *  - clear on timer compare (CTC)
@@ -123,6 +106,8 @@ static struct frame_status static_beacon;
 #define LASER_OFF() do { TCCR0 = 0; } while (0)
 
 struct beacon_tsop beacon_tsop;
+
+static uint32_t current_motor_period;
 
 void debug_serial(void)
 {
@@ -183,15 +168,16 @@ static inline void decode_frame(struct frame_status *status,
 	uint16_t diff_time = cur_time - status->prev_time;
 
 	/* first rising edge */
-	if (status->len == 0 && cur_tsop && diff_time > TSOP_TIME_LONG) {
+	if (status->len == 0 && cur_tsop && diff_time > status->time_long) {
 		status->len = 1;
 		status->val = 1;
 		status->frame = 0;
-		status->start_angle_time = cur_time - ref_time;
+		status->start_time = cur_time;
+		status->ref_time = ref_time;
 		status->mask = 1;
 	}
 	/* any short edge */
-	else if (status->len != 0 && diff_time < TSOP_TIME_SHORT) {
+	else if (status->len != 0 && diff_time < status->time_short) {
 		if (status->len & 1) {
 			if (status->val)
 				status->frame |= status->mask;
@@ -200,7 +186,7 @@ static inline void decode_frame(struct frame_status *status,
 		status->len ++;
 	}
 	/* any long edge */
-	else if (status->len != 0 && diff_time < TSOP_TIME_LONG) {
+	else if (status->len != 0 && diff_time < status->time_long) {
 		status->val = !status->val;
 		if (status->val)
 			status->frame |= status->mask;
@@ -213,12 +199,17 @@ static inline void decode_frame(struct frame_status *status,
 	}
 
 	/* end of frame */
-	if (status->len == FRAME_LEN*2) {
+	if (status->len == status->frame_len*2) {
 		uint8_t tail_next = (status->tail+1) & FRAME_RING_MASK;
+		uint16_t frame_mask;
+
+		frame_mask = (1 << status->frame_len) - 1;
 
 		if (tail_next != status->head) {
-			status->ring[status->tail].frame = (status->frame & FRAME_MASK);
-			status->ring[status->tail].time = status->start_angle_time;
+			status->ring[status->tail].frame = (status->frame & frame_mask);
+			status->ring[status->tail].ref_time = status->ref_time;
+			status->ring[status->tail].time = status->start_time;
+			status->ring[status->tail].tick = tick;
 			status->tail = tail_next;
 			if ((status->led_cpt & 0x7) == 0)
 				LED3_TOGGLE();
@@ -232,7 +223,7 @@ static inline void decode_frame(struct frame_status *status,
 }
 
 /* decode frame */
-SIGNAL(SIG_TSOP) {
+SIGNAL(SIG_TSOP_STA) {
 	static uint8_t running = 0;
 
 	/* tsop status */
@@ -242,7 +233,7 @@ SIGNAL(SIG_TSOP) {
 
 	ref_time = ICR3;
 	cur_time = TCNT3;
-	cur_tsop = TSOP_READ();
+	cur_tsop = TSOP_STA_READ();
 
 	/* avoid interruption stacking */
 	if (running)
@@ -256,6 +247,35 @@ SIGNAL(SIG_TSOP) {
 		LED2_OFF();
 
 	decode_frame(&static_beacon, ref_time, cur_time, cur_tsop);
+
+	running = 0;
+}
+
+/* decode frame */
+SIGNAL(SIG_TSOP_OPP) {
+	static uint8_t running = 0;
+
+	/* tsop status */
+	uint8_t cur_tsop;
+	uint16_t ref_time;
+	uint16_t cur_time;
+
+	ref_time = ICR3;
+	cur_time = TCNT3;
+	cur_tsop = TSOP_OPP_READ();
+
+	/* avoid interruption stacking */
+	if (running)
+		return;
+	running = 1;
+	sei();
+
+/* 	if (cur_tsop) */
+/* 		LED2_ON(); */
+/* 	else */
+/* 		LED2_OFF(); */
+
+	decode_frame(&opp_beacon, ref_time, cur_time, cur_tsop);
 
 	running = 0;
 }
@@ -304,39 +324,192 @@ static inline int32_t get_speed(uint8_t icr_cpt, uint16_t icr_diff)
 		}
 	}
 
-	/* real time difference in 1/2 us */
+	/* real time difference in timer unit (resolution 4us) */
 	diff = (best_cpt * 16384L) + (icr_diff & 0x3fff);
-	return 2000000000L/diff;
+	current_motor_period = diff; /* save it in global var */
+	return 250000000L/diff;
 }
 
 /* process the received frame ring */
-void process_ring(struct frame_status *status)
+static void process_sta_ring(struct frame_status *status)
+{
+	uint8_t head, head_next;
+	uint16_t frame, frametick;
+	uint8_t found = 0;
+	uint8_t beacon_id;
+
+	/* beacon 0 */
+	uint16_t data0, time0, ref_time0;
+	double angle0;
+	double dist0;
+
+	/* beacon 1 */
+	uint16_t data1, time1, ref_time1;
+	double angle1;
+	double dist1;
+
+	point_t pos;
+	double a;
+
+	/* remove too old captures from the ring */
+	while (status->head != status->tail) {
+		head_next = (status->head+1) & FRAME_RING_MASK;
+		frametick = status->ring[status->head].tick;
+		if ((uint16_t)(tick - frametick) < MAX_CAP_AGE)
+			break;
+		status->head = head_next;
+	}
+
+	head = status->head;
+	/* after CS, check if we have a new frame in ring */
+	while (head != status->tail) {
+		head_next = (head+1) & FRAME_RING_MASK;
+		frame = status->ring[head].frame;
+
+		/* ignore bad cksum */
+		if (verify_cksum(frame) == 0xFFFF)
+			continue;
+
+		beacon_id = (frame >> TSOP_STA_BEACON_ID_SHIFT) & TSOP_STA_BEACON_ID_MASK;
+		if (beacon_id != TSOP_STA_BEACON_ID0 &&
+		    beacon_id != TSOP_STA_BEACON_ID1)
+			continue;
+
+		/* if motor speed is not good, skip values  */
+		if (current_motor_period < MOTOR_PERIOD_MIN)
+			continue;
+		if (current_motor_period > MOTOR_PERIOD_MAX)
+			continue;
+
+		/* display if needed */
+		if (beacon_tsop.debug_frame) {
+			printf("STA ID=%d time=%d\r\n",
+			       beacon_id, status->ring[head].time);
+		}
+
+		if (beacon_id == TSOP_STA_BEACON_ID0) {
+			found |= 0x1;
+			data0 = (frame >> TSOP_STA_FRAME_DATA_SHIFT) & TSOP_STA_FRAME_DATA_MASK;
+			time0 = status->ring[head].time;
+			ref_time0 = status->ring[head].ref_time;
+		}
+		else if (beacon_id == TSOP_STA_BEACON_ID1) {
+			found |= 0x2;
+			data1 = (frame >> TSOP_STA_FRAME_DATA_SHIFT) & TSOP_STA_FRAME_DATA_MASK;
+			time1 = status->ring[head].time;
+			ref_time1 = status->ring[head].ref_time;
+		}
+
+		head = head_next;
+	}
+
+	/* if we didn't found beacon 0 and 1, return */
+	if (found != 0x3)
+		return;
+
+	/* update ring head */
+	status->head = head;
+
+	/* beacon 0 */
+	dist0 = data0;
+	dist0 /= 512.;
+	dist0 *= (MAX_DIST-MIN_DIST);
+	dist0 += MIN_DIST;
+
+	time0 = time0 - ref_time0;
+	angle0 = (double)time0 / (double)current_motor_period;
+	if (angle0 > 1.)
+		angle0 -= 1.;
+	if (angle0 > 1.)
+		return; /* fail */
+	angle0 *= (2 * M_PI);
+	if (angle0 > M_PI)
+		angle0 -= M_PI;
+
+	/* beacon 1 */
+	dist1 = data1;
+	dist1 /= 512.;
+	dist1 *= (MAX_DIST-MIN_DIST);
+	dist1 += MIN_DIST;
+
+	time1 = time1 - ref_time1;
+	angle1 = (double)time1 / (double)current_motor_period;
+	if (angle1 > 1.)
+		angle1 -= 1.;
+	if (angle1 > 1.)
+		return; /* fail */
+	angle1 *= (2 * M_PI);
+	if (angle0 > M_PI)
+		angle0 -= M_PI;
+
+	if (ad_to_posxya(&pos, &a, 0, &beacon0, &beacon1, angle0, dist0,
+			 angle1, dist1) < 0)
+		return;
+
+	xmit_static((uint16_t)pos.x, (uint16_t)pos.y, (uint16_t)a);
+}
+
+/* process the received frame ring */
+static void process_opp_ring(struct frame_status *status)
 {
 	uint8_t head_next;
-	uint32_t frame;
-
+	uint16_t frame;
+	uint8_t found = 0;
+	uint8_t beacon_id;
+	uint16_t data, time, ref_time;
+	double angle;
+	double dist;
+				
 	/* after CS, check if we have a new frame in ring */
 	while (status->head != status->tail) {
 		head_next = (status->head+1) & FRAME_RING_MASK;
 		frame = status->ring[status->head].frame;
 
+		/* ignore bad cksum */
+		if (verify_cksum(frame) == 0xFFFF)
+			continue;
+
+		beacon_id = (frame >> TSOP_OPP_BEACON_ID_SHIFT) & TSOP_OPP_BEACON_ID_MASK;
+		if (beacon_id != TSOP_OPP_BEACON_ID)
+			continue;
+
+		/* if motor speed is not good, skip values  */
+		if (current_motor_period < MOTOR_PERIOD_MIN)
+			continue;
+		if (current_motor_period > MOTOR_PERIOD_MAX)
+			continue;
+
+		found = 1;
+		data = (frame >> TSOP_OPP_FRAME_DATA_SHIFT) & TSOP_OPP_FRAME_DATA_MASK;
+		time = status->ring[status->head].time;
+		ref_time = status->ring[status->head].ref_time;
+
 		/* display if needed */
 		if (beacon_tsop.debug_frame) {
-			uint8_t beacon_id;
-			uint16_t data;
-				
-			/* ignore bad cksum */
-			if (verify_cksum(frame) == 0xFFFF)
-				continue;
-
-			beacon_id = (frame >> BEACON_ID_SHIFT) & BEACON_ID_MASK;
-			data = (frame >> FRAME_DATA_SHIFT) & FRAME_DATA_MASK;
-			printf("ID=%d data=%d time=%d\r\n",
+			printf("OPP ID=%d data=%d time=%d\r\n",
 			       beacon_id, data,
 			       status->ring[status->head].time);
 		}
 		status->head = head_next;
 	}
+
+	if (found == 0)
+		return;
+
+	dist = data;
+	dist /= 512.;
+	dist *= (MAX_DIST-MIN_DIST);
+	dist += MIN_DIST;
+
+	time = time - ref_time;
+	angle = (double)time / (double)current_motor_period;
+	if (angle > 1.)
+		angle -= 1.;
+	if (angle > 1.)
+		return; /* fail */
+	angle *= 3600; /* angle in 1/10 deg */
+
+	xmit_opp((uint16_t)dist, (uint16_t)angle);
 }
 
 int main(void)
@@ -350,6 +523,14 @@ int main(void)
 	int32_t speed, out, err;
 	uint16_t tcnt3;
 	uint8_t x = 0;
+
+	opp_beacon.frame_len = TSOP_OPP_FRAME_LEN;
+	opp_beacon.time_long = TSOP_OPP_TIME_LONG;
+	opp_beacon.time_short = TSOP_OPP_TIME_SHORT;
+
+	static_beacon.frame_len = TSOP_STA_FRAME_LEN;
+	static_beacon.time_long = TSOP_STA_TIME_LONG;
+	static_beacon.time_short = TSOP_STA_TIME_SHORT;
 
 	/* LEDS */
 	LED1_DDR |= _BV(LED1_BIT);
@@ -375,8 +556,8 @@ int main(void)
 	debug_serial();
 
 	/* configure external interrupt for TSOP */
-	EICRx_TSOP |= _BV(ISCx0_TSOP);
-	EIMSK |= _BV(INTx_TSOP);
+	EICRx_TSOP |= _BV(ISCx0_TSOP_STA) | _BV(ISCx0_TSOP_OPP);
+	EIMSK |= _BV(INTx_TSOP_STA) | _BV(INTx_TSOP_OPP);
 
 	/* pwm for motor */
 	PWM_NG_TIMER_16BITS_INIT(1, TIMER_16_MODE_PWM_10, 
@@ -390,10 +571,10 @@ int main(void)
 	TCCR0 = _BV(WGM01) | _BV(COM00) | _BV(CS00);
 	OCR0 = 80; /* f = 100 khz at 16 Mhz */
 
-	/* configure timer 3: CLK/8
+	/* configure timer 3: CLK/64
 	 * it is used as a reference time
 	 * enable noise canceller for ICP3 */
-	TCCR3B = _BV(ICNC3) | _BV(CS11);
+	TCCR3B = _BV(ICNC3) | _BV(CS11) | _BV(CS10);
 
 	sei();
 
@@ -468,7 +649,11 @@ int main(void)
 		if (cpt < CPT_ICR_MAX)
 			cpt ++;
 
-		process_ring(&static_beacon);
+		process_sta_ring(&static_beacon);
+		process_opp_ring(&opp_beacon);
+		cli();
+		tick ++; /* global imprecise time reference */
+		sei();
 	}
 
 	return 0;
