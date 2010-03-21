@@ -20,6 +20,4 @@
  */
 
 void pwm_set_and_save(void *pwm, int32_t val);
-void pickup_wheels_on(void);
-void pickup_wheels_off(void);
 

@@ -1,6 +1,5 @@
 /*  
- *  Copyright Droids Corporation
- *  Olivier Matz <zer0@droids-corp.org>
+ *  Copyright Droids Corporation (2010)
  * 
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,28 +15,23 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- *  Revision : $Id: cmdline.h,v 1.2 2009-02-27 22:23:37 zer0 Exp $
+ *  Revision : $Id: actuator.c,v 1.4 2009-04-24 19:30:41 zer0 Exp $
  *
  */
 
-#define CMDLINE_UART 1
+#ifndef _SPICKLE_H_
+#define _SPICKLE_H_
 
-int cmdline_process(void);
+void spickle_set(void *dummy, int32_t cmd);
+void spickle_set_coefs(uint32_t k1, uint32_t k2);
+void spickle_set_delays(uint32_t delay_up, uint32_t delay_down);
+void spickle_set_pos(uint32_t pos_up, uint32_t pos_down);
+void spickle_dump_params(void);
+void spickle_left_manage(void);
+void spickle_up(void);
+void spickle_down(void);
+void spickle_stop(void);
+void spickle_auto(void);
+void spickle_init(void);
 
-static inline uint8_t cmdline_keypressed(void) {
-	return (uart_recv_nowait(CMDLINE_UART) != -1);
-}
-
-static inline int16_t cmdline_getchar(void) {
-	return uart_recv_nowait(CMDLINE_UART);
-}
-
-static inline uint8_t cmdline_getchar_wait(void) {
-	return uart_recv(CMDLINE_UART);
-}
-
-void write_char(char c);
-void valid_buffer(const char *buf, uint8_t size);
-int8_t complete_buffer(const char *buf, char *dstbuf, uint8_t dstsize,
-		       int16_t *state);
-
+#endif

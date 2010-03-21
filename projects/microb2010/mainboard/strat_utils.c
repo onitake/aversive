@@ -30,7 +30,7 @@
 #include <ax12.h>
 #include <uart.h>
 #include <pwm_ng.h>
-#include <time.h>
+#include <clock_time.h>
 #include <spi.h>
 
 #include <pid.h>
@@ -82,18 +82,6 @@ int16_t simple_modulo_360(int16_t a)
 	}
 	else if (a > 180) {
 		a -= 360;
-	}
-	return a;
-}
-
-/** do a modulo 2.pi -> [-Pi,+Pi], knowing that 'a' is in [-3Pi,+3Pi] */  
-double simple_modulo_2pi(double a)
-{
-	if (a < -M_PI) {
-		a += M_2PI;
-	}
-	else if (a > M_PI) {
-		a -= M_2PI;
 	}
 	return a;
 }
@@ -180,14 +168,6 @@ uint8_t robot_is_in_area(int16_t margin)
 	return is_in_area(position_get_x_s16(&mainboard.pos),
 			  position_get_y_s16(&mainboard.pos),
 			  margin);
-}
-
-/* return true if we are near the disc */
-uint8_t robot_is_near_disc(void)
-{
-	if (distance_from_robot(CENTER_X, CENTER_Y) < DISC_PENTA_DIAG)
-		return 1;
-	return 0;
 }
 
 /* return 1 or 0 depending on which side of a line (y=cste) is the
@@ -286,9 +266,10 @@ uint8_t get_opponent_color(void)
 int8_t get_opponent_xy(int16_t *x, int16_t *y)
 {
 	uint8_t flags;
+	return -1; // XXX
 	IRQ_LOCK(flags);
-	*x = sensorboard.opponent_x;
-	*y = sensorboard.opponent_y;
+/* 	*x = ballboard.opponent_x; */
+/* 	*y = ballboard.opponent_y; */
 	IRQ_UNLOCK(flags);
 	if (*x == I2C_OPPONENT_NOT_THERE)
 		return -1;
@@ -300,10 +281,11 @@ int8_t get_opponent_da(int16_t *d, int16_t *a)
 {
 	uint8_t flags;
 	int16_t x_tmp;
+	return -1; // XXX
 	IRQ_LOCK(flags);
-	x_tmp = sensorboard.opponent_x;
-	*d = sensorboard.opponent_d;
-	*a = sensorboard.opponent_a;
+/* 	x_tmp = ballboard.opponent_x; */
+/* 	*d = ballboard.opponent_d; */
+/* 	*a = ballboard.opponent_a; */
 	IRQ_UNLOCK(flags);
 	if (x_tmp == I2C_OPPONENT_NOT_THERE)
 		return -1;
@@ -314,100 +296,24 @@ int8_t get_opponent_da(int16_t *d, int16_t *a)
 int8_t get_opponent_xyda(int16_t *x, int16_t *y, int16_t *d, int16_t *a)
 {
 	uint8_t flags;
+	return -1; // XXX
 	IRQ_LOCK(flags);
-	*x = sensorboard.opponent_x;
-	*y = sensorboard.opponent_y;
-	*d = sensorboard.opponent_d;
-	*a = sensorboard.opponent_a;
+/* 	*x = ballboard.opponent_x; */
+/* 	*y = ballboard.opponent_y; */
+/* 	*d = ballboard.opponent_d; */
+/* 	*a = ballboard.opponent_a; */
 	IRQ_UNLOCK(flags);
 	if (*x == I2C_OPPONENT_NOT_THERE)
 		return -1;
 	return 0;
 }
-
-uint8_t pump_left1_is_full(void)
-{
-	return !!( (mechboard.column_flags & I2C_MECHBOARD_COLUMN_L1) &&
-		   (sensor_get_adc(ADC_CSENSE3) > I2C_MECHBOARD_CURRENT_COLUMN));
-}
-
-uint8_t pump_left2_is_full(void)
-{
-	return !!( (mechboard.column_flags & I2C_MECHBOARD_COLUMN_L2) &&
-		   (sensor_get_adc(ADC_CSENSE4) > I2C_MECHBOARD_CURRENT_COLUMN));
-}
-
-uint8_t pump_right1_is_full(void)
-{
-	return !!( (mechboard.column_flags & I2C_MECHBOARD_COLUMN_R1) &&
-		   (mechboard.pump_right1_current > I2C_MECHBOARD_CURRENT_COLUMN));
-}
-
-uint8_t pump_right2_is_full(void)
-{
-	return !!( (mechboard.column_flags & I2C_MECHBOARD_COLUMN_R2) &&
-		   (mechboard.pump_right2_current > I2C_MECHBOARD_CURRENT_COLUMN));
-}
-
-/* number of column owned by the robot */
-uint8_t get_column_count_left(void)
-{
-	uint8_t ret = 0;
-	ret += pump_left1_is_full();
-	ret += pump_left2_is_full();
-	return ret;
-}
-
-/* number of column owned by the robot */
-uint8_t get_column_count_right(void)
-{
-	uint8_t ret = 0;
-	ret += pump_right1_is_full();
-	ret += pump_right2_is_full();
-	return ret;
-}
-
-/* number of column owned by the robot */
-uint8_t get_column_count(void)
-{
-	uint8_t ret = 0;
-	ret += pump_left1_is_full();
-	ret += pump_left2_is_full();
-	ret += pump_right1_is_full();
-	ret += pump_right2_is_full();
-	return ret;
-}
-
-uint8_t get_lintel_count(void)
-{
-	return mechboard.lintel_count;
-}
-
-uint8_t get_mechboard_mode(void)
-{
-	return mechboard.mode;
-}
-
-uint8_t get_scanner_status(void)
-{
-	return sensorboard.scan_status;
-}
-
-/* return 0 if timeout, or 1 if cond is true */
-uint8_t wait_scan_done(uint16_t timeout)
-{
-	uint8_t err;
-	err = WAIT_COND_OR_TIMEOUT(get_scanner_status() & I2C_SCAN_DONE, timeout);
-	return err;
-}
-
 uint8_t opponent_is_behind(void)
 {
-	int8_t opp_there;
-	int16_t opp_d, opp_a;
+/* 	int8_t opp_there; */
+/* 	int16_t opp_d, opp_a; */
 
-	opp_there = get_opponent_da(&opp_d, &opp_a);
-	if (opp_there && (opp_a < 215 && opp_a > 145) && opp_d < 600)
-		return 1;
+/* 	opp_there = get_opponent_da(&opp_d, &opp_a); */
+/* 	if (opp_there && (opp_a < 215 && opp_a > 145) && opp_d < 600) */
+/* 		return 1; */
 	return 0;
 }

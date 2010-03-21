@@ -40,9 +40,9 @@
 
 #include <rdline.h>
 
+#include "sensor.h"
 #include "../common/i2c_commands.h"
 #include "actuator.h"
-#include "ax12_user.h"
 #include "main.h"
 
 void servo_carry_open(void)

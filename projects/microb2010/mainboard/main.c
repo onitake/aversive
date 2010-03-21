@@ -37,7 +37,7 @@
 #include <pwm_ng.h>
 #include <timer.h>
 #include <scheduler.h>
-#include <time.h>
+#include <clock_time.h>
 #include <adc.h>
 
 #include <pid.h>
@@ -67,10 +67,6 @@
 #include "cs.h"
 #include "i2c_protocol.h"
 
-#if __AVR_LIBC_VERSION__ == 10602UL
-#error "won't work with this version"
-#endif
-
 /* 0 means "programmed"
  * ---- with 16 Mhz quartz
  * CKSEL 3-0 : 0111
@@ -85,8 +81,8 @@
 
 struct genboard gen;
 struct mainboard mainboard;
-struct mechboard mechboard;
-struct sensorboard sensorboard;
+struct cobboard cobboard;
+struct ballboard ballboard;
 
 /***********************/
 
@@ -172,7 +168,6 @@ int main(void)
 	memset(&mainboard, 0, sizeof(mainboard));
 	mainboard.flags = DO_ENCODERS | DO_RS |
 		DO_POS | DO_POWER | DO_BD;
-	sensorboard.opponent_x = I2C_OPPONENT_NOT_THERE;
 
 	/* UART */
 	uart_init();
@@ -244,10 +239,6 @@ int main(void)
 		      NULL, 0);
 	PWM_NG_INIT16(&gen.servo4, 5, C, 10, PWM_NG_MODE_NORMAL,
 		      NULL, 0);
-	pwm_ng_set(&gen.servo2, 290); /* right */
-	pwm_ng_set(&gen.servo3, 400); /* left */
-	/* 2 lintels 180, 485 */
-	/* 1 lintel 155, 520 */
 
 	/* SCHEDULER */
 	scheduler_init();

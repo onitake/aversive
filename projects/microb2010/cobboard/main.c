@@ -57,7 +57,7 @@
 #include "sensor.h"
 #include "state.h"
 #include "actuator.h"
-#include "arm_xy.h"
+#include "spickle.h"
 #include "cs.h"
 #include "i2c_protocol.h"
 
@@ -166,7 +166,7 @@ int main(void)
 #  error not supported
 #endif
 
-	//eeprom_write_byte(EEPROM_MAGIC_ADDRESS, EEPROM_MAGIC_COBBOARD);
+	eeprom_write_byte(EEPROM_MAGIC_ADDRESS, EEPROM_MAGIC_COBBOARD);
 	/* check eeprom to avoid to run the bad program */
 	if (eeprom_read_byte(EEPROM_MAGIC_ADDRESS) !=
 	    EEPROM_MAGIC_COBBOARD) {
@@ -200,12 +200,11 @@ int main(void)
 	PWM_NG_TIMER_16BITS_INIT(4, TIMER_16_MODE_PWM_10, 
 				 TIMER4_PRESCALER_DIV_1);
 	
-	PWM_NG_INIT16(&gen.pwm1_4A, 4, A, 10, PWM_NG_MODE_SIGNED,
-		      &PORTD, 4);
+	PWM_NG_INIT16(&gen.pwm1_4A, 4, A, 10, PWM_NG_MODE_SIGNED |
+		      PWM_NG_MODE_SIGN_INVERTED, &PORTD, 4);
 	PWM_NG_INIT16(&gen.pwm2_4B, 4, B, 10, PWM_NG_MODE_SIGNED,
 		      &PORTD, 5);
-	PWM_NG_INIT16(&gen.pwm3_1A, 1, A, 10, PWM_NG_MODE_SIGNED | 
-		      PWM_NG_MODE_SIGN_INVERTED,
+	PWM_NG_INIT16(&gen.pwm3_1A, 1, A, 10, PWM_NG_MODE_SIGNED,
 		      &PORTD, 6);
 	PWM_NG_INIT16(&gen.pwm4_1B, 1, B, 10, PWM_NG_MODE_SIGNED |
 		      PWM_NG_MODE_SIGN_INVERTED,
@@ -246,10 +245,13 @@ int main(void)
 
 	sei();
 
-	/* finger + other actuators */
+	/* actuators */
 	actuator_init();
 
-	state_init();
+	/* spickle */
+	spickle_init();
+
+/* 	state_init(); */
 
 	printf_P(PSTR("\r\n"));
 	printf_P(PSTR("Dass das Gluck deinen Haus setzt.\r\n"));
@@ -259,7 +261,7 @@ int main(void)
  	gen.log_level = 5;
 	cobboard.flags |= DO_CS;
 
-	state_machine();
+/* 	state_machine(); */
 	cmdline_interact();
 
 	return 0;

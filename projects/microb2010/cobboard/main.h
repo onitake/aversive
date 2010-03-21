@@ -48,11 +48,11 @@
 
 #define LEFT_SPICKLE_ENCODER   ((void *)0)
 #define RIGHT_SPICKLE_ENCODER  ((void *)1)
-#define SHOVEL_ENCODER         ((void *)1)
+#define SHOVEL_ENCODER         ((void *)2)
 
 #define LEFT_SPICKLE_PWM       ((void *)&gen.pwm1_4A)
 #define RIGHT_SPICKLE_PWM      ((void *)&gen.pwm2_4B)
-#define SHOVEL_PWM             ((void *)&gen.pwm2_4B)
+#define SHOVEL_PWM             ((void *)&gen.pwm3_1A)
 
 /** ERROR NUMS */
 #define E_USER_I2C_PROTO       195
@@ -64,6 +64,7 @@
 
 #define LED_PRIO           170
 #define TIME_PRIO          160
+#define SPICKLE_PRIO       130
 #define ADC_PRIO           120
 #define CS_PRIO            100
 #define I2C_POLL_PRIO       20

@@ -32,7 +32,7 @@
 #define S_FRONT         1
 #define S_CAP3          2
 #define S_CAP4          3
-#define S_COL_LEFT      4
+#define S_LCOB          4
 #define S_LEFT          5
 #define S_RIGHT         6
 #define S_COL_RIGHT     7

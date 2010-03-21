@@ -31,7 +31,7 @@
 #include <ax12.h>
 #include <uart.h>
 #include <pwm_ng.h>
-#include <time.h>
+#include <clock_time.h>
 
 #include <pid.h>
 #include <quadramp.h>

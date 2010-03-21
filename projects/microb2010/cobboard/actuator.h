@@ -19,9 +19,14 @@
  *
  */
 
+#ifndef _ACTUATOR_H_
+#define _ACTUATOR_H_
+
 void actuator_init(void);
 void servo_carry_open(void);
 void servo_carry_close(void);
 void servo_door_open(void);
 void servo_door_close(void);
+
+#endif
 

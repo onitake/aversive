@@ -72,6 +72,9 @@ extern parse_pgm_inst_t cmd_state_debug;
 extern parse_pgm_inst_t cmd_state_machine;
 extern parse_pgm_inst_t cmd_servo_door;
 extern parse_pgm_inst_t cmd_servo_carry;
+extern parse_pgm_inst_t cmd_spickle;
+extern parse_pgm_inst_t cmd_spickle_params;
+extern parse_pgm_inst_t cmd_spickle_params_show;
 extern parse_pgm_inst_t cmd_test;
 
 
@@ -126,6 +129,9 @@ parse_pgm_ctx_t main_ctx[] = {
 	(parse_pgm_inst_t *)&cmd_state_machine,
 	(parse_pgm_inst_t *)&cmd_servo_door,
 	(parse_pgm_inst_t *)&cmd_servo_carry,
+	(parse_pgm_inst_t *)&cmd_spickle,
+	(parse_pgm_inst_t *)&cmd_spickle_params,
+	(parse_pgm_inst_t *)&cmd_spickle_params_show,
 	(parse_pgm_inst_t *)&cmd_test,
 
 	NULL,

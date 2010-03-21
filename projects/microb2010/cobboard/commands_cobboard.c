@@ -50,7 +50,7 @@
 #include "state.h"
 #include "i2c_protocol.h"
 #include "actuator.h"
-#include "actuator.h"
+#include "spickle.h"
 
 extern uint16_t state_debug;
 
@@ -444,6 +444,122 @@ parse_pgm_inst_t cmd_servo_carry = {
 	.tokens = {        /* token list, NULL terminated */
 		(prog_void *)&cmd_servo_carry_arg0, 
 		(prog_void *)&cmd_servo_carry_arg1, 
+		NULL,
+	},
+};
+
+/**********************************************************/
+/* Spickles tests */
+
+/* this structure is filled when cmd_spickle is parsed successfully */
+struct cmd_spickle_result {
+	fixed_string_t arg0;
+	fixed_string_t arg1;
+};
+
+/* function called when cmd_spickle is parsed successfully */
+static void cmd_spickle_parsed(void * parsed_result,
+			       __attribute__((unused)) void *data)
+{
+	struct cmd_spickle_result * res = parsed_result;
+	
+	if (!strcmp_P(res->arg1, PSTR("up"))) {
+		spickle_up();
+	}
+	else if (!strcmp_P(res->arg1, PSTR("down"))) {
+		spickle_down();
+	}
+	else if (!strcmp_P(res->arg1, PSTR("stop"))) {
+		spickle_stop();
+	}
+	else if (!strcmp_P(res->arg1, PSTR("auto"))) {
+		spickle_auto();
+	}
+
+	printf_P(PSTR("done\r\n"));
+}
+
+prog_char str_spickle_arg0[] = "spickle";
+parse_pgm_token_string_t cmd_spickle_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_spickle_result, arg0, str_spickle_arg0);
+prog_char str_spickle_arg1[] = "auto#up#down#stop";
+parse_pgm_token_string_t cmd_spickle_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_spickle_result, arg1, str_spickle_arg1);
+
+prog_char help_spickle[] = "spickle auto mode: spickle auto delay_up delay_down";
+parse_pgm_inst_t cmd_spickle = {
+	.f = cmd_spickle_parsed,  /* function to call */
+	.data = NULL,      /* 2nd arg of func */
+	.help_str = help_spickle,
+	.tokens = {        /* token list, NULL terminated */
+		(prog_void *)&cmd_spickle_arg0, 
+		(prog_void *)&cmd_spickle_arg1, 
+		NULL,
+	},
+};
+
+/**********************************************************/
+/* Set Spickle Params */
+
+/* this structure is filled when cmd_spickle_params is parsed successfully */
+struct cmd_spickle_params_result {
+	fixed_string_t arg0;
+	fixed_string_t arg1;
+	int32_t arg2;
+	int32_t arg3;
+};
+
+/* function called when cmd_spickle_params is parsed successfully */
+static void cmd_spickle_params_parsed(void *parsed_result,
+				      __attribute__((unused)) void *data)
+{
+	struct cmd_spickle_params_result * res = parsed_result;
+	
+	
+	if (!strcmp_P(res->arg1, PSTR("delay"))) {
+		spickle_set_delays(res->arg2, res->arg3);
+	}
+	else if (!strcmp_P(res->arg1, PSTR("coef"))) {
+		spickle_set_coefs(res->arg2, res->arg3);
+	}
+	else if (!strcmp_P(res->arg1, PSTR("pos"))) {
+		spickle_set_pos(res->arg2, res->arg3);
+	}
+
+	/* else show */
+	spickle_dump_params();
+}
+
+prog_char str_spickle_params_arg0[] = "spickle_params";
+parse_pgm_token_string_t cmd_spickle_params_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_spickle_params_result, arg0, str_spickle_params_arg0);
+prog_char str_spickle_params_arg1[] = "delay#pos#coef";
+parse_pgm_token_string_t cmd_spickle_params_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_spickle_params_result, arg1, str_spickle_params_arg1);
+parse_pgm_token_num_t cmd_spickle_params_arg2 = TOKEN_NUM_INITIALIZER(struct cmd_spickle_params_result, arg2, INT32);
+parse_pgm_token_num_t cmd_spickle_params_arg3 = TOKEN_NUM_INITIALIZER(struct cmd_spickle_params_result, arg3, INT32);
+
+prog_char help_spickle_params[] = "Set spickle_params values";
+parse_pgm_inst_t cmd_spickle_params = {
+	.f = cmd_spickle_params_parsed,  /* function to call */
+	.data = NULL,      /* 2nd arg of func */
+	.help_str = help_spickle_params,
+	.tokens = {        /* token list, NULL terminated */
+		(prog_void *)&cmd_spickle_params_arg0, 
+		(prog_void *)&cmd_spickle_params_arg1, 
+		(prog_void *)&cmd_spickle_params_arg2, 
+		(prog_void *)&cmd_spickle_params_arg3, 
+		NULL,
+	},
+};
+
+prog_char str_spickle_params_arg1_show[] = "show";
+parse_pgm_token_string_t cmd_spickle_params_arg1_show = TOKEN_STRING_INITIALIZER(struct cmd_spickle_params_result, arg1, str_spickle_params_arg1_show);
+
+prog_char help_spickle_params_show[] = "show spickle params";
+parse_pgm_inst_t cmd_spickle_params_show = {
+	.f = cmd_spickle_params_parsed,  /* function to call */
+	.data = NULL,      /* 2nd arg of func */
+	.help_str = help_spickle_params_show,
+	.tokens = {        /* token list, NULL terminated */
+		(prog_void *)&cmd_spickle_params_arg0, 
+		(prog_void *)&cmd_spickle_params_arg1_show, 
 		NULL,
 	},
 };

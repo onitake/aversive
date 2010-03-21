@@ -31,7 +31,7 @@
 #include <pwm_ng.h>
 #include <timer.h>
 #include <scheduler.h>
-#include <time.h>
+#include <clock_time.h>
 
 #include <pid.h>
 #include <quadramp.h>
@@ -63,15 +63,5 @@ void pwm_set_and_save(void *pwm, int32_t val)
 	else if (pwm == RIGHT_PWM)
 		mainboard.pwm_r = val;
 	pwm_ng_set(pwm, val);
-}
-
-void pickup_wheels_on(void)
-{
-	mainboard.enable_pickup_wheels = 1;
-}
-
-void pickup_wheels_off(void)
-{
-	mainboard.enable_pickup_wheels = 0;
 }
 

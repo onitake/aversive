@@ -28,7 +28,7 @@
 #include <ax12.h>
 #include <uart.h>
 #include <pwm_ng.h>
-#include <time.h>
+#include <clock_time.h>
 #include <spi.h>
 
 #include <pid.h>

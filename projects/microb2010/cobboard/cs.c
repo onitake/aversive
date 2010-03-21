@@ -45,6 +45,7 @@
 
 #include "main.h"
 #include "actuator.h"
+#include "spickle.h"
 
 /* called every 5 ms */
 static void do_cs(__attribute__((unused)) void *dummy) 
@@ -106,21 +107,15 @@ void microb_cs_init(void)
 	/* ---- CS left_spickle */
 	/* PID */
 	pid_init(&cobboard.left_spickle.pid);
-	pid_set_gains(&cobboard.left_spickle.pid, 500, 40, 5000);
-	pid_set_maximums(&cobboard.left_spickle.pid, 0, 5000, 2400); /* max is 12 V */
+	pid_set_gains(&cobboard.left_spickle.pid, 300, 10, 1500);
+	pid_set_maximums(&cobboard.left_spickle.pid, 0, 10000, 2400); /* max is 12 V */
 	pid_set_out_shift(&cobboard.left_spickle.pid, 10);
 	pid_set_derivate_filter(&cobboard.left_spickle.pid, 4);
 
-	/* QUADRAMP */
-	quadramp_init(&cobboard.left_spickle.qr);
-	quadramp_set_1st_order_vars(&cobboard.left_spickle.qr, 2000, 2000); /* set speed */
-	quadramp_set_2nd_order_vars(&cobboard.left_spickle.qr, 20, 20); /* set accel */
-
 	/* CS */
 	cs_init(&cobboard.left_spickle.cs);
-	cs_set_consign_filter(&cobboard.left_spickle.cs, quadramp_do_filter, &cobboard.left_spickle.qr);
 	cs_set_correct_filter(&cobboard.left_spickle.cs, pid_do_filter, &cobboard.left_spickle.pid);
-	cs_set_process_in(&cobboard.left_spickle.cs, pwm_ng_set, LEFT_SPICKLE_PWM);
+	cs_set_process_in(&cobboard.left_spickle.cs, spickle_set, LEFT_SPICKLE_PWM);
 	cs_set_process_out(&cobboard.left_spickle.cs, encoders_spi_get_value, LEFT_SPICKLE_ENCODER);
 	cs_set_consign(&cobboard.left_spickle.cs, 0);
 
@@ -132,21 +127,15 @@ void microb_cs_init(void)
 	/* ---- CS right_spickle */
 	/* PID */
 	pid_init(&cobboard.right_spickle.pid);
-	pid_set_gains(&cobboard.right_spickle.pid, 500, 40, 5000);
-	pid_set_maximums(&cobboard.right_spickle.pid, 0, 5000, 2400); /* max is 12 V */
+	pid_set_gains(&cobboard.right_spickle.pid, 300, 10, 1500);
+	pid_set_maximums(&cobboard.right_spickle.pid, 0, 10000, 2400); /* max is 12 V */
 	pid_set_out_shift(&cobboard.right_spickle.pid, 10);
-	pid_set_derivate_filter(&cobboard.right_spickle.pid, 6);
-
-	/* QUADRAMP */
-	quadramp_init(&cobboard.right_spickle.qr);
-	quadramp_set_1st_order_vars(&cobboard.right_spickle.qr, 1000, 1000); /* set speed */
-	quadramp_set_2nd_order_vars(&cobboard.right_spickle.qr, 20, 20); /* set accel */
+	pid_set_derivate_filter(&cobboard.right_spickle.pid, 4);
 
 	/* CS */
 	cs_init(&cobboard.right_spickle.cs);
-	cs_set_consign_filter(&cobboard.right_spickle.cs, quadramp_do_filter, &cobboard.right_spickle.qr);
 	cs_set_correct_filter(&cobboard.right_spickle.cs, pid_do_filter, &cobboard.right_spickle.pid);
-	cs_set_process_in(&cobboard.right_spickle.cs, pwm_ng_set, RIGHT_SPICKLE_PWM);
+	cs_set_process_in(&cobboard.right_spickle.cs, spickle_set, RIGHT_SPICKLE_PWM);
 	cs_set_process_out(&cobboard.right_spickle.cs, encoders_spi_get_value, RIGHT_SPICKLE_ENCODER);
 	cs_set_consign(&cobboard.right_spickle.cs, 0);
 
@@ -158,19 +147,14 @@ void microb_cs_init(void)
 	/* ---- CS shovel */
 	/* PID */
 	pid_init(&cobboard.shovel.pid);
-	pid_set_gains(&cobboard.shovel.pid, 500, 40, 5000);
-	pid_set_maximums(&cobboard.shovel.pid, 0, 5000, 2400); /* max is 12 V */
+	pid_set_gains(&cobboard.shovel.pid, 1000, 10, 200);
+	pid_set_maximums(&cobboard.shovel.pid, 0, 10000, 3200); /* max is 18 V */
 	pid_set_out_shift(&cobboard.shovel.pid, 10);
-	pid_set_derivate_filter(&cobboard.shovel.pid, 6);
-
-	/* QUADRAMP */
-	quadramp_init(&cobboard.shovel.qr);
-	quadramp_set_1st_order_vars(&cobboard.shovel.qr, 1000, 1000); /* set speed */
-	quadramp_set_2nd_order_vars(&cobboard.shovel.qr, 20, 20); /* set accel */
+	pid_set_derivate_filter(&cobboard.shovel.pid, 4);
 
 	/* CS */
 	cs_init(&cobboard.shovel.cs);
-	cs_set_consign_filter(&cobboard.shovel.cs, quadramp_do_filter, &cobboard.shovel.qr);
+	//cs_set_consign_filter(&cobboard.shovel.cs, quadramp_do_filter, &cobboard.shovel.qr);
 	cs_set_correct_filter(&cobboard.shovel.cs, pid_do_filter, &cobboard.shovel.pid);
 	cs_set_process_in(&cobboard.shovel.cs, pwm_ng_set, SHOVEL_PWM);
 	cs_set_process_out(&cobboard.shovel.cs, encoders_spi_get_value, SHOVEL_ENCODER);
@@ -181,10 +165,10 @@ void microb_cs_init(void)
 	bd_set_speed_threshold(&cobboard.shovel.bd, 150);
 	bd_set_current_thresholds(&cobboard.shovel.bd, 500, 8000, 1000000, 40);
 
-	/* set them on !! */
-	cobboard.left_spickle.on = 1;
-	cobboard.right_spickle.on = 1;
-	cobboard.shovel.on = 1;
+	/* set them on (or not) !! */
+	cobboard.left_spickle.on = 0;
+	cobboard.right_spickle.on = 0;
+	cobboard.shovel.on = 0;
 
 	scheduler_add_periodical_event_priority(do_cs, NULL, 
 						CS_PERIOD / SCHEDULER_UNIT, 

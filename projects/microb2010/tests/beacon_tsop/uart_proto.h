@@ -1,5 +1,6 @@
 /*  
- *  Copyright Droids Corporation, Microb Technology (2009)
+ *  Copyright Droids Corporation (2010)
+ *  Olivier Matz <zer0@droids-corp.org>
  * 
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,16 +16,10 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- *  Revision : $Id: strat_avoid.h,v 1.5 2009-11-08 17:24:33 zer0 Exp $
+ *  Revision : $Id: main.c,v 1.8 2009-05-02 10:08:09 zer0 Exp $
  *
  */
 
-void set_opponent_poly(poly_t *pol, int16_t w, int16_t l);
-int8_t goto_and_avoid(int16_t x, int16_t y, uint8_t flags_intermediate,
-		      uint8_t flags_final);
-int8_t goto_and_avoid_backward(int16_t x, int16_t y,
-			       uint8_t flags_intermediate,
-			       uint8_t flags_final);
-int8_t goto_and_avoid_forward(int16_t x, int16_t y,
-			      uint8_t flags_intermediate,
-			      uint8_t flags_final);
+void uart_proto_init(void);
+void xmit_opp(uint16_t d, uint16_t a);
+void xmit_static(uint16_t x, uint16_t y, uint16_t a);

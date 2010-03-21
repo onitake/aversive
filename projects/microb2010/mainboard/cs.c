@@ -32,7 +32,7 @@
 #include <pwm_ng.h>
 #include <timer.h>
 #include <scheduler.h>
-#include <time.h>
+#include <clock_time.h>
 #include <adc.h>
 
 #include <pid.h>
@@ -53,6 +53,26 @@
 #include "main.h"
 #include "strat.h"
 #include "actuator.h"
+
+int32_t encoders_left_cobroller_speed(void *number)
+{
+	static volatile int32_t roller_pos;
+	int32_t tmp, speed;
+	tmp = encoders_spi_get_value(number);
+	speed = tmp - roller_pos;
+	roller_pos = tmp;
+	return speed;
+}
+
+int32_t encoders_right_cobroller_speed(void *number)
+{
+	static volatile int32_t roller_pos;
+	int32_t tmp, speed;
+	tmp = encoders_spi_get_value(number);
+	speed = tmp - roller_pos;
+	roller_pos = tmp;
+	return speed;
+}
 
 /* called every 5 ms */
 static void do_cs(void *dummy) 
@@ -87,6 +107,10 @@ static void do_cs(void *dummy)
 			cs_manage(&mainboard.angle.cs);
 		if (mainboard.distance.on)
 			cs_manage(&mainboard.distance.cs);
+		if (mainboard.left_cobroller.on)
+			cs_manage(&mainboard.left_cobroller.cs);
+		if (mainboard.right_cobroller.on)
+			cs_manage(&mainboard.right_cobroller.cs);
 	}
 	if ((cpt & 1) && (mainboard.flags & DO_POS)) {
 		/* about 1.5ms (worst case without centrifugal force
@@ -96,6 +120,8 @@ static void do_cs(void *dummy)
 	if (mainboard.flags & DO_BD) {
 		bd_manage_from_cs(&mainboard.angle.bd, &mainboard.angle.cs);
 		bd_manage_from_cs(&mainboard.distance.bd, &mainboard.distance.cs);
+		bd_manage_from_cs(&mainboard.left_cobroller.bd, &mainboard.left_cobroller.cs);
+		bd_manage_from_cs(&mainboard.right_cobroller.bd, &mainboard.right_cobroller.cs);
 	}
 	if (mainboard.flags & DO_TIMER) {
 		uint8_t second;
@@ -228,9 +254,63 @@ void microb_cs_init(void)
 	bd_set_speed_threshold(&mainboard.distance.bd, 60);
 	bd_set_current_thresholds(&mainboard.distance.bd, 500, 8000, 1000000, 50);
 
+	/* ---- CS left_cobroller */
+	/* PID */
+	pid_init(&mainboard.left_cobroller.pid);
+	pid_set_gains(&mainboard.left_cobroller.pid, 500, 10, 7000);
+	pid_set_maximums(&mainboard.left_cobroller.pid, 0, 2000, 4095);
+	pid_set_out_shift(&mainboard.left_cobroller.pid, 10);
+	pid_set_derivate_filter(&mainboard.left_cobroller.pid, 6);
+
+	/* QUADRAMP */
+	quadramp_init(&mainboard.left_cobroller.qr);
+	quadramp_set_1st_order_vars(&mainboard.left_cobroller.qr, 2000, 2000); /* set speed */
+	quadramp_set_2nd_order_vars(&mainboard.left_cobroller.qr, 17, 17); /* set accel */
+
+	/* CS */
+	cs_init(&mainboard.left_cobroller.cs);
+	cs_set_consign_filter(&mainboard.left_cobroller.cs, quadramp_do_filter, &mainboard.left_cobroller.qr);
+	cs_set_correct_filter(&mainboard.left_cobroller.cs, pid_do_filter, &mainboard.left_cobroller.pid);
+	cs_set_process_in(&mainboard.left_cobroller.cs, pwm_ng_set, LEFT_COBROLLER_PWM);
+	cs_set_process_out(&mainboard.left_cobroller.cs, encoders_left_cobroller_speed, LEFT_COBROLLER_ENCODER);
+	cs_set_consign(&mainboard.left_cobroller.cs, 0);
+
+	/* Blocking detection */
+	bd_init(&mainboard.left_cobroller.bd);
+	bd_set_speed_threshold(&mainboard.left_cobroller.bd, 60);
+	bd_set_current_thresholds(&mainboard.left_cobroller.bd, 500, 8000, 1000000, 50);
+
+	/* ---- CS right_cobroller */
+	/* PID */
+	pid_init(&mainboard.right_cobroller.pid);
+	pid_set_gains(&mainboard.right_cobroller.pid, 500, 10, 7000);
+	pid_set_maximums(&mainboard.right_cobroller.pid, 0, 2000, 4095);
+	pid_set_out_shift(&mainboard.right_cobroller.pid, 10);
+	pid_set_derivate_filter(&mainboard.right_cobroller.pid, 6);
+
+	/* QUADRAMP */
+	quadramp_init(&mainboard.right_cobroller.qr);
+	quadramp_set_1st_order_vars(&mainboard.right_cobroller.qr, 2000, 2000); /* set speed */
+	quadramp_set_2nd_order_vars(&mainboard.right_cobroller.qr, 17, 17); /* set accel */
+
+	/* CS */
+	cs_init(&mainboard.right_cobroller.cs);
+	cs_set_consign_filter(&mainboard.right_cobroller.cs, quadramp_do_filter, &mainboard.right_cobroller.qr);
+	cs_set_correct_filter(&mainboard.right_cobroller.cs, pid_do_filter, &mainboard.right_cobroller.pid);
+	cs_set_process_in(&mainboard.right_cobroller.cs, pwm_ng_set, RIGHT_COBROLLER_PWM);
+	cs_set_process_out(&mainboard.right_cobroller.cs, encoders_left_cobroller_speed, RIGHT_COBROLLER_ENCODER);
+	cs_set_consign(&mainboard.right_cobroller.cs, 0);
+
+	/* Blocking detection */
+	bd_init(&mainboard.right_cobroller.bd);
+	bd_set_speed_threshold(&mainboard.right_cobroller.bd, 60);
+	bd_set_current_thresholds(&mainboard.right_cobroller.bd, 500, 8000, 1000000, 50);
+
 	/* set them on !! */
 	mainboard.angle.on = 1;
 	mainboard.distance.on = 1;
+	mainboard.left_cobroller.on = 1;
+	mainboard.right_cobroller.on = 1;
 
 
 	scheduler_add_periodical_event_priority(do_cs, NULL,

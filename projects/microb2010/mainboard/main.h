@@ -66,14 +66,15 @@
 #define IMP_COEF 10.
 #define DIST_IMP_MM (((IMP_ENCODERS*4) / WHEEL_PERIM_MM) * IMP_COEF)
 
-#define LEFT_ENCODER        ((void *)1)
-#define RIGHT_ENCODER       ((void *)0)
+#define LEFT_ENCODER            ((void *)1)
+#define RIGHT_ENCODER           ((void *)0)
+#define LEFT_COBROLLER_ENCODER  ((void *)2)
+#define RIGHT_COBROLLER_ENCODER ((void *)3)
 
 #define LEFT_PWM            ((void *)&gen.pwm1_4A)
 #define RIGHT_PWM           ((void *)&gen.pwm2_4B)
-
-#define LEFT_PUMP1_PWM      ((void *)&gen.pwm3_1A)
-#define LEFT_PUMP2_PWM      ((void *)&gen.pwm4_1B)
+#define LEFT_COBROLLER_PWM  ((void *)&gen.pwm3_1A)
+#define RIGHT_COBROLLER_PWM ((void *)&gen.pwm4_1B)
 
 /** ERROR NUMS */
 #define E_USER_STRAT           194
@@ -142,6 +143,8 @@ struct mainboard {
 	/* control systems */
         struct cs_block angle;
         struct cs_block distance;
+        struct cs_block left_cobroller;
+        struct cs_block right_cobroller;
 
 	/* x,y positionning */
 	struct robot_system rs;
@@ -154,54 +157,23 @@ struct mainboard {
 	volatile int16_t speed_d;     /* current dist speed */
 	int32_t pwm_l;                /* current left pwm */
 	int32_t pwm_r;                /* current right pwm */
-	uint8_t enable_pickup_wheels; /* these PWM are on sensorboard */
-
 };
 
-/* state of mechboard, synchronized through i2c */
-struct mechboard {
+/* state of cobboard, synchronized through i2c */
+struct cobboard {
 	uint8_t mode;	
 	uint8_t status;
-	int8_t lintel_count;
-	uint8_t column_flags;
-	
-	/* pwm */
-	int16_t pump_left1;
-	int16_t pump_right1;
-	int16_t pump_left2;
-	int16_t pump_right2;
-
-	/* currents (for left arm, we can just read it on adc) */
-	int16_t pump_right1_current;
-	int16_t pump_right2_current;
-	
-	/* pwm for lintel servos */
-	uint16_t servo_lintel_left;
-	uint16_t servo_lintel_right;
 };
 
-/* state of sensorboard, synchronized through i2c */
-struct sensorboard {
+/* state of ballboard, synchronized through i2c */
+struct ballboard {
 	uint8_t status;
-	/* opponent pos */
-	int16_t opponent_x;
-	int16_t opponent_y;
-	int16_t opponent_a;
-	int16_t opponent_d;
-
-	/* scanner */
-#define I2C_SCAN_DONE 1
-	uint8_t scan_status;
-#define I2C_COLUMN_NO_DROPZONE -1
-	int8_t dropzone_h;
-	int16_t dropzone_x;
-	int16_t dropzone_y;
 };
 
 extern struct genboard gen;
 extern struct mainboard mainboard;
-extern struct mechboard mechboard;
-extern struct sensorboard sensorboard;
+extern struct cobboard cobboard;
+extern struct ballboard ballboard;
 
 /* start the bootloader */
 void bootloader(void);

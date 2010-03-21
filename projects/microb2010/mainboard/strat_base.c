@@ -31,7 +31,7 @@
 #include <ax12.h>
 #include <uart.h>
 #include <pwm_ng.h>
-#include <time.h>
+#include <clock_time.h>
 #include <spi.h>
 
 #include <pid.h>
@@ -126,27 +126,6 @@ uint8_t strat_goto_xy_force(int16_t x, int16_t y)
 {
 	uint8_t i, err;
 
-#ifdef HOMOLOGATION
-	int8_t serr;
-	uint8_t hardstop = 0;
-	microseconds us = time_get_us2();
-	int16_t opp_a, opp_d, opp_x, opp_y;
-
-	while (1) {
-		serr = get_opponent_xyda(&opp_x, &opp_y,
-					&opp_d, &opp_a);
-		if (serr == -1)
-			break;
-		if (opp_d < 600)
-			break;
-		if (hardstop == 0) {
-			strat_hardstop();
-			hardstop = 1;
-		}
-		if ((time_get_us2() - us) > 3000000L)
-			break;
-	}
-#endif
 	for (i=0; i<3; i++) {
 		trajectory_goto_xy_abs(&mainboard.traj, x, y);
 		err = wait_traj_end(TRAJ_FLAGS_SMALL_DIST);
@@ -197,41 +176,6 @@ uint8_t strat_calib(int16_t dist, uint8_t flags)
 	trajectory_d_rel(&mainboard.traj, dist);
 	err = wait_traj_end(flags);
 	pid_set_gains(&mainboard.angle.pid, p, i, d);
-	return err;
-}
-
-/* escape from zone, and don't brake, so we can continue with another
- * traj */
-uint8_t strat_escape(struct build_zone *zone, uint8_t flags)
-{
-	uint8_t err;
-	uint16_t old_spdd, old_spda;
-
-	strat_get_speed(&old_spdd, &old_spda);
-
-	err = WAIT_COND_OR_TIMEOUT(!opponent_is_behind(), 1000);
-	if (err == 0) {
-		strat_set_speed(SPEED_DIST_VERY_SLOW, SPEED_ANGLE_FAST);
-		trajectory_d_rel(&mainboard.traj, -150);
-		err = wait_traj_end(TRAJ_FLAGS_SMALL_DIST);
-		strat_set_speed(old_spdd, old_spda);
-		return err;
-	}
-
-	strat_set_speed(SPEED_DIST_FAST, SPEED_ANGLE_FAST);
-
-	if (zone->flags & ZONE_F_DISC) {
-		trajectory_d_rel(&mainboard.traj, -350);
-		err = WAIT_COND_OR_TRAJ_END(!robot_is_near_disc(), flags);
-	}
-	else {
-		trajectory_d_rel(&mainboard.traj, -300);
-		err = wait_traj_end(flags);
-	}
-
-	strat_set_speed(old_spdd, old_spda);
-	if (err == 0)
-		return END_NEAR;
 	return err;
 }
 
@@ -290,12 +234,6 @@ void strat_limit_speed(void)
 	if (get_opponent_da(&opp_d, &opp_a) != 0)
 		goto update;
 
-#ifdef HOMOLOGATION
-	if (opp_d < 600) {
-		lim_d = 150;
-		lim_a = 200;
-	}
-#else
 	if (opp_d < 500) {
 		if (mainboard.speed_d > 0 && (opp_a > 290 || opp_a < 70)) {
 			lim_d = SPEED_DIST_VERY_SLOW;
@@ -310,7 +248,6 @@ void strat_limit_speed(void)
 			lim_a = SPEED_ANGLE_VERY_SLOW;
 		}
 	}
-#endif		
 	else if (opp_d < 800) {
 		if (mainboard.speed_d > 0 && (opp_a > 290 || opp_a < 70)) {
 			lim_d = SPEED_DIST_SLOW;

@@ -862,7 +862,7 @@ class Interp(cmd.Cmd):
         buf = f.read()
         addr = 0
         while addr < len(buf):
-            time.sleep(0.1)
+            #time.sleep(0.1)
             if check_crc(self.ser, buf, addr, SPM_PAGE_SIZE) == 0:
                 sys.stdout.write("*")
                 sys.stdout.flush()

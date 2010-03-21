@@ -198,6 +198,15 @@ parse_pgm_inst_t cmd_test = {
 
 /**********************************************************/
 
+extern parse_pgm_inst_t cmd_gain;
+extern parse_pgm_inst_t cmd_gain_show;
+extern parse_pgm_inst_t cmd_derivate_filter;
+extern parse_pgm_inst_t cmd_derivate_filter_show;
+extern parse_pgm_inst_t cmd_maximum;
+extern parse_pgm_inst_t cmd_maximum_show;
+extern parse_pgm_inst_t cmd_consign;
+extern parse_pgm_inst_t cmd_consign_show;
+
 /* in progmem */
 parse_pgm_ctx_t main_ctx[] = {
 
@@ -206,5 +215,15 @@ parse_pgm_ctx_t main_ctx[] = {
 	(parse_pgm_inst_t *)&cmd_debug_frame,
 	(parse_pgm_inst_t *)&cmd_debug_speed,
 	(parse_pgm_inst_t *)&cmd_test,
+
+	(parse_pgm_inst_t *)&cmd_gain,
+	(parse_pgm_inst_t *)&cmd_gain_show,
+	(parse_pgm_inst_t *)&cmd_derivate_filter,
+	(parse_pgm_inst_t *)&cmd_derivate_filter_show,
+	(parse_pgm_inst_t *)&cmd_maximum,
+	(parse_pgm_inst_t *)&cmd_maximum_show,
+	(parse_pgm_inst_t *)&cmd_consign,
+	(parse_pgm_inst_t *)&cmd_consign_show,
+
 	NULL,
 };

@@ -3,7 +3,7 @@ TARGET = beacon_tsop
 AVERSIVE_DIR = ../../../..
 
 # List C source files here. (C dependencies are automatically generated.)
-SRC = main.c commands.c cmdline.c trigo.c uart_proto.c
+SRC = main.c commands.c commands_cs.c cmdline.c trigo.c uart_proto.c
 
 # List Assembler source files here.
 # Make them always end in a capital .S.  Files ending in a lowercase .s
@@ -14,7 +14,7 @@ SRC = main.c commands.c cmdline.c trigo.c uart_proto.c
 # care about how the name is spelled on its command-line.
 ASRC =
 
-AVRDUDE_DELAY=30
+AVRDUDE_DELAY=15
 
 CFLAGS += -W -Wall -Werror
 

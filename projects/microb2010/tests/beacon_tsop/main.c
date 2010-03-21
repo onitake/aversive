@@ -38,8 +38,15 @@
 #include "uart_proto.h"
 #include "trigo.h"
 #include "main.h"
+
+#define BOARD2010
+//#define BOARD2006
+
+#ifdef BOARD2010
+#include "board2010.h"
+#else
 #include "board2006.h"
-//#include "board2010.h"
+#endif
 
 /******************* TSOP */
 
@@ -86,12 +93,12 @@ static uint16_t tick = 0;
 
 /* 8ms, easier if it's a pow of 2 */
 #define CS_PERIOD_US (8192)
-#define CS_PERIOD ((uint16_t)(CS_PERIOD_US*2))
+#define CS_PERIOD ((uint16_t)(CS_PERIOD_US/4))
 #define CPT_ICR_MAX (uint8_t)((1000000UL/(uint32_t)CS_PERIOD_US)) /* too slow = 1 tr/s */
 #define CPT_ICR_MIN (uint8_t)((10000UL/(uint32_t)CS_PERIOD_US))   /* too fast = 100 tr/s */
 
 /* in tr / 1000s */
-#define CS_CONSIGN (10 * 1000L)
+#define CS_CONSIGN (15 * 1000L)
 
 /* 5% tolerance to validate captures, period is in  */
 #define TIM3_UNIT 250000000L
@@ -106,6 +113,7 @@ static uint16_t tick = 0;
 #define LASER_OFF() do { TCCR0 = 0; } while (0)
 
 struct beacon_tsop beacon_tsop;
+uint32_t cs_consign = CS_CONSIGN;
 
 static uint32_t current_motor_period;
 
@@ -242,9 +250,9 @@ SIGNAL(SIG_TSOP_STA) {
 	sei();
 
 	if (cur_tsop)
-		LED2_ON();
+		LED5_ON();
 	else
-		LED2_OFF();
+		LED5_OFF();
 
 	decode_frame(&static_beacon, ref_time, cur_time, cur_tsop);
 
@@ -270,10 +278,10 @@ SIGNAL(SIG_TSOP_OPP) {
 	running = 1;
 	sei();
 
-/* 	if (cur_tsop) */
-/* 		LED2_ON(); */
-/* 	else */
-/* 		LED2_OFF(); */
+	if (cur_tsop)
+		LED6_ON();
+	else
+		LED6_OFF();
 
 	decode_frame(&opp_beacon, ref_time, cur_time, cur_tsop);
 
@@ -295,6 +303,7 @@ static inline int32_t AbS(int32_t x)
  *   (modulo 65536 obviously) */
 static inline int32_t get_speed(uint8_t icr_cpt, uint16_t icr_diff)
 {
+#if 0
 	int32_t best_diff = 65536L;
 	int8_t best_cpt = -2;
 	int32_t diff;
@@ -327,7 +336,21 @@ static inline int32_t get_speed(uint8_t icr_cpt, uint16_t icr_diff)
 	/* real time difference in timer unit (resolution 4us) */
 	diff = (best_cpt * 16384L) + (icr_diff & 0x3fff);
 	current_motor_period = diff; /* save it in global var */
-	return 250000000L/diff;
+#endif
+
+	/* too slow (less than 1 tr/s) */
+	if (icr_cpt >= CPT_ICR_MAX)
+		return 1000L;
+
+	/* too fast (more than 100 tr/s) */
+	if (icr_cpt <= CPT_ICR_MIN)
+		return 100000L;
+
+	/* XXX test */
+	if (icr_cpt > 25)
+		return icr_cpt * 8192UL;
+
+	return TIM3_UNIT/icr_diff;
 }
 
 /* process the received frame ring */
@@ -520,9 +543,9 @@ int main(void)
 	uint16_t diff_icr = 0;
 	uint8_t cpt_icr = 0;
 	uint8_t cpt = 0;
-	int32_t speed, out, err;
+	int32_t speed = 0, out, err;
 	uint16_t tcnt3;
-	uint8_t x = 0;
+	uint8_t x = 0; /* debug display counter */
 
 	opp_beacon.frame_len = TSOP_OPP_FRAME_LEN;
 	opp_beacon.time_long = TSOP_OPP_TIME_LONG;
@@ -533,20 +556,22 @@ int main(void)
 	static_beacon.time_short = TSOP_STA_TIME_SHORT;
 
 	/* LEDS */
-	LED1_DDR |= _BV(LED1_BIT);
-	LED2_DDR |= _BV(LED2_BIT);
-	LED3_DDR |= _BV(LED3_BIT);
+	LED_DDR_INIT();
 	DDRB |= 0x10; /* OC0 (laser pwm) */
 
 	/* PID init */
 	pid_init(&beacon_tsop.pid);
-	pid_set_gains(&beacon_tsop.pid, 500, 0, 0);
-	pid_set_maximums(&beacon_tsop.pid, 0, 20000, 4095);
+	pid_set_gains(&beacon_tsop.pid, 700, 10, 0);
+	pid_set_maximums(&beacon_tsop.pid, 0, 200000, 4095);
 	pid_set_out_shift(&beacon_tsop.pid, 10);
 	pid_set_derivate_filter(&beacon_tsop.pid, 4);
 
 	uart_init();
+#if CMDLINE_UART == 0
  	fdevopen(uart0_dev_send, uart0_dev_recv);
+#elif CMDLINE_UART == 1
+ 	fdevopen(uart1_dev_send, uart1_dev_recv);
+#endif
 
 	rdline_init(&beacon_tsop.rdl, write_char, valid_buffer, complete_buffer);
 	snprintf(beacon_tsop.prompt, sizeof(beacon_tsop.prompt), "beacon > ");	
@@ -562,19 +587,23 @@ int main(void)
 	/* pwm for motor */
 	PWM_NG_TIMER_16BITS_INIT(1, TIMER_16_MODE_PWM_10, 
 				 TIMER1_PRESCALER_DIV_1);
+#ifdef BOARD2010
+	PWM_NG_INIT16(&beacon_tsop.pwm_motor, 1, C, 10, 0, NULL, 0);
+#else
 	PWM_NG_INIT16(&beacon_tsop.pwm_motor, 1, A, 10, 0, NULL, 0);
+#endif
 
 	/* pwm for laser:
 	 *  - clear on timer compare (CTC)
 	 *  - Toggle OC0 on compare match
 	 *  - prescaler = 1 */
 	TCCR0 = _BV(WGM01) | _BV(COM00) | _BV(CS00);
-	OCR0 = 80; /* f = 100 khz at 16 Mhz */
+	OCR0 = 18; /* f ~= 420 khz at 16 Mhz */
 
 	/* configure timer 3: CLK/64
 	 * it is used as a reference time
 	 * enable noise canceller for ICP3 */
-	TCCR3B = _BV(ICNC3) | _BV(CS11) | _BV(CS10);
+	TCCR3B = _BV(CS11) | _BV(CS10);
 
 	sei();
 
@@ -593,7 +622,7 @@ int main(void)
 			sei();
 			ETIFR = _BV(ICF3);
 
-			//LED2_TOGGLE();
+			LED2_TOGGLE();
 			diff_icr = (icr - prev_icr);
 			cpt_icr = cpt;
 			prev_icr = icr;
@@ -619,10 +648,9 @@ int main(void)
 
 		/* process CS... maybe we don't need to use
 		 * control_system_manager, just PID is enough */
+
 		if (cpt == CPT_ICR_MAX)
 			speed = 0;
-		else
-			speed = get_speed(cpt_icr, diff_icr);
 		
 		/* enabled laser when rotation speed if at least 5tr/s */
 		if (speed > 5000)
@@ -630,15 +658,17 @@ int main(void)
 		else
 			LASER_OFF();
 
-		err = CS_CONSIGN - speed;
+		err = cs_consign - speed;
 		out = pid_do_filter(&beacon_tsop.pid, err);
-		if (x == 0 && beacon_tsop.debug_speed)
-			printf("%ld %ld\n", speed, out);
 		if (out < 0)
 			out = 0;
 		/* XXX */
-		if (out > 2000)
-			out = 2000;
+		if (out > 3000)
+			out = 3000;
+
+		if (x == 0 && beacon_tsop.debug_speed)
+			printf("%ld %ld %u %u / %u\n",
+			       speed, out, diff_icr, cpt_icr, cpt);
 
 		pwm_ng_set(&beacon_tsop.pwm_motor, out);
 

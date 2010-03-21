@@ -30,7 +30,7 @@
 #include <ax12.h>
 #include <uart.h>
 #include <pwm_ng.h>
-#include <time.h>
+#include <clock_time.h>
 #include <spi.h>
 #include <encoders_spi.h>
 
@@ -56,7 +56,6 @@
 #include "cmdline.h"
 #include "strat_utils.h"
 #include "strat_base.h"
-#include "strat_avoid.h"
 #include "strat.h"
 #include "../common/i2c_commands.h"
 #include "i2c_protocol.h"
@@ -273,11 +272,8 @@ static void cmd_rs_gains_parsed(void * parsed_result, void * data)
 		rs_set_right_ext_encoder(&mainboard.rs, encoders_spi_get_value, 
 					 RIGHT_ENCODER, res->right); //en augmentant on tourne à droite
 	}
-	printf_P(PSTR("rs_gains set "));
-	f64_print(mainboard.rs.left_ext_gain);
-	printf_P(PSTR(" "));
-	f64_print(mainboard.rs.right_ext_gain);
-	printf_P(PSTR("\r\n"));
+	printf_P(PSTR("rs_gains set %2.2f %2.2f\r\n"),
+		 mainboard.rs.left_ext_gain, mainboard.rs.right_ext_gain);
 }
 
 prog_char str_rs_gains_arg0[] = "rs_gains";
@@ -399,6 +395,11 @@ static void cmd_pt_list_parsed(void * parsed_result, void * data)
 	struct cmd_pt_list_result * res = parsed_result;
 	uint8_t i, why=0;
 	
+	if (!strcmp_P(res->arg1, PSTR("avoid_start"))) {
+		printf_P(PSTR("not implemented\r\n"));
+		return;
+	}
+
 	if (!strcmp_P(res->arg1, PSTR("append"))) {
 		res->arg2 = pt_list_len;
 	}
@@ -447,6 +448,7 @@ static void cmd_pt_list_parsed(void * parsed_result, void * data)
 			trajectory_goto_xy_abs(&mainboard.traj, pt_list[i].x, pt_list[i].y);
 			why = wait_traj_end(0xFF); /* all */
 		}
+#if 0
 		else if (!strcmp_P(res->arg1, PSTR("avoid_start"))) {
 			while (1) {
 				why = goto_and_avoid(pt_list[i].x, pt_list[i].y, 0xFF, 0xFF);
@@ -455,6 +457,7 @@ static void cmd_pt_list_parsed(void * parsed_result, void * data)
 					break;
 			}
 		}
+#endif
 		if (why & (~(END_TRAJ | END_NEAR)))
 			trajectory_stop(&mainboard.traj);
 	}
@@ -580,14 +583,24 @@ static void cmd_goto_parsed(void * parsed_result, void * data)
 		trajectory_goto_xy_abs(&mainboard.traj, res->arg2, res->arg3);
 	}
 	else if (!strcmp_P(res->arg1, PSTR("avoid"))) {
+#if 0
 		err = goto_and_avoid_forward(res->arg2, res->arg3, 0xFF, 0xFF);
 		if (err != END_TRAJ && err != END_NEAR)
 			strat_hardstop();
+#else
+		printf_P(PSTR("not implemented\r\n"));
+		return;
+#endif
 	}
 	else if (!strcmp_P(res->arg1, PSTR("avoid_bw"))) {
+#if 0
 		err = goto_and_avoid_backward(res->arg2, res->arg3, 0xFF, 0xFF);
 		if (err != END_TRAJ && err != END_NEAR)
 			strat_hardstop();
+#else
+		printf_P(PSTR("not implemented\r\n"));
+		return;
+#endif
 	}
 	else if (!strcmp_P(res->arg1, PSTR("xy_abs_fow"))) {
 		trajectory_goto_forward_xy_abs(&mainboard.traj, res->arg2, res->arg3);
@@ -732,14 +745,14 @@ static void cmd_position_parsed(void * parsed_result, void * data)
 	}
 	else if (!strcmp_P(res->arg1, PSTR("autoset_green"))) {
 		mainboard.our_color = I2C_COLOR_GREEN;
-		i2c_set_color(I2C_MECHBOARD_ADDR, I2C_COLOR_GREEN);
-		i2c_set_color(I2C_SENSORBOARD_ADDR, I2C_COLOR_GREEN);
+		i2c_set_color(I2C_COBBOARD_ADDR, I2C_COLOR_GREEN);
+		i2c_set_color(I2C_BALLBOARD_ADDR, I2C_COLOR_GREEN);
 		auto_position();
 	}
 	else if (!strcmp_P(res->arg1, PSTR("autoset_red"))) {
 		mainboard.our_color = I2C_COLOR_RED;
-		i2c_set_color(I2C_MECHBOARD_ADDR, I2C_COLOR_RED);
-		i2c_set_color(I2C_SENSORBOARD_ADDR, I2C_COLOR_RED);
+		i2c_set_color(I2C_COBBOARD_ADDR, I2C_COLOR_RED);
+		i2c_set_color(I2C_BALLBOARD_ADDR, I2C_COLOR_RED);
 		auto_position();
 	}
 
@@ -840,74 +853,15 @@ struct cmd_strat_conf_result {
 /* function called when cmd_strat_conf is parsed successfully */
 static void cmd_strat_conf_parsed(void *parsed_result, void *data)
 {
-	struct cmd_strat_conf_result *res = parsed_result;
+	//	struct cmd_strat_conf_result *res = parsed_result;
 
-	if (!strcmp_P(res->arg1, PSTR("base"))) {
-		strat_infos.conf.flags = 0;
-		strat_infos.conf.scan_our_min_time = 90;
-		strat_infos.conf.delay_between_our_scan = 90;
-		strat_infos.conf.scan_opp_min_time = 90;
-		strat_infos.conf.delay_between_opp_scan = 90;
-	}
-	else if (!strcmp_P(res->arg1, PSTR("big3"))) {
-		strat_infos.conf.flags = 
-			STRAT_CONF_STORE_STATIC2 |
-			STRAT_CONF_BIG_3_TEMPLE;
-		strat_infos.conf.scan_our_min_time = 90;
-		strat_infos.conf.delay_between_our_scan = 90;
-		strat_infos.conf.scan_opp_min_time = 90;
-		strat_infos.conf.delay_between_opp_scan = 90;
-	}
-	else if (!strcmp_P(res->arg1, PSTR("base_check"))) {
-		strat_infos.conf.flags = 0;
-		strat_infos.conf.scan_our_min_time = 35;
-		strat_infos.conf.delay_between_our_scan = 90;
-		strat_infos.conf.scan_opp_min_time = 90;
-		strat_infos.conf.delay_between_opp_scan = 90;
-	}
-	else if (!strcmp_P(res->arg1, PSTR("big3_check"))) {
-		strat_infos.conf.flags = 
-			STRAT_CONF_STORE_STATIC2 |
-			STRAT_CONF_BIG_3_TEMPLE;
-		strat_infos.conf.scan_our_min_time = 35;
-		strat_infos.conf.delay_between_our_scan = 90;
-		strat_infos.conf.scan_opp_min_time = 90;
-		strat_infos.conf.delay_between_opp_scan = 90;
-	}
-	else if (!strcmp_P(res->arg1, PSTR("offensive_early"))) {
-		strat_infos.conf.flags = 
-			STRAT_CONF_TAKE_ONE_LINTEL |
-			STRAT_CONF_STORE_STATIC2 |
-			STRAT_CONF_EARLY_SCAN |
-			STRAT_CONF_PUSH_OPP_COLS;
-		strat_infos.conf.scan_our_min_time = 50;
-		strat_infos.conf.delay_between_our_scan = 90;
-		strat_infos.conf.scan_opp_min_time = 15;
-		strat_infos.conf.delay_between_opp_scan = 90;
-		strat_infos.conf.wait_opponent = 5;
-	}
-	else if (!strcmp_P(res->arg1, PSTR("offensive_late"))) {
-		strat_infos.conf.flags = STRAT_CONF_TAKE_ONE_LINTEL;
-		strat_infos.conf.scan_our_min_time = 90;
-		strat_infos.conf.delay_between_our_scan = 90;
-		strat_infos.conf.scan_opp_min_time = 30;
-		strat_infos.conf.delay_between_opp_scan = 90;
-	}
-	else if (!strcmp_P(res->arg1, PSTR("one_on_disc"))) {
-		strat_infos.conf.flags = 
-			STRAT_CONF_ONLY_ONE_ON_DISC;
-		strat_infos.conf.scan_our_min_time = 90;
-		strat_infos.conf.delay_between_our_scan = 90;
-		strat_infos.conf.scan_opp_min_time = 90;
-		strat_infos.conf.delay_between_opp_scan = 90;
-	}
 	strat_infos.dump_enabled = 1;
 	strat_dump_conf();
 }
 
 prog_char str_strat_conf_arg0[] = "strat_conf";
 parse_pgm_token_string_t cmd_strat_conf_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_strat_conf_result, arg0, str_strat_conf_arg0);
-prog_char str_strat_conf_arg1[] = "show#base#big3#base_check#big3_check#offensive_early#offensive_late#one_on_disc";
+prog_char str_strat_conf_arg1[] = "show#base";
 parse_pgm_token_string_t cmd_strat_conf_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_strat_conf_result, arg1, str_strat_conf_arg1);
 
 prog_char help_strat_conf[] = "configure strat options";
@@ -943,6 +897,7 @@ static void cmd_strat_conf2_parsed(void *parsed_result, void *data)
 	else
 		on = 0;
 	
+#if 0
 	if (!strcmp_P(res->arg1, PSTR("one_temple_on_disc")))
 		bit = STRAT_CONF_ONLY_ONE_ON_DISC;
 	else if (!strcmp_P(res->arg1, PSTR("bypass_static2")))
@@ -959,6 +914,7 @@ static void cmd_strat_conf2_parsed(void *parsed_result, void *data)
 		bit = STRAT_CONF_EARLY_SCAN;
 	else if (!strcmp_P(res->arg1, PSTR("push_opp_cols")))
 		bit = STRAT_CONF_PUSH_OPP_COLS;
+#endif
 
 	if (on)
 		strat_infos.conf.flags |= bit;
@@ -971,7 +927,7 @@ static void cmd_strat_conf2_parsed(void *parsed_result, void *data)
 
 prog_char str_strat_conf2_arg0[] = "strat_conf";
 parse_pgm_token_string_t cmd_strat_conf2_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_strat_conf2_result, arg0, str_strat_conf2_arg0);
-prog_char str_strat_conf2_arg1[] = "push_opp_cols#one_temple_on_disc#bypass_static2#take_one_lintel#skip_when_check_fail#store_static2#big3_temple#early_opp_scan";
+prog_char str_strat_conf2_arg1[] = "faux";
 parse_pgm_token_string_t cmd_strat_conf2_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_strat_conf2_result, arg1, str_strat_conf2_arg1);
 prog_char str_strat_conf2_arg2[] = "on#off";
 parse_pgm_token_string_t cmd_strat_conf2_arg2 = TOKEN_STRING_INITIALIZER(struct cmd_strat_conf2_result, arg2, str_strat_conf2_arg2);
@@ -1003,6 +959,7 @@ struct cmd_strat_conf3_result {
 /* function called when cmd_strat_conf3 is parsed successfully */
 static void cmd_strat_conf3_parsed(void *parsed_result, void *data)
 {
+#if 0
 	struct cmd_strat_conf3_result *res = parsed_result;
 
 	if (!strcmp_P(res->arg1, PSTR("scan_opponent_min_time"))) {
@@ -1031,13 +988,14 @@ static void cmd_strat_conf3_parsed(void *parsed_result, void *data)
 	else if (!strcmp_P(res->arg1, PSTR("lintel_min_time"))) {
 		strat_infos.conf.lintel_min_time = res->arg2;
 	}
+#endif
 	strat_infos.dump_enabled = 1;
 	strat_dump_conf();
 }
 
 prog_char str_strat_conf3_arg0[] = "strat_conf";
 parse_pgm_token_string_t cmd_strat_conf3_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_strat_conf3_result, arg0, str_strat_conf3_arg0);
-prog_char str_strat_conf3_arg1[] = "lintel_min_time#scan_opponent_min_time#delay_between_opponent_scan#scan_our_min_time#delay_between_our_scan#wait_opponent";
+prog_char str_strat_conf3_arg1[] = "faux2";
 parse_pgm_token_string_t cmd_strat_conf3_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_strat_conf3_result, arg1, str_strat_conf3_arg1);
 parse_pgm_token_num_t cmd_strat_conf3_arg2 = TOKEN_NUM_INITIALIZER(struct cmd_strat_conf3_result, arg2, UINT16);
 
@@ -1050,47 +1008,6 @@ parse_pgm_inst_t cmd_strat_conf3 = {
 		(prog_void *)&cmd_strat_conf3_arg0, 
 		(prog_void *)&cmd_strat_conf3_arg1, 
 		(prog_void *)&cmd_strat_conf3_arg2, 
-		NULL,
-	},
-};
-
-/**********************************************************/
-/* strat configuration */
-
-/* this structure is filled when cmd_strat_conf4 is parsed successfully */
-struct cmd_strat_conf4_result {
-	fixed_string_t arg0;
-	fixed_string_t arg1;
-	int16_t arg2;
-};
-
-/* function called when cmd_strat_conf4 is parsed successfully */
-static void cmd_strat_conf4_parsed(void *parsed_result, void *data)
-{
-	struct cmd_strat_conf4_result *res = parsed_result;
-
-	if (!strcmp_P(res->arg1, PSTR("scan_opponent_angle"))) {
-		strat_infos.conf.scan_opp_angle = res->arg2;
-	}
-	strat_infos.dump_enabled = 1;
-	strat_dump_conf();
-}
-
-prog_char str_strat_conf4_arg0[] = "strat_conf";
-parse_pgm_token_string_t cmd_strat_conf4_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_strat_conf4_result, arg0, str_strat_conf4_arg0);
-prog_char str_strat_conf4_arg1[] = "scan_opponent_angle";
-parse_pgm_token_string_t cmd_strat_conf4_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_strat_conf4_result, arg1, str_strat_conf4_arg1);
-parse_pgm_token_num_t cmd_strat_conf4_arg2 = TOKEN_NUM_INITIALIZER(struct cmd_strat_conf4_result, arg2, UINT16);
-
-prog_char help_strat_conf4[] = "configure strat options";
-parse_pgm_inst_t cmd_strat_conf4 = {
-	.f = cmd_strat_conf4_parsed,  /* function to call */
-	.data = NULL,      /* 2nd arg of func */
-	.help_str = help_strat_conf4,
-	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_strat_conf4_arg0, 
-		(prog_void *)&cmd_strat_conf4_arg1, 
-		(prog_void *)&cmd_strat_conf4_arg2, 
 		NULL,
 	},
 };
@@ -1112,76 +1029,15 @@ struct cmd_subtraj_result {
 /* function called when cmd_subtraj is parsed successfully */
 static void cmd_subtraj_parsed(void *parsed_result, void *data)
 {
-	struct cmd_subtraj_result *res = parsed_result;
-	uint8_t err = 0;
-	struct column_dispenser *disp;
+/* 	struct cmd_subtraj_result *res = parsed_result; */
 
-	if (strcmp_P(res->arg1, PSTR("static")) == 0) {
-		err = strat_static_columns(res->arg2);
-	}
-	else if (strcmp_P(res->arg1, PSTR("static2")) == 0) {
-		strat_infos.s_cols.configuration = res->arg2;
-		switch (res->arg2) {
-		case 1:
-			position_set(&mainboard.pos, 1398, 
-				     COLOR_Y(1297), COLOR_A(-66));
-			break;
-		case 2:
-			position_set(&mainboard.pos, 1232, 
-				     COLOR_Y(1051), COLOR_A(4));
-			break;
-		case 3:
-			position_set(&mainboard.pos, 1232, 
-				     COLOR_Y(1043), COLOR_A(5));
-			break;
-		case 4:
-			position_set(&mainboard.pos, 1346,
-				     COLOR_Y(852), COLOR_A(57));
-			break;
-		default:
-			return;
-		}
-		if (res->arg2 == 1 && res->arg3 == 1) {
-			strat_infos.s_cols.flags = STATIC_COL_LINE1_DONE;
-		}
-		if (res->arg2 == 1 && res->arg3 == 2) {
-			strat_infos.s_cols.flags = STATIC_COL_LINE2_DONE;
-		}
-		err = strat_static_columns_pass2();
-	}
-	else if (strcmp_P(res->arg1, PSTR("lintel1")) == 0) {
-		err = strat_goto_lintel_disp(&strat_infos.l1);
-	}
-	else if (strcmp_P(res->arg1, PSTR("lintel2")) == 0) {
-		err = strat_goto_lintel_disp(&strat_infos.l2);
-	}
-	else if (strcmp_P(res->arg1, PSTR("coldisp1")) == 0) {
-		disp = &strat_infos.c1;
-		err = strat_goto_col_disp(&disp);
-	}
-	else if (strcmp_P(res->arg1, PSTR("coldisp2")) == 0) {
-		disp = &strat_infos.c2;
-		err = strat_goto_col_disp(&disp);
-	}
-	else if (strcmp_P(res->arg1, PSTR("coldisp3")) == 0) {
-		disp = &strat_infos.c3;
-		err = strat_goto_col_disp(&disp);
-	}
-	else if (strcmp_P(res->arg1, PSTR("disc")) == 0) {
-		if (res->arg2 == 0) {
-			printf_P(PSTR("bad level\r\n"));
-			return;
-		}
-		err = strat_goto_disc(res->arg2);
-	}
-
-	printf_P(PSTR("substrat returned %s\r\n"), get_err(err));
+	printf_P(PSTR("TODO\r\n"));
 	trajectory_hardstop(&mainboard.traj);
 }
 
 prog_char str_subtraj_arg0[] = "subtraj";
 parse_pgm_token_string_t cmd_subtraj_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_subtraj_result, arg0, str_subtraj_arg0);
-prog_char str_subtraj_arg1[] = "static#disc#lintel1#lintel2#coldisp1#coldisp2#coldisp3#static2";
+prog_char str_subtraj_arg1[] = "faux";
 parse_pgm_token_string_t cmd_subtraj_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_subtraj_result, arg1, str_subtraj_arg1);
 parse_pgm_token_num_t cmd_subtraj_arg2 = TOKEN_NUM_INITIALIZER(struct cmd_subtraj_result, arg2, INT32);
 parse_pgm_token_num_t cmd_subtraj_arg3 = TOKEN_NUM_INITIALIZER(struct cmd_subtraj_result, arg3, INT32);

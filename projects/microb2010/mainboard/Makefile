@@ -6,15 +6,11 @@ AVERSIVE_DIR = ../../..
 SRC  = $(TARGET).c cmdline.c commands_ax12.c commands_gen.c 
 SRC += commands_cs.c commands_mainboard.c commands_traj.c commands.c
 SRC += i2c_protocol.c sensor.c actuator.c cs.c ax12_user.c
-SRC += strat_utils.c strat_base.c strat_avoid.c strat.c
-SRC += strat_static_columns.c strat_lintel.c
-SRC += strat_column_disp.c strat_building.c strat_scan.c
+SRC += strat_utils.c strat_base.c strat.c
 
 ASRC = 
 
 CFLAGS += -Wall -Werror
-#CFLAGS += -DHOMOLOGATION
-CFLAGS += -DTEST_BEACON
 LDFLAGS = -T ../common/avr6.x
 
 ########################################
