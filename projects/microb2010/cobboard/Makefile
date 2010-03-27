@@ -11,7 +11,7 @@ LDFLAGS = -T ../common/avr6.x
 SRC  = $(TARGET).c cmdline.c commands_ax12.c commands_gen.c 
 SRC += commands_cs.c commands_cobboard.c commands.c
 SRC += i2c_protocol.c sensor.c actuator.c cs.c
-SRC += state.c ax12_user.c spickle.c
+SRC += state.c ax12_user.c spickle.c shovel.c
 
 # List Assembler source files here.
 # Make them always end in a capital .S.  Files ending in a lowercase .s

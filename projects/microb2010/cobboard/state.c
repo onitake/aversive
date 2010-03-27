@@ -48,31 +48,37 @@
 #include "cmdline.h"
 #include "sensor.h"
 #include "actuator.h"
+#include "spickle.h"
+#include "shovel.h"
 #include "state.h"
 
 #define STMCH_DEBUG(args...) DEBUG(E_USER_ST_MACH, args)
 #define STMCH_NOTICE(args...) NOTICE(E_USER_ST_MACH, args)
 #define STMCH_ERROR(args...) ERROR(E_USER_ST_MACH, args)
 
-/* shorter aliases for this file */
-#define INIT               I2C_COBBOARD_MODE_INIT
-#define MANUAL             I2C_COBBOARD_MODE_MANUAL
-#define HARVEST            I2C_COBBOARD_MODE_HARVEST
-#define EXIT               I2C_COBBOARD_MODE_EXIT
-
-static struct i2c_cmd_cobboard_set_mode mainboard_command;
 static struct vt100 local_vt100;
-static volatile uint8_t prev_state;
-static volatile uint8_t changed = 0;
+static volatile uint8_t state_mode;
+static uint8_t cob_count;
+
+/* short aliases */
+#define L_DEPLOY(mode)   (!!((mode) & I2C_COBBOARD_MODE_L_DEPLOY))
+#define R_DEPLOY(mode)   (!!((mode) & I2C_COBBOARD_MODE_R_DEPLOY))
+#define DEPLOY(side, mode) ((side) == I2C_LEFT_SIDE ? L_DEPLOY(mode) : R_DEPLOY(mode))
+#define L_HARVEST(mode)  (!!((mode) & I2C_COBBOARD_MODE_L_HARVEST))
+#define R_HARVEST(mode)  (!!((mode) & I2C_COBBOARD_MODE_R_HARVEST))
+#define HARVEST(side, mode) ((side) == I2C_LEFT_SIDE ? L_HARVEST(mode) : R_HARVEST(mode))
+#define EJECT(mode)      (!!((mode) & I2C_COBBOARD_MODE_EJECT))
 
 uint8_t state_debug = 0;
 
-void state_dump_sensors(void)
+#if 0
+static void state_dump_sensors(void)
 {
 	STMCH_DEBUG("TODO\n");
 }
+#endif
 
-void state_debug_wait_key_pressed(void)
+static void state_debug_wait_key_pressed(void)
 {
 	if (!state_debug)
 		return;
@@ -80,84 +86,131 @@ void state_debug_wait_key_pressed(void)
 	while(!cmdline_keypressed());
 }
 
-/* set a new state, return 0 on success */
-int8_t state_set_mode(struct i2c_cmd_cobboard_set_mode *cmd)
+/* return true if cob is present */
+static uint8_t state_cob_present(uint8_t side)
 {
-	changed = 1;
-	prev_state = mainboard_command.mode;
-	memcpy(&mainboard_command, cmd, sizeof(mainboard_command));
-	STMCH_DEBUG("%s mode=%d", __FUNCTION__, mainboard_command.mode);
+	if (side == I2C_LEFT_SIDE)
+		return sensor_get(S_LCOB);
+	else
+		/* XXX */
+		//		return sensor_get(S_LCOB);
+		return 0;
+}
+
+/* return the detected color of the cob (only valid if present) */
+static uint8_t state_cob_color(uint8_t side)
+{
+	if (side == I2C_LEFT_SIDE)
+		return I2C_COB_WHITE;
+	else
+		/* XXX */
+		//		return sensor_get(S_LCOB);
+		return 0;
+}
+
+/* set a new state, return 0 on success */
+int8_t state_set_mode(uint8_t mode)
+{
+	state_mode = mode;
+	/* XXX synchrounous pack here */
+	STMCH_DEBUG("%s(): l_deploy=%d l_harvest=%d "
+		    "r_deploy=%d r_harvest=%d eject=%d",
+		    __FUNCTION__, L_DEPLOY(mode), L_HARVEST(mode),
+		    R_DEPLOY(mode), R_HARVEST(mode), EJECT(mode));
 	return 0;
 }
 
 /* check that state is the one in parameter and that state did not
  * changed */
-uint8_t state_check(uint8_t mode)
+static uint8_t state_want_exit(void)
 {
 	int16_t c;
-	if (mode != mainboard_command.mode)
-		return 0;
-
-	if (changed)
-		return 0;
 
 	/* force quit when CTRL-C is typed */
 	c = cmdline_getchar();
 	if (c == -1)
-		return 1;
-	if (vt100_parser(&local_vt100, c) == KEY_CTRL_C) {
-		mainboard_command.mode = EXIT;
 		return 0;
-	}
-	return 1;
+	if (vt100_parser(&local_vt100, c) == KEY_CTRL_C)
+		return 1;
+	return 0;
 }
 
 uint8_t state_get_mode(void)
 {
-	return mainboard_command.mode;
+	return state_mode;
 }
 
-/* manual mode, arm position is sent from mainboard */
-static void state_do_manual(void)
+/* harvest cobs from area */
+static void state_do_harvest(uint8_t side)
 {
-	if (!state_check(MANUAL))
+	uint16_t delay;
+
+	/* if there is no cob, return */
+	if (state_cob_present(side))
 		return;
-	STMCH_DEBUG("%s mode=%d", __FUNCTION__, state_get_mode());
-	while (state_check(MANUAL));
+		
+	/* if it is black, nothing to do */
+	if (state_cob_color(side) == I2C_COB_BLACK)
+		return;
+
+	/* eat the cob */
+	spickle_pack(side);
+	state_debug_wait_key_pressed();
+	delay = spickle_get_pack_delay(side);
+	time_wait_ms(delay);
+
+	/* redeploy the spickle */
+	spickle_deploy(side);
+	state_debug_wait_key_pressed();
+
+	cob_count ++;
+
+	/* store it */
+	shovel_up();
+	wait_ms(200);
+	state_debug_wait_key_pressed();
+	shovel_down();
+	state_debug_wait_key_pressed();
 }
 
-/* init mode */
-static void state_do_init(void)
+/* eject cobs */
+static void state_do_eject(void)
 {
-	if (!state_check(INIT))
-		return;
-	state_init();
-	STMCH_DEBUG("%s mode=%d", __FUNCTION__, state_get_mode());
-	while (state_check(INIT));
+	cob_count = 0;
+	shovel_mid();
+	time_wait_ms(2000);
+	shovel_down();
 }
 
-/* harvest columns elts from area */
-static void state_do_harvest(void)
-{
-	if (!state_check(HARVEST))
-		return;
-	STMCH_DEBUG("%s mode=%d", __FUNCTION__, state_get_mode());
-	while (state_check(HARVEST));
-}
 /* main state machine */
 void state_machine(void)
 {
-	while (state_get_mode() != EXIT) {
-		changed = 0;
-		state_do_init();
-		state_do_manual();
-		state_do_harvest();
+	while (state_want_exit() == 0) {
+
+		/* pack spickles */
+		if (!L_DEPLOY(state_mode))
+			spickle_pack(I2C_LEFT_SIDE);
+		if (!R_DEPLOY(state_mode))
+			spickle_pack(I2C_RIGHT_SIDE);
+
+		/* harvest */
+		if (L_DEPLOY(state_mode) && L_HARVEST(state_mode))
+			state_do_harvest(I2C_LEFT_SIDE);
+		if (R_DEPLOY(state_mode) && R_HARVEST(state_mode))
+			state_do_harvest(I2C_RIGHT_SIDE);
+
+		/* eject */
+		if (EJECT(state_mode))
+			state_do_eject();
 	}
 }
 
 void state_init(void)
 {
 	vt100_init(&local_vt100);
-	mainboard_command.mode = HARVEST;
-	cobboard.cob_count = 0;
+	shovel_down();
+	spickle_pack(I2C_LEFT_SIDE);
+	spickle_pack(I2C_RIGHT_SIDE);
+	state_mode = 0;
+	cob_count = 0;
 }

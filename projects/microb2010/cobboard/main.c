@@ -58,6 +58,7 @@
 #include "state.h"
 #include "actuator.h"
 #include "spickle.h"
+#include "shovel.h"
 #include "cs.h"
 #include "i2c_protocol.h"
 
@@ -166,7 +167,7 @@ int main(void)
 #  error not supported
 #endif
 
-	eeprom_write_byte(EEPROM_MAGIC_ADDRESS, EEPROM_MAGIC_COBBOARD);
+	//eeprom_write_byte(EEPROM_MAGIC_ADDRESS, EEPROM_MAGIC_COBBOARD);
 	/* check eeprom to avoid to run the bad program */
 	if (eeprom_read_byte(EEPROM_MAGIC_ADDRESS) !=
 	    EEPROM_MAGIC_COBBOARD) {
@@ -248,8 +249,9 @@ int main(void)
 	/* actuators */
 	actuator_init();
 
-	/* spickle */
+	/* spickle, shovel */
 	spickle_init();
+	shovel_init();
 
 /* 	state_init(); */
 

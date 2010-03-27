@@ -125,6 +125,10 @@ struct cobboard {
 	uint8_t our_color;
 	volatile uint8_t cob_count;
 	volatile uint8_t status;
+
+	/* synchronized to mainboard */
+	int16_t left_cobroller_speed;
+	int16_t right_cobroller_speed;
 };
 
 extern struct genboard gen;

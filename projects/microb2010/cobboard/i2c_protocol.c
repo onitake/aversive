@@ -95,13 +95,16 @@ static void i2c_send_status(void)
 	ans.mode = state_get_mode();
 	ans.status = 0x55;
 
+	ans.left_cobroller_speed = cobboard.left_cobroller_speed;
+	ans.right_cobroller_speed = cobboard.right_cobroller_speed;
+
 	i2c_send(I2C_ADD_MASTER, (uint8_t *) &ans,
 		 sizeof(ans), I2C_CTRL_GENERIC);
 }
 
 static int8_t i2c_set_mode(struct i2c_cmd_cobboard_set_mode *cmd)
 {
-	state_set_mode(cmd);
+	state_set_mode(cmd->mode);
 	return 0;
 }
 

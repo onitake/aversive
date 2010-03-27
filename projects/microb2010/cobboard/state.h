@@ -23,7 +23,7 @@
 #define _STATE_H_
 
 /* set a new state, return 0 on success */
-int8_t state_set_mode(struct i2c_cmd_cobboard_set_mode *cmd);
+int8_t state_set_mode(uint8_t mode);
 
 /* get current state */
 uint8_t state_get_mode(void);

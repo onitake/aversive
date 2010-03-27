@@ -1,5 +1,5 @@
 /*  
- *  Copyright Droids Corporation (2009)
+ *  Copyright Droids Corporation (2010)
  * 
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -37,63 +37,21 @@
 #include <quadramp.h>
 #include <control_system_manager.h>
 #include <blocking_detection_manager.h>
-
 #include <rdline.h>
 
-#include "sensor.h"
-#include "../common/i2c_commands.h"
 #include "main.h"
-#include "actuator.h"
 
-#define COBROLLER_SPEED 800
-
-#define SERVO_DOOR_PWM ((void *)&gen.servo2)
-#define SERVO_DOOR_OPEN 250
-#define SERVO_DOOR_CLOSED 470
-
-void actuator_init(void);
-
-void servo_carry_open(void)
+/* init spickle position at beginning */
+static void shovel_autopos(void)
 {
-	/* TODO */
+	pwm_ng_set(SHOVEL_PWM, -500);
+	wait_ms(1000);
+	pwm_ng_set(LEFT_SPICKLE_PWM, 0);
+	encoders_spi_set_value(SHOVEL_ENCODER, 0);
 }
 
-void servo_carry_close(void)
+void shovel_init(void)
 {
-	/* TODO */
-}
-
-void servo_door_open(void)
-{
-	pwm_ng_set(SERVO_DOOR_PWM, SERVO_DOOR_OPEN);
-}
-
-void servo_door_close(void)
-{
-	pwm_ng_set(SERVO_DOOR_PWM, SERVO_DOOR_CLOSED);
-}
-
-void left_cobroller_on(void)
-{
-	cobboard.left_cobroller_speed = COBROLLER_SPEED;
-}
-
-void right_cobroller_on(void)
-{
-	cobboard.right_cobroller_speed = COBROLLER_SPEED;
-}
-
-void left_cobroller_off(void)
-{
-	cobboard.left_cobroller_speed = 0;
-}
-
-void right_cobroller_off(void)
-{
-	cobboard.right_cobroller_speed = 0;
-}
-
-void actuator_init(void)
-{
-
+	shovel_autopos();
+	cobboard.shovel.on = 1;
 }

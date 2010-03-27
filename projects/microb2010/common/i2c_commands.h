@@ -36,6 +36,9 @@
 #define I2C_COLOR_RED   0
 #define I2C_COLOR_GREEN 1
 
+#define I2C_COB_BLACK   0
+#define I2C_COB_WHITE   1
+
 struct i2c_cmd_hdr {
 	uint8_t cmd;
 };
@@ -67,18 +70,13 @@ struct i2c_cmd_generic_color {
 
 struct i2c_cmd_cobboard_set_mode {
 	struct i2c_cmd_hdr hdr;
-#define I2C_COBBOARD_MODE_INIT               0x00
-#define I2C_COBBOARD_MODE_MANUAL             0x01
-#define I2C_COBBOARD_MODE_HARVEST            0x02
-#define I2C_COBBOARD_MODE_EXIT               0xFF
-	uint8_t mode;
-	union {
-		struct {
-		} manual;
 
-		struct {
-		} harvest;
-	};
+#define I2C_COBBOARD_MODE_L_DEPLOY     0x01 /* deploy the spickle */
+#define I2C_COBBOARD_MODE_L_HARVEST    0x02 /* auto harvest withe cobs */
+#define I2C_COBBOARD_MODE_R_DEPLOY     0x04 /* deploy the spickle */
+#define I2C_COBBOARD_MODE_R_HARVEST    0x08 /* auto harvest withe cobs */
+#define I2C_COBBOARD_MODE_EJECT        0x10 /* eject cobs */
+	uint8_t mode;
 };
 
 /****/
@@ -106,6 +104,9 @@ struct i2c_ans_cobboard_status {
 	uint8_t status;
 
 	uint8_t cob_count;
+
+	int16_t left_cobroller_speed;
+	int16_t right_cobroller_speed;
 };
 
 #define I2C_REQ_BALLBOARD_STATUS 0x82

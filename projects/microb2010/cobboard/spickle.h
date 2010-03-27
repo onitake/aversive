@@ -24,14 +24,17 @@
 
 void spickle_set(void *dummy, int32_t cmd);
 void spickle_set_coefs(uint32_t k1, uint32_t k2);
-void spickle_set_delays(uint32_t delay_up, uint32_t delay_down);
-void spickle_set_pos(uint32_t pos_up, uint32_t pos_down);
+void spickle_set_pos(uint8_t side, uint32_t pos_deploy, uint32_t pos_pack);
+void spickle_set_delay(uint8_t side, uint32_t delay_deployed, uint32_t delay_packed);
+
 void spickle_dump_params(void);
-void spickle_left_manage(void);
-void spickle_up(void);
-void spickle_down(void);
-void spickle_stop(void);
-void spickle_auto(void);
+
+void spickle_deploy(uint8_t side);
+void spickle_pack(uint8_t side);
+
+uint16_t spickle_get_deploy_delay(uint8_t side);
+uint16_t spickle_get_pack_delay(uint8_t side);
+
 void spickle_init(void);
 
 #endif

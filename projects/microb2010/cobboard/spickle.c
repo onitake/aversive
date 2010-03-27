@@ -42,34 +42,62 @@
 
 #include "sensor.h"
 #include "../common/i2c_commands.h"
-#include "actuator.h"
 #include "main.h"
+#include "actuator.h"
 
+struct spickle_params {
+	/* current limit (common to left and right) */
+	int32_t k1;
+	int32_t k2;
 
-#define OFF 0
-#define WAIT_SENSOR 1
-#define SENSOR_OK 2
-#define WAIT_DOWN 3
+	/* cs blocks */
+	struct cs_block * const csb[2];
 
-static volatile uint8_t spickle_state = OFF;
-static volatile uint32_t spickle_pos_up =  35000;
-static volatile uint32_t spickle_pos_down = 0;
-static volatile uint32_t spickle_delay_up = 500;
-static volatile uint32_t spickle_delay_down = 2000;
-static volatile uint32_t delay = 0;
-static volatile int32_t spickle_k1 = 500, spickle_k2 = 20;
-static volatile int32_t spickle_cmd = 0;
+	/* params */
+	int16_t delay_deployed[2];
+	int16_t delay_packed[2];
+	int32_t pos_deployed[2];
+	int32_t pos_packed[2];
+};
+
+static struct spickle_params spickle = {
+	.k1 = 500,
+	.k2 = 20,
+	.csb = {
+		&cobboard.left_spickle,
+		&cobboard.right_spickle,
+	},
+	.delay_deployed = {
+		500, /* left */
+		500, /* right */
+	},
+	.delay_packed = {
+		500, /* left */
+		500, /* right */
+	},
+	.pos_deployed = {
+		35000, /* left */
+		35000, /* right */
+	},
+	.pos_packed = {
+		0, /* left */
+		0, /* right */
+	},
+};
 
 /* init spickle position at beginning */
 static void spickle_autopos(void)
 {
 	pwm_ng_set(LEFT_SPICKLE_PWM, -500);
-	wait_ms(3000);
+	//pwm_ng_set(RIGHT_SPICKLE_PWM, -500);
+	wait_ms(1000);
 	pwm_ng_set(LEFT_SPICKLE_PWM, 0);
+	pwm_ng_set(RIGHT_SPICKLE_PWM, 0);
 	encoders_spi_set_value(LEFT_SPICKLE_ENCODER, 0);
+	encoders_spi_set_value(RIGHT_SPICKLE_ENCODER, 0);
 }
 
-/* set CS command for spickle */
+/* Set CS command for spickle. Called by CS manager. */
 void spickle_set(void *mot, int32_t cmd)
 {
 	static int32_t oldpos_left, oldpos_right;
@@ -86,12 +114,12 @@ void spickle_set(void *mot, int32_t cmd)
 
 	speed = pos - oldpos;
 	if (speed > 0 && cmd < 0)
-		maxcmd = spickle_k1;
+		maxcmd = spickle.k1;
 	else if (speed < 0 && cmd > 0)
-		maxcmd = spickle_k1;
+		maxcmd = spickle.k1;
 	else {
 		speed = ABS(speed);
-		maxcmd = spickle_k1 + spickle_k2 * speed;
+		maxcmd = spickle.k1 + spickle.k2 * speed;
 	}
 	if (cmd > maxcmd)
 		cmd = maxcmd;
@@ -108,93 +136,62 @@ void spickle_set(void *mot, int32_t cmd)
 
 void spickle_set_coefs(uint32_t k1, uint32_t k2)
 {
-	spickle_k1 = k1;
-	spickle_k2 = k2;
+	spickle.k1 = k1;
+	spickle.k2 = k2;
 }
 
-void spickle_set_delays(uint32_t delay_up, uint32_t delay_down)
+void spickle_set_pos(uint8_t side, uint32_t pos_deployed, uint32_t pos_packed)
 {
-	spickle_delay_up = delay_up;
-	spickle_delay_down = delay_down;
+	spickle.pos_deployed[side] = pos_deployed;
+	spickle.pos_packed[side] = pos_packed;
 }
 
-void spickle_set_pos(uint32_t pos_up, uint32_t pos_down)
+void spickle_set_delay(uint8_t side, uint32_t delay_deployed, uint32_t delay_packed)
 {
-	spickle_pos_up = pos_up;
-	spickle_pos_down = pos_down;
+	spickle.delay_deployed[side] = delay_deployed;
+	spickle.delay_packed[side] = delay_packed;
 }
 
 void spickle_dump_params(void)
 {
-	printf_P(PSTR("coef %ld %ld\r\n"), spickle_k1, spickle_k2);
-	printf_P(PSTR("pos %ld %ld\r\n"), spickle_pos_up, spickle_pos_down);
-	printf_P(PSTR("delay %ld %ld\r\n"), spickle_delay_up, spickle_delay_down);
+	printf_P(PSTR("coef %ld %ld\r\n"), spickle.k1, spickle.k2);
+	printf_P(PSTR("left pos %ld %ld\r\n"),
+		 spickle.pos_deployed[I2C_LEFT_SIDE],
+		 spickle.pos_packed[I2C_LEFT_SIDE]);
+	printf_P(PSTR("left delay %ld %ld\r\n"),
+		 spickle.delay_deployed[I2C_LEFT_SIDE],
+		 spickle.delay_packed[I2C_LEFT_SIDE]);
+	printf_P(PSTR("right pos %ld %ld\r\n"),
+		 spickle.pos_deployed[I2C_RIGHT_SIDE],
+		 spickle.pos_packed[I2C_RIGHT_SIDE]);
+	printf_P(PSTR("right delay %ld %ld\r\n"),
+		 spickle.delay_deployed[I2C_RIGHT_SIDE],
+		 spickle.delay_packed[I2C_RIGHT_SIDE]);
 }
 
-void spickle_up(void)
+void spickle_deploy(uint8_t side)
 {
-	spickle_state = 0;
-	cs_set_consign(&cobboard.left_spickle.cs, spickle_pos_up);
+	cs_set_consign(&spickle.csb[side]->cs, spickle.pos_deployed[side]);
 }
 
-void spickle_down(void)
+void spickle_pack(uint8_t side)
 {
-	spickle_state = 0;
-	cs_set_consign(&cobboard.left_spickle.cs, spickle_pos_down);
+	cs_set_consign(&spickle.csb[side]->cs, spickle.pos_deployed[side]);
 }
 
-void spickle_stop(void)
+uint16_t spickle_get_deploy_delay(uint8_t side)
 {
-	spickle_state = 0;
+	return spickle.delay_deployed[side];
 }
 
-void spickle_auto(void)
+uint16_t spickle_get_pack_delay(uint8_t side)
 {
-	spickle_state = WAIT_SENSOR;
-	cs_set_consign(&cobboard.left_spickle.cs, spickle_pos_up);
-}
-
-/* for spickle auto mode */
-static void spickle_cb(__attribute__((unused)) void *dummy)
-{
-	static uint8_t prev = 0;
-	uint8_t val;
-
-	val = sensor_get(S_LCOB);
-
-	switch (spickle_state) {
-	case OFF:
-		break;
-	case WAIT_SENSOR:
-		if (val && !prev) {
-			delay = spickle_delay_up;
-			spickle_state = SENSOR_OK;
-		}
-		break;
-	case SENSOR_OK:
-		if (delay-- == 0) {
-			cs_set_consign(&cobboard.left_spickle.cs, spickle_pos_down);
-			spickle_state = WAIT_DOWN;
-			delay = spickle_delay_down;
-		}
-		break;
-	case WAIT_DOWN:
-		if (delay-- == 0) {
-			cs_set_consign(&cobboard.left_spickle.cs, spickle_pos_up);
-			spickle_state = WAIT_SENSOR;
-		}
-		break;
-	default:
-		break;
-	}
-	prev = val;
+	return spickle.delay_packed[side];
 }
 
 void spickle_init(void)
 {
 	spickle_autopos();
-
-	scheduler_add_periodical_event_priority(spickle_cb, NULL, 
-						1000L / SCHEDULER_UNIT, 
-						SPICKLE_PRIO);
+	cobboard.left_spickle.on = 1;
+	//cobboard.right_spickle.on = 1;
 }

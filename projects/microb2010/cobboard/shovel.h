@@ -1,5 +1,5 @@
 /*  
- *  Copyright Droids Corporation (2009)
+ *  Copyright Droids Corporation (2010)
  * 
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,24 +15,32 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- *  Revision : $Id: actuator.h,v 1.6 2009-11-08 17:25:00 zer0 Exp $
+ *  Revision : $Id: actuator.c,v 1.4 2009-04-24 19:30:41 zer0 Exp $
  *
  */
 
-#ifndef _ACTUATOR_H_
-#define _ACTUATOR_H_
+#ifndef _SHOVEL_H_
+#define _SHOVEL_H_
 
-void actuator_init(void);
+#define SHOVEL_DOWN 100
+#define SHOVEL_MID  4000
+#define SHOVEL_UP   10000
 
-void servo_carry_open(void);
-void servo_carry_close(void);
-void servo_door_open(void);
-void servo_door_close(void);
+void shovel_init(void);
 
-void left_cobroller_on(void);
-void right_cobroller_on(void);
-void left_cobroller_off(void);
-void right_cobroller_off(void);
+static inline void shovel_down(void)
+{
+	cs_set_consign(&cobboard.shovel.cs, SHOVEL_DOWN);
+}
 
-#endif
+static inline void shovel_mid(void)
+{
+	cs_set_consign(&cobboard.shovel.cs, SHOVEL_MID);
+}
 
+static inline void shovel_up(void)
+{
+	cs_set_consign(&cobboard.shovel.cs, SHOVEL_UP);
+}
+
+#endif /* _SHOVEL_H_ */

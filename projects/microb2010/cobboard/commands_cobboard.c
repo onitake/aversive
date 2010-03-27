@@ -51,6 +51,7 @@
 #include "i2c_protocol.h"
 #include "actuator.h"
 #include "spickle.h"
+#include "shovel.h"
 
 extern uint16_t state_debug;
 
@@ -185,23 +186,18 @@ static void cmd_state1_parsed(void *parsed_result,
 			      __attribute__((unused)) void *data)
 {
 	struct cmd_state1_result *res = parsed_result;
-	struct i2c_cmd_cobboard_set_mode command;
 
-	if (!strcmp_P(res->arg1, PSTR("init"))) {
+	if (!strcmp_P(res->arg1, PSTR("init")))
 		state_init();
-		return;
-	}
+	else if (!strcmp_P(res->arg1, PSTR("eject")))
+		state_set_mode(I2C_COBBOARD_MODE_EJECT);
 
-	if (!strcmp_P(res->arg1, PSTR("manual")))
-		command.mode = I2C_COBBOARD_MODE_MANUAL;
-	else if (!strcmp_P(res->arg1, PSTR("harvest")))
-		command.mode = I2C_COBBOARD_MODE_HARVEST;
-	state_set_mode(&command);
+	/* other commands */
 }
 
 prog_char str_state1_arg0[] = "cobboard";
 parse_pgm_token_string_t cmd_state1_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_state1_result, arg0, str_state1_arg0);
-prog_char str_state1_arg1[] = "init#manual";
+prog_char str_state1_arg1[] = "init#eject";
 parse_pgm_token_string_t cmd_state1_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_state1_result, arg1, str_state1_arg1);
 
 prog_char help_state1[] = "set cobboard mode";
@@ -231,26 +227,43 @@ static void cmd_state2_parsed(void *parsed_result,
 			      __attribute__((unused)) void *data)
 {
 	struct cmd_state2_result *res = parsed_result;
-	struct i2c_cmd_cobboard_set_mode command;
-	uint8_t side;
+	uint8_t side, mode = state_get_mode();
 
-	if (!strcmp_P(res->arg2, PSTR("left")))
+	if (!strcmp_P(res->arg2, PSTR("left"))) {
 		side = I2C_LEFT_SIDE;
-	else if (!strcmp_P(res->arg2, PSTR("right")))
+		mode &= ~(I2C_COBBOARD_MODE_L_DEPLOY | I2C_COBBOARD_MODE_L_HARVEST);
+	}
+	else {
 		side = I2C_RIGHT_SIDE;
-
-	if (!strcmp_P(res->arg1, PSTR("yyy"))) {
-	}
-	else if (!strcmp_P(res->arg1, PSTR("xxx"))) {
+		mode &= ~(I2C_COBBOARD_MODE_R_DEPLOY | I2C_COBBOARD_MODE_R_HARVEST);
 	}
 
+	if (!strcmp_P(res->arg1, PSTR("pack"))) {
+		/* nothing to do */
+	}
+	else if (!strcmp_P(res->arg1, PSTR("deploy"))) {
+		if (side == I2C_LEFT_SIDE)
+			mode |= I2C_COBBOARD_MODE_L_DEPLOY;
+		else
+			mode |= I2C_COBBOARD_MODE_R_DEPLOY;
+	}
+	else if (!strcmp_P(res->arg1, PSTR("harvest"))) {
+		if (side == I2C_LEFT_SIDE) {
+			mode |= I2C_COBBOARD_MODE_L_DEPLOY;
+			mode |= I2C_COBBOARD_MODE_L_HARVEST;
+		}
+		else {
+			mode |= I2C_COBBOARD_MODE_R_DEPLOY;
+			mode |= I2C_COBBOARD_MODE_R_HARVEST;
+		}
+	}
 
-	state_set_mode(&command);
+	state_set_mode(mode);
 }
 
 prog_char str_state2_arg0[] = "cobboard";
 parse_pgm_token_string_t cmd_state2_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_state2_result, arg0, str_state2_arg0);
-prog_char str_state2_arg1[] = "xxx";
+prog_char str_state2_arg1[] = "harvest#deploy#pack";
 parse_pgm_token_string_t cmd_state2_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_state2_result, arg1, str_state2_arg1);
 prog_char str_state2_arg2[] = "left#right";
 parse_pgm_token_string_t cmd_state2_arg2 = TOKEN_STRING_INITIALIZER(struct cmd_state2_result, arg2, str_state2_arg2);
@@ -283,14 +296,13 @@ static void cmd_state3_parsed(void *parsed_result,
 			      __attribute__((unused)) void *data)
 {
 	struct cmd_state3_result *res = parsed_result;
-	struct i2c_cmd_cobboard_set_mode command;
 
 	if (!strcmp_P(res->arg1, PSTR("xxx"))) {
 		/* xxx = res->arg2 */
 	}
 	else if (!strcmp_P(res->arg1, PSTR("yyy"))) {
 	}
-	state_set_mode(&command);
+	state_set_mode(0);
 }
 
 prog_char str_state3_arg0[] = "cobboard";
@@ -412,6 +424,95 @@ parse_pgm_inst_t cmd_servo_door = {
 };
 
 /**********************************************************/
+/* cobroller */
+
+/* this structure is filled when cmd_cobroller is parsed successfully */
+struct cmd_cobroller_result {
+	fixed_string_t arg0;
+	fixed_string_t arg1;
+	fixed_string_t arg2;
+};
+
+/* function called when cmd_cobroller is parsed successfully */
+static void cmd_cobroller_parsed(void *parsed_result,
+				    __attribute__((unused)) void *data)
+{
+	struct cmd_cobroller_result *res = parsed_result;
+
+	if (!strcmp_P(res->arg1, PSTR("left"))) {
+		if (!strcmp_P(res->arg2, PSTR("on")))
+			left_cobroller_on();
+		else if (!strcmp_P(res->arg2, PSTR("off")))
+			left_cobroller_off();
+	}
+	else if (!strcmp_P(res->arg1, PSTR("right"))) {
+		if (!strcmp_P(res->arg2, PSTR("on")))
+			right_cobroller_on();
+		else if (!strcmp_P(res->arg2, PSTR("off")))
+			right_cobroller_off();
+	}
+}
+
+prog_char str_cobroller_arg0[] = "cobroller";
+parse_pgm_token_string_t cmd_cobroller_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_cobroller_result, arg0, str_cobroller_arg0);
+prog_char str_cobroller_arg1[] = "left#right";
+parse_pgm_token_string_t cmd_cobroller_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_cobroller_result, arg1, str_cobroller_arg1);
+prog_char str_cobroller_arg2[] = "on#off";
+parse_pgm_token_string_t cmd_cobroller_arg2 = TOKEN_STRING_INITIALIZER(struct cmd_cobroller_result, arg2, str_cobroller_arg2);
+
+prog_char help_cobroller[] = "Servo door function";
+parse_pgm_inst_t cmd_cobroller = {
+	.f = cmd_cobroller_parsed,  /* function to call */
+	.data = NULL,      /* 2nd arg of func */
+	.help_str = help_cobroller,
+	.tokens = {        /* token list, NULL terminated */
+		(prog_void *)&cmd_cobroller_arg0, 
+		(prog_void *)&cmd_cobroller_arg1, 
+		(prog_void *)&cmd_cobroller_arg2, 
+		NULL,
+	},
+};
+
+/**********************************************************/
+/* shovel */
+
+/* this structure is filled when cmd_shovel is parsed successfully */
+struct cmd_shovel_result {
+	fixed_string_t arg0;
+	fixed_string_t arg1;
+};
+
+/* function called when cmd_shovel is parsed successfully */
+static void cmd_shovel_parsed(void *parsed_result,
+			      __attribute__((unused)) void *data)
+{
+	struct cmd_shovel_result *res = parsed_result;
+	if (!strcmp_P(res->arg1, PSTR("down")))
+		shovel_down();
+	else if (!strcmp_P(res->arg1, PSTR("up")))
+		shovel_up();
+	else if (!strcmp_P(res->arg1, PSTR("mid")))
+		shovel_mid();
+}
+
+prog_char str_shovel_arg0[] = "shovel";
+parse_pgm_token_string_t cmd_shovel_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_shovel_result, arg0, str_shovel_arg0);
+prog_char str_shovel_arg1[] = "down#up#mid";
+parse_pgm_token_string_t cmd_shovel_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_shovel_result, arg1, str_shovel_arg1);
+
+prog_char help_shovel[] = "Servo shovel function";
+parse_pgm_inst_t cmd_shovel = {
+	.f = cmd_shovel_parsed,  /* function to call */
+	.data = NULL,      /* 2nd arg of func */
+	.help_str = help_shovel,
+	.tokens = {        /* token list, NULL terminated */
+		(prog_void *)&cmd_shovel_arg0, 
+		(prog_void *)&cmd_shovel_arg1, 
+		NULL,
+	},
+};
+
+/**********************************************************/
 /* Servo_Carry */
 
 /* this structure is filled when cmd_servo_carry is parsed successfully */
@@ -449,12 +550,13 @@ parse_pgm_inst_t cmd_servo_carry = {
 };
 
 /**********************************************************/
-/* Spickles tests */
+/* Spickle tests */
 
 /* this structure is filled when cmd_spickle is parsed successfully */
 struct cmd_spickle_result {
 	fixed_string_t arg0;
 	fixed_string_t arg1;
+	fixed_string_t arg2;
 };
 
 /* function called when cmd_spickle is parsed successfully */
@@ -462,29 +564,33 @@ static void cmd_spickle_parsed(void * parsed_result,
 			       __attribute__((unused)) void *data)
 {
 	struct cmd_spickle_result * res = parsed_result;
-	
-	if (!strcmp_P(res->arg1, PSTR("up"))) {
-		spickle_up();
-	}
-	else if (!strcmp_P(res->arg1, PSTR("down"))) {
-		spickle_down();
-	}
-	else if (!strcmp_P(res->arg1, PSTR("stop"))) {
-		spickle_stop();
-	}
-	else if (!strcmp_P(res->arg1, PSTR("auto"))) {
-		spickle_auto();
-	}
+	uint8_t side;
 
+	if (!strcmp_P(res->arg1, PSTR("left")))
+		side = I2C_LEFT_SIDE;
+	else
+		side = I2C_RIGHT_SIDE;
+
+	if (!strcmp_P(res->arg2, PSTR("deploy"))) {
+		spickle_deploy(side);
+	}
+	else if (!strcmp_P(res->arg2, PSTR("pack"))) {
+		spickle_pack(side);
+	}
 	printf_P(PSTR("done\r\n"));
 }
 
 prog_char str_spickle_arg0[] = "spickle";
-parse_pgm_token_string_t cmd_spickle_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_spickle_result, arg0, str_spickle_arg0);
-prog_char str_spickle_arg1[] = "auto#up#down#stop";
-parse_pgm_token_string_t cmd_spickle_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_spickle_result, arg1, str_spickle_arg1);
+parse_pgm_token_string_t cmd_spickle_arg0 =
+	TOKEN_STRING_INITIALIZER(struct cmd_spickle_result, arg0, str_spickle_arg0);
+prog_char str_spickle_arg1[] = "left#right";
+parse_pgm_token_string_t cmd_spickle_arg1 =
+	TOKEN_STRING_INITIALIZER(struct cmd_spickle_result, arg1, str_spickle_arg1);
+prog_char str_spickle_arg2[] = "deploy#pack";
+parse_pgm_token_string_t cmd_spickle_arg2 =
+	TOKEN_STRING_INITIALIZER(struct cmd_spickle_result, arg2, str_spickle_arg2);
 
-prog_char help_spickle[] = "spickle auto mode: spickle auto delay_up delay_down";
+prog_char help_spickle[] = "move spickle";
 parse_pgm_inst_t cmd_spickle = {
 	.f = cmd_spickle_parsed,  /* function to call */
 	.data = NULL,      /* 2nd arg of func */
@@ -492,6 +598,7 @@ parse_pgm_inst_t cmd_spickle = {
 	.tokens = {        /* token list, NULL terminated */
 		(prog_void *)&cmd_spickle_arg0, 
 		(prog_void *)&cmd_spickle_arg1, 
+		(prog_void *)&cmd_spickle_arg2, 
 		NULL,
 	},
 };
@@ -503,8 +610,9 @@ parse_pgm_inst_t cmd_spickle = {
 struct cmd_spickle_params_result {
 	fixed_string_t arg0;
 	fixed_string_t arg1;
-	int32_t arg2;
+	fixed_string_t arg2;
 	int32_t arg3;
+	int32_t arg4;
 };
 
 /* function called when cmd_spickle_params is parsed successfully */
@@ -512,30 +620,39 @@ static void cmd_spickle_params_parsed(void *parsed_result,
 				      __attribute__((unused)) void *data)
 {
 	struct cmd_spickle_params_result * res = parsed_result;
-	
-	
-	if (!strcmp_P(res->arg1, PSTR("delay"))) {
-		spickle_set_delays(res->arg2, res->arg3);
-	}
-	else if (!strcmp_P(res->arg1, PSTR("coef"))) {
-		spickle_set_coefs(res->arg2, res->arg3);
-	}
-	else if (!strcmp_P(res->arg1, PSTR("pos"))) {
-		spickle_set_pos(res->arg2, res->arg3);
+	uint8_t side;
+
+	if (!strcmp_P(res->arg1, PSTR("show"))) {
+		spickle_dump_params();
+		return;
 	}
 
-	/* else show */
-	spickle_dump_params();
+	if (!strcmp_P(res->arg1, PSTR("left")))
+		side = I2C_LEFT_SIDE;
+	else
+		side = I2C_RIGHT_SIDE;
+
+	if (!strcmp_P(res->arg2, PSTR("pos")))
+		spickle_set_pos(side, res->arg3, res->arg4);
+	else if (!strcmp_P(res->arg2, PSTR("delay")))
+		spickle_set_delay(side, res->arg3, res->arg4);
 }
 
 prog_char str_spickle_params_arg0[] = "spickle_params";
-parse_pgm_token_string_t cmd_spickle_params_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_spickle_params_result, arg0, str_spickle_params_arg0);
-prog_char str_spickle_params_arg1[] = "delay#pos#coef";
-parse_pgm_token_string_t cmd_spickle_params_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_spickle_params_result, arg1, str_spickle_params_arg1);
-parse_pgm_token_num_t cmd_spickle_params_arg2 = TOKEN_NUM_INITIALIZER(struct cmd_spickle_params_result, arg2, INT32);
-parse_pgm_token_num_t cmd_spickle_params_arg3 = TOKEN_NUM_INITIALIZER(struct cmd_spickle_params_result, arg3, INT32);
+parse_pgm_token_string_t cmd_spickle_params_arg0 =
+	TOKEN_STRING_INITIALIZER(struct cmd_spickle_params_result, arg0, str_spickle_params_arg0);
+prog_char str_spickle_params_arg1[] = "left#right";
+parse_pgm_token_string_t cmd_spickle_params_arg1 =
+	TOKEN_STRING_INITIALIZER(struct cmd_spickle_params_result, arg1, str_spickle_params_arg1);
+prog_char str_spickle_params_arg2[] = "pos#delay";
+parse_pgm_token_string_t cmd_spickle_params_arg2 =
+	TOKEN_STRING_INITIALIZER(struct cmd_spickle_params_result, arg2, str_spickle_params_arg2);
+parse_pgm_token_num_t cmd_spickle_params_arg3 =
+	TOKEN_NUM_INITIALIZER(struct cmd_spickle_params_result, arg3, INT32);
+parse_pgm_token_num_t cmd_spickle_params_arg4 =
+	TOKEN_NUM_INITIALIZER(struct cmd_spickle_params_result, arg4, INT32);
 
-prog_char help_spickle_params[] = "Set spickle_params values";
+prog_char help_spickle_params[] = "Set spickle pos values";
 parse_pgm_inst_t cmd_spickle_params = {
 	.f = cmd_spickle_params_parsed,  /* function to call */
 	.data = NULL,      /* 2nd arg of func */
@@ -545,12 +662,14 @@ parse_pgm_inst_t cmd_spickle_params = {
 		(prog_void *)&cmd_spickle_params_arg1, 
 		(prog_void *)&cmd_spickle_params_arg2, 
 		(prog_void *)&cmd_spickle_params_arg3, 
+		(prog_void *)&cmd_spickle_params_arg4, 
 		NULL,
 	},
 };
 
 prog_char str_spickle_params_arg1_show[] = "show";
-parse_pgm_token_string_t cmd_spickle_params_arg1_show = TOKEN_STRING_INITIALIZER(struct cmd_spickle_params_result, arg1, str_spickle_params_arg1_show);
+parse_pgm_token_string_t cmd_spickle_params_arg1_show =
+	TOKEN_STRING_INITIALIZER(struct cmd_spickle_params_result, arg1, str_spickle_params_arg1_show);
 
 prog_char help_spickle_params_show[] = "show spickle params";
 parse_pgm_inst_t cmd_spickle_params_show = {
@@ -560,6 +679,72 @@ parse_pgm_inst_t cmd_spickle_params_show = {
 	.tokens = {        /* token list, NULL terminated */
 		(prog_void *)&cmd_spickle_params_arg0, 
 		(prog_void *)&cmd_spickle_params_arg1_show, 
+		NULL,
+	},
+};
+
+/**********************************************************/
+/* Set Spickle Params */
+
+/* this structure is filled when cmd_spickle_params2 is parsed successfully */
+struct cmd_spickle_params2_result {
+	fixed_string_t arg0;
+	fixed_string_t arg1;
+	int32_t arg2;
+	int32_t arg3;
+};
+
+/* function called when cmd_spickle_params2 is parsed successfully */
+static void cmd_spickle_params2_parsed(void *parsed_result,
+				      __attribute__((unused)) void *data)
+{
+	struct cmd_spickle_params2_result * res = parsed_result;
+	
+	if (!strcmp_P(res->arg1, PSTR("coef"))) {
+		spickle_set_coefs(res->arg2, res->arg3);
+	}
+
+	/* else show */
+	spickle_dump_params();
+}
+
+prog_char str_spickle_params2_arg0[] = "spickle_params2";
+parse_pgm_token_string_t cmd_spickle_params2_arg0 =
+	TOKEN_STRING_INITIALIZER(struct cmd_spickle_params2_result, arg0, str_spickle_params2_arg0);
+prog_char str_spickle_params2_arg1[] = "coef";
+parse_pgm_token_string_t cmd_spickle_params2_arg1 =
+	TOKEN_STRING_INITIALIZER(struct cmd_spickle_params2_result, arg1, str_spickle_params2_arg1);
+parse_pgm_token_num_t cmd_spickle_params2_arg2 =
+	TOKEN_NUM_INITIALIZER(struct cmd_spickle_params2_result, arg2, INT32);
+parse_pgm_token_num_t cmd_spickle_params2_arg3 =
+	TOKEN_NUM_INITIALIZER(struct cmd_spickle_params2_result, arg3, INT32);
+
+prog_char help_spickle_params2[] = "Set spickle_params2 values";
+parse_pgm_inst_t cmd_spickle_params2 = {
+	.f = cmd_spickle_params2_parsed,  /* function to call */
+	.data = NULL,      /* 2nd arg of func */
+	.help_str = help_spickle_params2,
+	.tokens = {        /* token list, NULL terminated */
+		(prog_void *)&cmd_spickle_params2_arg0, 
+		(prog_void *)&cmd_spickle_params2_arg1, 
+		(prog_void *)&cmd_spickle_params2_arg2, 
+		(prog_void *)&cmd_spickle_params2_arg3, 
+		NULL,
+	},
+};
+
+prog_char str_spickle_params2_arg1_show[] = "show";
+parse_pgm_token_string_t cmd_spickle_params2_arg1_show =
+	TOKEN_STRING_INITIALIZER(struct cmd_spickle_params2_result, arg1, str_spickle_params2_arg1_show);
+
+prog_char help_spickle_params2_show[] = "show spickle params";
+parse_pgm_inst_t cmd_spickle_params2_show = {
+	.f = cmd_spickle_params2_parsed,  /* function to call */
+	.data = NULL,      /* 2nd arg of func */
+	.help_str = help_spickle_params2_show,
+	.tokens = {        /* token list, NULL terminated */
+		(prog_void *)&cmd_spickle_params2_arg0, 
+		(prog_void *)&cmd_spickle_params2_arg1_show, 
 		NULL,
 	},
 };
@@ -579,7 +764,8 @@ static void cmd_test_parsed(__attribute__((unused)) void *parsed_result,
 }
 
 prog_char str_test_arg0[] = "test";
-parse_pgm_token_string_t cmd_test_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_test_result, arg0, str_test_arg0);
+parse_pgm_token_string_t cmd_test_arg0 =
+	TOKEN_STRING_INITIALIZER(struct cmd_test_result, arg0, str_test_arg0);
 
 prog_char help_test[] = "Test function";
 parse_pgm_inst_t cmd_test = {
