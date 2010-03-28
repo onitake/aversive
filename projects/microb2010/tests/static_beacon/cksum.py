@@ -37,7 +37,6 @@ def verify_cksum(val):
     return 0xffff # wrong value
 
 
-
 err = 0
 total = 0
 for i in range(200):

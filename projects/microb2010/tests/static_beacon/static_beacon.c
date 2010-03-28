@@ -41,11 +41,12 @@
 
 //#define NO_MODULATION
 #define WAIT_LASER
-//#define MODUL_455KHZ
+#define MODUL_455KHZ
 //#define MODUL_56KHZ
-#define MODUL_38KHZ
+//#define MODUL_38KHZ
 //#define SPEED_40RPS
-#define SPEED_10RPS
+#define SPEED_20RPS
+//#define SPEED_10RPS
 
 /* beacon identifier: must be odd, 3 bits */
 #define BEACON_ID 0x1
@@ -57,7 +58,7 @@
 #define FRAME_DATA_SHIFT 3
 
 #if (defined MODUL_455KHZ)
-#define N_PERIODS   10
+#define N_PERIODS   15
 #define N_CYCLES_0  17
 #define N_CYCLES_1  17
 #elif (defined MODUL_56KHZ)
@@ -108,7 +109,7 @@
 /* FRAME must be odd */
 /* #define FRAME 0x0B /\* in little endian 1-1-0-1 *\/ */
 /* #define FRAME_LEN 4 */
-#define FRAME 0xAA5B /* in little endian */
+#define FRAME 0x4A5B /* in little endian */
 #define FRAME_LEN 16
 
 /* pin returns !0 when nothing, and 0 when laser is on photodiode */
@@ -122,6 +123,11 @@
 #define MAX_INTER_TIME    ((uint16_t)(8000*2)) /* t=8ms dist=10cm */
 #define IR_DELAY          ((uint16_t)(8000*2))
 #define INTER_LASER_TIME   30 /* in ms */
+#elif (defined SPEED_20RPS)
+#define MIN_INTER_TIME    ((uint16_t)(40*16))   /* t~=80us dist=350cm */
+#define MAX_INTER_TIME    ((uint16_t)(2000*16)) /* t=2ms dist=? >10cm */
+#define IR_DELAY          ((uint16_t)(2000*16))
+#define INTER_LASER_TIME   10 /* in ms */
 #elif (defined SPEED_40RPS)
 #define MIN_INTER_TIME    ((uint16_t)(40*16))  /* t~=40us dist=350cm */
 #define MAX_INTER_TIME    ((uint16_t)(2000*16)) /* t=2ms dist=10cm */
@@ -248,7 +254,7 @@ static inline int8_t wait_laser(uint16_t *when, uint16_t *laserdiff)
 	uint16_t time1, time2;
 	uint16_t diff;
 
-#ifdef SPEED_40RPS
+#if (defined SPEED_40RPS) || (defined SPEED_20RPS)
 	/* set timer to 16Mhz, we will use ICP */
 	TCCR1A = 0;
 	TCCR1B = _BV(CS10);
@@ -358,7 +364,7 @@ int main(void)
 	while (1);
 #endif
 
-#if 1
+#if 0
 	/* test freq ~ 400khz */
 	ICR1 = 38;
 	OCR1A = 19;

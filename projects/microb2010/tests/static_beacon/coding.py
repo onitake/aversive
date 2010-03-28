@@ -1,13 +1,14 @@
 #!/usr/bin/python
 
 import sys, math
+import matplotlib.pyplot as plt
 
-if 1:
-    RPS = 10.
-    TIMER_FREQ = 2000000.
-else:
-    RPS = 40.
-    TIMER_FREQ = 16000000.
+
+#RPS = 10.
+RPS = 20.
+#RPS = 40.
+#TIMER_FREQ = 2000000.
+TIMER_FREQ = 16000000.
 
 LASER_RADIUS = 25. # mm
 
@@ -17,85 +18,122 @@ NBITS = 9
 STEPS = (1 << 9)
 k = math.pow(MAX/MIN, 1./STEPS)
 
-def mm_to_framedist(mm):
+def mm_to_frame(mm):
     d = mm
     d -= MIN
     d /= (MAX-MIN)
     d *= 512
     return d
 
-def framedist_to_mm(d):
+def frame_to_mm(d):
     d /= 512.
     d *= (MAX-MIN)
     d += MIN
     return d
 
 # t is in us, result is 9 bits
-def time_to_frame(t):
+def us_to_frame(t):
     # process angle from t
     a = (t / (1000000./RPS)) * 2. * math.pi
 
     # process d from a (between 20cm and 350cm)
     d = LASER_RADIUS / math.sin(a/2)
-    frame = int(mm_to_framedist(d))
+    frame = int(mm_to_frame(d))
     return frame
 
-# frame is integer 9 bits, result is laserdiff time
-def frame_to_time(frame):
-    d = framedist_to_mm(frame)
+# frame is integer 9 bits, result is laserdiff time in us
+def frame_to_us(frame):
+    d = frame_to_mm(frame)
     a = 2 * math.asin(LASER_RADIUS/d)
-    t = (a * (TIMER_FREQ/RPS)) / (2. * math.pi)
+    t = (a * (1000000./RPS)) / (2. * math.pi)
     return t
 
-def sample_to_offset(samples, table):
-    offsets = samples[:]
-    for i in range(len(offsets)):
-        o = offsets[i]
-        framedist = mm_to_framedist(o[0])
-        off = o[1] - table[int(framedist)]
-        offsets[i] = framedist, off
-    return offsets
+# theorical: laser timediff to robot distance
+def us_to_mm(us):
+    return frame_to_mm(us_to_frame(us))
 
-def linear_interpolation(offsets, framedist, time):
-    if framedist <= offsets[0][0]:
-        return time + offsets[0][1]
-    if framedist >= offsets[-1][0]:
-        return time + offsets[-1][1]
+# theorical: robot distance to laserdiff
+def mm_to_us(mm):
+    return frame_to_us(mm_to_frame(mm))
 
-    #print (offsets, framedist, time)
-    o_prev = offsets[0]
-    for o in offsets[1:]:
-        if framedist > o[0]:
-            o_prev = o
-            continue
-        x = (framedist - o_prev[0]) / (o[0] - o_prev[0])
-        return time + o_prev[1] + (x * (o[1] - o_prev[1]))
-    return None
+def time_us_to_tick(us):
+    return (us / 1000000.) * TIMER_FREQ
 
-#x = time_to_frame(float(sys.argv[1]))
-#frame_to_distance(x)
-#frame_to_time(int(sys.argv[1]))
+def time_tick_to_us(t):
+    return (t * 1000000.) / TIMER_FREQ
 
 
-table = [0] * 512
-for i in range(512):
-    table[i] = frame_to_time(i)
+##################
 
-# linear correction: distance_mm, time
+# linear correction: distance_mm, time_us
+# must be ordered
 samples = [
-    (250., 7600.),
-    (500., 3000.),
-    (3000., 400.),
+    (250., 2201.),
+    (450., 701.),
+    (1200., 231.),
+    (3000., 50.),
     ]
 
-offsets = sample_to_offset(samples, table)
+dist_mm = map(frame_to_mm, range(512))
+
+# theorical curve
+theorical = [0] * 512
+for i in range(512):
+    theorical[i] = frame_to_us(i)
+
+# find offset and update theorical curve
+off = samples[-1][1] - mm_to_us(3000.)
+print "offset=%f"%(off)
+theo_off = [0] * 512
+for i in range(512):
+    mm = frame_to_mm(i)
+    theo_off[i] = mm_to_us(mm) + off
+
+final = [0] * 512
+for i in range(512):
+    mm = frame_to_mm(i)
+
+    # find between which samples we are
+    smp = 0
+    while smp < (len(samples) - 2):
+        if samples[smp+1][0] >= mm:
+            break
+        smp += 1
+
+    mm_start = us_to_mm(samples[smp][1] - off)
+    mm_end = us_to_mm(samples[smp+1][1] - off)
+
+    # interpolation
+    ratio = (mm - samples[smp][0]) / (samples[smp+1][0] - samples[smp][0])
+    mm_new = mm_start + ratio * (mm_end - mm_start)
+
+    final[i] = mm_to_us(mm_new) + off
+
+sample_idx = 0
+while sample_idx < len(samples):
+    print samples[sample_idx][1],
+    print us_to_mm(samples[sample_idx][1] - off),
+    print mm_to_us(samples[sample_idx][0])
+    sample_idx += 1
+
+
+plt.plot(
+#    dist_mm, theorical, "r-",
+#    dist_mm, theo_off, "b-",
+    dist_mm, final, "g-",
+    map(lambda x:x[0], samples), map(lambda x:x[1], samples), "g^",
+    )
+plt.show()
+
+
 print "#include <aversive.h>"
 print "#include <aversive/pgmspace.h>"
 print "prog_uint16_t framedist_table[] = {"
 for i in range(512):
     if (i % 8) == 0:
         print "	",
-    print "%d,"%(int(linear_interpolation(offsets, i, table[i]))),
+#    print "%d,"%(int(linear_interpolation(offsets, i, table[i]))),
+    print "%d,"%(int(table[i])),
     if (i % 8 == 7):
         print
 print "};"
