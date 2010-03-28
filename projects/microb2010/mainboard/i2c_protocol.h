@@ -35,8 +35,10 @@ void i2c_sendevent(int8_t size);
 int8_t i2c_set_color(uint8_t addr, uint8_t color);
 int8_t i2c_led_control(uint8_t addr, uint8_t led, uint8_t state);
 
-int8_t i2c_cobboard_mode_manual(void);
-int8_t i2c_cobboard_mode_harvest(void);
 int8_t i2c_cobboard_mode_init(void);
+int8_t i2c_cobboard_mode_eject(void);
+int8_t i2c_cobboard_mode_harvest(uint8_t side);
+int8_t i2c_cobboard_mode_deploy(uint8_t side);
+int8_t i2c_cobboard_mode_pack(uint8_t side);
 
 #endif

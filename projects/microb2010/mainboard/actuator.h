@@ -21,3 +21,6 @@
 
 void pwm_set_and_save(void *pwm, int32_t val);
 
+void support_balls_deploy(void);
+void support_balls_pack(void);
+void actuator_init(void);

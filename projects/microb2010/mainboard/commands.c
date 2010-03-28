@@ -75,6 +75,7 @@ extern parse_pgm_inst_t cmd_cobboard_setmode1;
 extern parse_pgm_inst_t cmd_cobboard_setmode2;
 extern parse_pgm_inst_t cmd_cobboard_setmode3;
 extern parse_pgm_inst_t cmd_beacon_start;
+extern parse_pgm_inst_t cmd_servo_balls;
 extern parse_pgm_inst_t cmd_test;
 
 /* commands_traj.c */
@@ -157,6 +158,7 @@ parse_pgm_ctx_t main_ctx[] = {
 	(parse_pgm_inst_t *)&cmd_cobboard_setmode1,
 	(parse_pgm_inst_t *)&cmd_cobboard_setmode2,
 	(parse_pgm_inst_t *)&cmd_cobboard_setmode3,
+	(parse_pgm_inst_t *)&cmd_servo_balls,
 	(parse_pgm_inst_t *)&cmd_test,
 
 	/* commands_traj.c */

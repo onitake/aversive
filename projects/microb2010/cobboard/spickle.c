@@ -176,7 +176,7 @@ void spickle_deploy(uint8_t side)
 
 void spickle_pack(uint8_t side)
 {
-	cs_set_consign(&spickle.csb[side]->cs, spickle.pos_deployed[side]);
+	cs_set_consign(&spickle.csb[side]->cs, spickle.pos_packed[side]);
 }
 
 uint16_t spickle_get_deploy_delay(uint8_t side)

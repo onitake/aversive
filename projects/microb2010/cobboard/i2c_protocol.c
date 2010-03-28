@@ -93,11 +93,13 @@ static void i2c_send_status(void)
 
 	/* status */
 	ans.mode = state_get_mode();
-	ans.status = 0x55;
+	ans.status = 0x55; /* TODO */
 
 	ans.left_cobroller_speed = cobboard.left_cobroller_speed;
 	ans.right_cobroller_speed = cobboard.right_cobroller_speed;
 
+	ans.cob_count = state_get_cob_count();
+;
 	i2c_send(I2C_ADD_MASTER, (uint8_t *) &ans,
 		 sizeof(ans), I2C_CTRL_GENERIC);
 }

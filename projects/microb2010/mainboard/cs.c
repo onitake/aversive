@@ -180,9 +180,9 @@ void microb_cs_init(void)
 	rs_set_right_pwm(&mainboard.rs,  pwm_set_and_save, RIGHT_PWM);
 	/* increase gain to decrease dist, increase left and it will turn more left */
 	rs_set_left_ext_encoder(&mainboard.rs, encoders_spi_get_value, 
-				LEFT_ENCODER, IMP_COEF * 1.0015);
+				LEFT_ENCODER, IMP_COEF * -1.00);
 	rs_set_right_ext_encoder(&mainboard.rs, encoders_spi_get_value, 
-				 RIGHT_ENCODER, IMP_COEF * -1.006);
+				 RIGHT_ENCODER, IMP_COEF * 1.00);
 	/* rs will use external encoders */
 	rs_set_flags(&mainboard.rs, RS_USE_EXT);
 
@@ -231,7 +231,7 @@ void microb_cs_init(void)
 	/* ---- CS distance */
 	/* PID */
 	pid_init(&mainboard.distance.pid);
-	pid_set_gains(&mainboard.distance.pid, 500, 10, 7000);
+	pid_set_gains(&mainboard.distance.pid, 500, 100, 7000);
 	pid_set_maximums(&mainboard.distance.pid, 0, 2000, 4095);
 	pid_set_out_shift(&mainboard.distance.pid, 10);
 	pid_set_derivate_filter(&mainboard.distance.pid, 6);
@@ -257,19 +257,13 @@ void microb_cs_init(void)
 	/* ---- CS left_cobroller */
 	/* PID */
 	pid_init(&mainboard.left_cobroller.pid);
-	pid_set_gains(&mainboard.left_cobroller.pid, 500, 10, 7000);
-	pid_set_maximums(&mainboard.left_cobroller.pid, 0, 2000, 4095);
-	pid_set_out_shift(&mainboard.left_cobroller.pid, 10);
+	pid_set_gains(&mainboard.left_cobroller.pid, 80, 10, 10);
+	pid_set_maximums(&mainboard.left_cobroller.pid, 0, 30000, 4095);
+	pid_set_out_shift(&mainboard.left_cobroller.pid, 5);
 	pid_set_derivate_filter(&mainboard.left_cobroller.pid, 6);
-
-	/* QUADRAMP */
-	quadramp_init(&mainboard.left_cobroller.qr);
-	quadramp_set_1st_order_vars(&mainboard.left_cobroller.qr, 2000, 2000); /* set speed */
-	quadramp_set_2nd_order_vars(&mainboard.left_cobroller.qr, 17, 17); /* set accel */
 
 	/* CS */
 	cs_init(&mainboard.left_cobroller.cs);
-	cs_set_consign_filter(&mainboard.left_cobroller.cs, quadramp_do_filter, &mainboard.left_cobroller.qr);
 	cs_set_correct_filter(&mainboard.left_cobroller.cs, pid_do_filter, &mainboard.left_cobroller.pid);
 	cs_set_process_in(&mainboard.left_cobroller.cs, pwm_ng_set, LEFT_COBROLLER_PWM);
 	cs_set_process_out(&mainboard.left_cobroller.cs, encoders_left_cobroller_speed, LEFT_COBROLLER_ENCODER);
@@ -283,19 +277,13 @@ void microb_cs_init(void)
 	/* ---- CS right_cobroller */
 	/* PID */
 	pid_init(&mainboard.right_cobroller.pid);
-	pid_set_gains(&mainboard.right_cobroller.pid, 500, 10, 7000);
-	pid_set_maximums(&mainboard.right_cobroller.pid, 0, 2000, 4095);
-	pid_set_out_shift(&mainboard.right_cobroller.pid, 10);
+	pid_set_gains(&mainboard.right_cobroller.pid, 80, 10, 10);
+	pid_set_maximums(&mainboard.right_cobroller.pid, 0, 30000, 4095);
+	pid_set_out_shift(&mainboard.right_cobroller.pid, 5);
 	pid_set_derivate_filter(&mainboard.right_cobroller.pid, 6);
-
-	/* QUADRAMP */
-	quadramp_init(&mainboard.right_cobroller.qr);
-	quadramp_set_1st_order_vars(&mainboard.right_cobroller.qr, 2000, 2000); /* set speed */
-	quadramp_set_2nd_order_vars(&mainboard.right_cobroller.qr, 17, 17); /* set accel */
 
 	/* CS */
 	cs_init(&mainboard.right_cobroller.cs);
-	cs_set_consign_filter(&mainboard.right_cobroller.cs, quadramp_do_filter, &mainboard.right_cobroller.qr);
 	cs_set_correct_filter(&mainboard.right_cobroller.cs, pid_do_filter, &mainboard.right_cobroller.pid);
 	cs_set_process_in(&mainboard.right_cobroller.cs, pwm_ng_set, RIGHT_COBROLLER_PWM);
 	cs_set_process_out(&mainboard.right_cobroller.cs, encoders_left_cobroller_speed, RIGHT_COBROLLER_ENCODER);
@@ -307,10 +295,10 @@ void microb_cs_init(void)
 	bd_set_current_thresholds(&mainboard.right_cobroller.bd, 500, 8000, 1000000, 50);
 
 	/* set them on !! */
-	mainboard.angle.on = 1;
-	mainboard.distance.on = 1;
+	mainboard.angle.on = 0;
+	mainboard.distance.on = 0;
 	mainboard.left_cobroller.on = 1;
-	mainboard.right_cobroller.on = 1;
+	mainboard.right_cobroller.on = 0;
 
 
 	scheduler_add_periodical_event_priority(do_cs, NULL,

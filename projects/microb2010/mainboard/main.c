@@ -181,7 +181,7 @@ int main(void)
 #  error not supported
 #endif
 
-	//eeprom_write_byte(EEPROM_MAGIC_ADDRESS, EEPROM_MAGIC_MAINBOARD);
+	eeprom_write_byte(EEPROM_MAGIC_ADDRESS, EEPROM_MAGIC_MAINBOARD);
 	/* check eeprom to avoid to run the bad program */
 	if (eeprom_read_byte(EEPROM_MAGIC_ADDRESS) !=
 	    EEPROM_MAGIC_MAINBOARD) {
@@ -216,8 +216,8 @@ int main(void)
 	PWM_NG_TIMER_16BITS_INIT(4, TIMER_16_MODE_PWM_10, 
 				 TIMER4_PRESCALER_DIV_1);
 	
-	PWM_NG_INIT16(&gen.pwm1_4A, 4, A, 10, PWM_NG_MODE_SIGNED | 
-		      PWM_NG_MODE_SIGN_INVERTED, &PORTD, 4);
+	PWM_NG_INIT16(&gen.pwm1_4A, 4, A, 10, PWM_NG_MODE_SIGNED,
+		      &PORTD, 4);
 	PWM_NG_INIT16(&gen.pwm2_4B, 4, B, 10, PWM_NG_MODE_SIGNED | 
 		      PWM_NG_MODE_SIGN_INVERTED, &PORTD, 5);
 	PWM_NG_INIT16(&gen.pwm3_1A, 1, A, 10, PWM_NG_MODE_SIGNED,
@@ -239,6 +239,7 @@ int main(void)
 		      NULL, 0);
 	PWM_NG_INIT16(&gen.servo4, 5, C, 10, PWM_NG_MODE_NORMAL,
 		      NULL, 0);
+	support_balls_deploy(); /* init pwm for servos */
 
 	/* SCHEDULER */
 	scheduler_init();

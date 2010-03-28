@@ -76,6 +76,7 @@ struct i2c_cmd_cobboard_set_mode {
 #define I2C_COBBOARD_MODE_R_DEPLOY     0x04 /* deploy the spickle */
 #define I2C_COBBOARD_MODE_R_HARVEST    0x08 /* auto harvest withe cobs */
 #define I2C_COBBOARD_MODE_EJECT        0x10 /* eject cobs */
+#define I2C_COBBOARD_MODE_INIT         0x20 /* init state machine */
 	uint8_t mode;
 };
 

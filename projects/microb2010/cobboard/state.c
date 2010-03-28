@@ -68,6 +68,7 @@ static uint8_t cob_count;
 #define R_HARVEST(mode)  (!!((mode) & I2C_COBBOARD_MODE_R_HARVEST))
 #define HARVEST(side, mode) ((side) == I2C_LEFT_SIDE ? L_HARVEST(mode) : R_HARVEST(mode))
 #define EJECT(mode)      (!!((mode) & I2C_COBBOARD_MODE_EJECT))
+#define INIT(mode)       (!!((mode) & I2C_COBBOARD_MODE_INIT))
 
 uint8_t state_debug = 0;
 
@@ -77,6 +78,11 @@ static void state_dump_sensors(void)
 	STMCH_DEBUG("TODO\n");
 }
 #endif
+
+uint8_t state_get_cob_count(void)
+{
+	return cob_count;
+}
 
 static void state_debug_wait_key_pressed(void)
 {
@@ -187,10 +193,20 @@ void state_machine(void)
 {
 	while (state_want_exit() == 0) {
 
+		/* init */
+		if (INIT(state_mode)) {
+			state_mode &= (~I2C_COBBOARD_MODE_INIT);
+			state_init();
+		}
+
 		/* pack spickles */
-		if (!L_DEPLOY(state_mode))
+		if (L_DEPLOY(state_mode))
+			spickle_deploy(I2C_LEFT_SIDE);
+		else
 			spickle_pack(I2C_LEFT_SIDE);
-		if (!R_DEPLOY(state_mode))
+		if (R_DEPLOY(state_mode))
+			spickle_deploy(I2C_RIGHT_SIDE);
+		else
 			spickle_pack(I2C_RIGHT_SIDE);
 
 		/* harvest */
@@ -200,8 +216,10 @@ void state_machine(void)
 			state_do_harvest(I2C_RIGHT_SIDE);
 
 		/* eject */
-		if (EJECT(state_mode))
+		if (EJECT(state_mode)) {
+			state_mode &= (~I2C_COBBOARD_MODE_EJECT);
 			state_do_eject();
+		}
 	}
 }
 

@@ -66,15 +66,19 @@
 #define IMP_COEF 10.
 #define DIST_IMP_MM (((IMP_ENCODERS*4) / WHEEL_PERIM_MM) * IMP_COEF)
 
-#define LEFT_ENCODER            ((void *)1)
 #define RIGHT_ENCODER           ((void *)0)
+#define LEFT_ENCODER            ((void *)1)
 #define LEFT_COBROLLER_ENCODER  ((void *)2)
 #define RIGHT_COBROLLER_ENCODER ((void *)3)
 
-#define LEFT_PWM            ((void *)&gen.pwm1_4A)
-#define RIGHT_PWM           ((void *)&gen.pwm2_4B)
+#define RIGHT_PWM           ((void *)&gen.pwm1_4A)
+#define LEFT_PWM            ((void *)&gen.pwm2_4B)
 #define LEFT_COBROLLER_PWM  ((void *)&gen.pwm3_1A)
 #define RIGHT_COBROLLER_PWM ((void *)&gen.pwm4_1B)
+
+#define SUPPORT_BALLS_R_SERVO ((void *)&gen.servo2)
+#define SUPPORT_BALLS_L_SERVO ((void *)&gen.servo3)
+
 
 /** ERROR NUMS */
 #define E_USER_STRAT           194
@@ -163,6 +167,9 @@ struct mainboard {
 struct cobboard {
 	uint8_t mode;	
 	uint8_t status;
+	int16_t left_cobroller_speed;
+	int16_t right_cobroller_speed;
+	uint8_t cob_count;
 };
 
 /* state of ballboard, synchronized through i2c */

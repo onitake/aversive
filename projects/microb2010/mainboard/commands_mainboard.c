@@ -662,6 +662,8 @@ static void cmd_cobboard_show_parsed(void * parsed_result, void * data)
 {
 	printf_P(PSTR("mode = %x\r\n"), cobboard.mode);
 	printf_P(PSTR("status = %x\r\n"), cobboard.status);
+	printf_P(PSTR("left_cobroller_speed = %d\r\n"), cobboard.left_cobroller_speed);
+	printf_P(PSTR("right_cobroller_speed = %d\r\n"), cobboard.right_cobroller_speed);
 }
 
 prog_char str_cobboard_show_arg0[] = "cobboard";
@@ -697,15 +699,13 @@ static void cmd_cobboard_setmode1_parsed(void *parsed_result, void *data)
 
 	if (!strcmp_P(res->arg1, PSTR("init")))
 		i2c_cobboard_mode_init();
-	else if (!strcmp_P(res->arg1, PSTR("manual")))
-		i2c_cobboard_mode_manual();
-	else if (!strcmp_P(res->arg1, PSTR("harvest")))
-		i2c_cobboard_mode_harvest();
+	else if (!strcmp_P(res->arg1, PSTR("eject")))
+		i2c_cobboard_mode_eject();
 }
 
 prog_char str_cobboard_setmode1_arg0[] = "cobboard";
 parse_pgm_token_string_t cmd_cobboard_setmode1_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_cobboard_setmode1_result, arg0, str_cobboard_setmode1_arg0);
-prog_char str_cobboard_setmode1_arg1[] = "init#manual#harvest";
+prog_char str_cobboard_setmode1_arg1[] = "init#eject";
 parse_pgm_token_string_t cmd_cobboard_setmode1_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_cobboard_setmode1_result, arg1, str_cobboard_setmode1_arg1);
 
 prog_char help_cobboard_setmode1[] = "set cobboard mode (mode)";
@@ -741,15 +741,17 @@ static void cmd_cobboard_setmode2_parsed(void * parsed_result, void * data)
 	else if (!strcmp_P(res->arg2, PSTR("right")))
 		side = I2C_RIGHT_SIDE;
 
-	if (!strcmp_P(res->arg1, PSTR("yyy")))
-		printf("faux\r\n");
-	else if (!strcmp_P(res->arg1, PSTR("xxx")))
-		printf("faux\r\n");
+	if (!strcmp_P(res->arg1, PSTR("deploy")))
+		i2c_cobboard_mode_deploy(side);
+	else if (!strcmp_P(res->arg1, PSTR("harvest")))
+		i2c_cobboard_mode_harvest(side);
+	else if (!strcmp_P(res->arg1, PSTR("pack")))
+		i2c_cobboard_mode_pack(side);
 }
 
 prog_char str_cobboard_setmode2_arg0[] = "cobboard";
 parse_pgm_token_string_t cmd_cobboard_setmode2_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_cobboard_setmode2_result, arg0, str_cobboard_setmode2_arg0);
-prog_char str_cobboard_setmode2_arg1[] = "xxx";
+prog_char str_cobboard_setmode2_arg1[] = "harvest#deploy#pack";
 parse_pgm_token_string_t cmd_cobboard_setmode2_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_cobboard_setmode2_result, arg1, str_cobboard_setmode2_arg1);
 prog_char str_cobboard_setmode2_arg2[] = "left#right";
 parse_pgm_token_string_t cmd_cobboard_setmode2_arg2 = TOKEN_STRING_INITIALIZER(struct cmd_cobboard_setmode2_result, arg2, str_cobboard_setmode2_arg2);
@@ -800,6 +802,46 @@ parse_pgm_inst_t cmd_cobboard_setmode3 = {
 		(prog_void *)&cmd_cobboard_setmode3_arg0, 
 		(prog_void *)&cmd_cobboard_setmode3_arg1, 
 		(prog_void *)&cmd_cobboard_setmode3_arg2, 
+		NULL,
+	},
+};
+
+/**********************************************************/
+/* Servo_Balls */
+
+/* this structure is filled when cmd_servo_balls is parsed successfully */
+struct cmd_servo_balls_result {
+	fixed_string_t arg0;
+	fixed_string_t arg1;
+};
+
+/* function called when cmd_servo_balls is parsed successfully */
+static void cmd_servo_balls_parsed(void *parsed_result,
+				   __attribute__((unused)) void *data)
+{
+	struct cmd_servo_balls_result *res = parsed_result;
+
+	if (!strcmp_P(res->arg1, PSTR("deploy")))
+		support_balls_deploy();
+	else if (!strcmp_P(res->arg1, PSTR("pack")))
+		support_balls_pack();
+}
+
+prog_char str_servo_balls_arg0[] = "support_balls";
+parse_pgm_token_string_t cmd_servo_balls_arg0 =
+	TOKEN_STRING_INITIALIZER(struct cmd_servo_balls_result, arg0, str_servo_balls_arg0);
+prog_char str_servo_balls_arg1[] = "deploy#pack";
+parse_pgm_token_string_t cmd_servo_balls_arg1 =
+	TOKEN_STRING_INITIALIZER(struct cmd_servo_balls_result, arg1, str_servo_balls_arg1);
+
+prog_char help_servo_balls[] = "control support balls";
+parse_pgm_inst_t cmd_servo_balls = {
+	.f = cmd_servo_balls_parsed,  /* function to call */
+	.data = NULL,      /* 2nd arg of func */
+	.help_str = help_servo_balls,
+	.tokens = {        /* token list, NULL terminated */
+		(prog_void *)&cmd_servo_balls_arg0, 
+		(prog_void *)&cmd_servo_balls_arg1, 
 		NULL,
 	},
 };

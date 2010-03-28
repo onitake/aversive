@@ -263,6 +263,10 @@ void i2c_recvevent(uint8_t * buf, int8_t size)
 		/* status */
 		cobboard.mode = ans->mode;
 		cobboard.status = ans->status;
+		cobboard.left_cobroller_speed = ans->left_cobroller_speed;
+		cs_set_consign(&mainboard.left_cobroller.cs, cobboard.left_cobroller_speed);
+		cobboard.right_cobroller_speed = ans->right_cobroller_speed;
+		cs_set_consign(&mainboard.right_cobroller.cs, cobboard.right_cobroller_speed);
 
 		break;
 	}
@@ -368,19 +372,61 @@ int8_t i2c_led_control(uint8_t addr, uint8_t led, uint8_t state)
 	return i2c_send_command(addr, (uint8_t*)&buf, sizeof(buf));
 }
 
-int8_t i2c_cobboard_mode_manual(void)
+int8_t i2c_cobboard_mode_eject(void)
 {
 	struct i2c_cmd_cobboard_set_mode buf;
 	buf.hdr.cmd = I2C_CMD_COBBOARD_SET_MODE;
-	buf.mode = I2C_COBBOARD_MODE_MANUAL;
+	buf.mode = cobboard.mode | I2C_COBBOARD_MODE_EJECT;
 	return i2c_send_command(I2C_COBBOARD_ADDR, (uint8_t*)&buf, sizeof(buf));
 }
 
-int8_t i2c_cobboard_mode_harvest(void)
+int8_t i2c_cobboard_mode_harvest(uint8_t side)
 {
 	struct i2c_cmd_cobboard_set_mode buf;
+	uint8_t mode = cobboard.mode;
+
 	buf.hdr.cmd = I2C_CMD_COBBOARD_SET_MODE;
-	buf.mode = I2C_COBBOARD_MODE_HARVEST;
+	if (side == I2C_LEFT_SIDE) {
+		mode |= I2C_COBBOARD_MODE_L_DEPLOY;
+		mode |= I2C_COBBOARD_MODE_L_HARVEST;
+	}
+	else {
+		mode |= I2C_COBBOARD_MODE_R_DEPLOY;
+		mode |= I2C_COBBOARD_MODE_R_HARVEST;
+	}
+	buf.mode = mode;
+	return i2c_send_command(I2C_COBBOARD_ADDR, (uint8_t*)&buf, sizeof(buf));
+}
+
+int8_t i2c_cobboard_mode_deploy(uint8_t side)
+{
+	struct i2c_cmd_cobboard_set_mode buf;
+	uint8_t mode = cobboard.mode;
+
+	buf.hdr.cmd = I2C_CMD_COBBOARD_SET_MODE;
+	if (side == I2C_LEFT_SIDE) {
+		mode &= ~(I2C_COBBOARD_MODE_L_DEPLOY | I2C_COBBOARD_MODE_L_HARVEST);
+		mode |= I2C_COBBOARD_MODE_L_DEPLOY;
+	}
+	else {
+		mode &= ~(I2C_COBBOARD_MODE_R_DEPLOY | I2C_COBBOARD_MODE_R_HARVEST);
+		mode |= I2C_COBBOARD_MODE_R_DEPLOY;
+	}
+	buf.mode = mode;
+	return i2c_send_command(I2C_COBBOARD_ADDR, (uint8_t*)&buf, sizeof(buf));
+}
+
+int8_t i2c_cobboard_mode_pack(uint8_t side)
+{
+	struct i2c_cmd_cobboard_set_mode buf;
+	uint8_t mode = cobboard.mode;
+
+	buf.hdr.cmd = I2C_CMD_COBBOARD_SET_MODE;
+	if (side == I2C_LEFT_SIDE)
+		mode &= ~(I2C_COBBOARD_MODE_L_DEPLOY | I2C_COBBOARD_MODE_L_HARVEST);
+	else
+		mode &= ~(I2C_COBBOARD_MODE_R_DEPLOY | I2C_COBBOARD_MODE_R_HARVEST);
+	buf.mode = mode;
 	return i2c_send_command(I2C_COBBOARD_ADDR, (uint8_t*)&buf, sizeof(buf));
 }
 
