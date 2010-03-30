@@ -118,11 +118,12 @@ static uint8_t state_cob_color(uint8_t side)
 int8_t state_set_mode(uint8_t mode)
 {
 	state_mode = mode;
-	/* XXX synchrounous pack here */
-	STMCH_DEBUG("%s(): l_deploy=%d l_harvest=%d "
-		    "r_deploy=%d r_harvest=%d eject=%d",
-		    __FUNCTION__, L_DEPLOY(mode), L_HARVEST(mode),
-		    R_DEPLOY(mode), R_HARVEST(mode), EJECT(mode));
+
+/* 	STMCH_DEBUG("%s(): l_deploy=%d l_harvest=%d " */
+/* 		    "r_deploy=%d r_harvest=%d eject=%d", */
+/* 		    __FUNCTION__, L_DEPLOY(mode), L_HARVEST(mode), */
+/* 		    R_DEPLOY(mode), R_HARVEST(mode), EJECT(mode)); */
+
 	return 0;
 }
 
@@ -184,8 +185,10 @@ static void state_do_eject(void)
 {
 	cob_count = 0;
 	shovel_mid();
+	servo_door_open();
 	time_wait_ms(2000);
 	shovel_down();
+	servo_door_close();
 }
 
 /* main state machine */
@@ -199,15 +202,23 @@ void state_machine(void)
 			state_init();
 		}
 
-		/* pack spickles */
-		if (L_DEPLOY(state_mode))
+		/* pack/deply spickles, enable/disable roller */
+		if (L_DEPLOY(state_mode)) {
 			spickle_deploy(I2C_LEFT_SIDE);
-		else
+			left_cobroller_on();
+		}
+		else {
 			spickle_pack(I2C_LEFT_SIDE);
-		if (R_DEPLOY(state_mode))
+			left_cobroller_off();
+		}
+		if (R_DEPLOY(state_mode)) {
 			spickle_deploy(I2C_RIGHT_SIDE);
-		else
+			right_cobroller_on();
+		}
+		else {
 			spickle_pack(I2C_RIGHT_SIDE);
+			right_cobroller_off();
+		}
 
 		/* harvest */
 		if (L_DEPLOY(state_mode) && L_HARVEST(state_mode))
@@ -227,6 +238,7 @@ void state_init(void)
 {
 	vt100_init(&local_vt100);
 	shovel_down();
+	servo_door_close();
 	spickle_pack(I2C_LEFT_SIDE);
 	spickle_pack(I2C_RIGHT_SIDE);
 	state_mode = 0;

@@ -47,7 +47,6 @@
 
 #define COBROLLER_SPEED 800
 
-#define SERVO_DOOR_PWM ((void *)&gen.servo2)
 #define SERVO_DOOR_OPEN 250
 #define SERVO_DOOR_CLOSED 470
 

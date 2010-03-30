@@ -80,6 +80,21 @@ struct i2c_cmd_cobboard_set_mode {
 	uint8_t mode;
 };
 
+#define I2C_CMD_BALLBOARD_SET_MODE 0x10
+
+struct i2c_cmd_ballboard_set_mode {
+	struct i2c_cmd_hdr hdr;
+
+#define I2C_BALLBOARD_MODE_OFF         0x00
+#define I2C_BALLBOARD_MODE_HARVEST     0x01
+#define I2C_BALLBOARD_MODE_EJECT       0x02
+#define I2C_BALLBOARD_MODE_PREP_L_FORK 0x03
+#define I2C_BALLBOARD_MODE_TAKE_L_FORK 0x04
+#define I2C_BALLBOARD_MODE_PREP_R_FORK 0x05
+#define I2C_BALLBOARD_MODE_TAKE_R_FORK 0x06
+	uint8_t mode;
+};
+
 /****/
 /* requests and their answers */
 /****/
