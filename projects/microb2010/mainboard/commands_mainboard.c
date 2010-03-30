@@ -291,15 +291,15 @@ static void cmd_start_parsed(void *parsed_result, void *data)
 		gen.log_level = 0;
 	}
 
-	if (!strcmp_P(res->color, PSTR("red"))) {
-		mainboard.our_color = I2C_COLOR_RED;
-		i2c_set_color(I2C_COBBOARD_ADDR, I2C_COLOR_RED);
-		i2c_set_color(I2C_BALLBOARD_ADDR, I2C_COLOR_RED);
+	if (!strcmp_P(res->color, PSTR("yellow"))) {
+		mainboard.our_color = I2C_COLOR_YELLOW;
+		i2c_set_color(I2C_COBBOARD_ADDR, I2C_COLOR_YELLOW);
+		i2c_set_color(I2C_BALLBOARD_ADDR, I2C_COLOR_YELLOW);
 	}
-	else if (!strcmp_P(res->color, PSTR("green"))) {
-		mainboard.our_color = I2C_COLOR_GREEN;
-		i2c_set_color(I2C_COBBOARD_ADDR, I2C_COLOR_GREEN);
-		i2c_set_color(I2C_BALLBOARD_ADDR, I2C_COLOR_GREEN);
+	else if (!strcmp_P(res->color, PSTR("blue"))) {
+		mainboard.our_color = I2C_COLOR_BLUE;
+		i2c_set_color(I2C_COBBOARD_ADDR, I2C_COLOR_BLUE);
+		i2c_set_color(I2C_BALLBOARD_ADDR, I2C_COLOR_BLUE);
 	}
 
 	strat_start();
@@ -310,7 +310,7 @@ static void cmd_start_parsed(void *parsed_result, void *data)
 
 prog_char str_start_arg0[] = "start";
 parse_pgm_token_string_t cmd_start_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_start_result, arg0, str_start_arg0);
-prog_char str_start_color[] = "green#red";
+prog_char str_start_color[] = "blue#yellow";
 parse_pgm_token_string_t cmd_start_color = TOKEN_STRING_INITIALIZER(struct cmd_start_result, color, str_start_color);
 prog_char str_start_debug[] = "debug#match";
 parse_pgm_token_string_t cmd_start_debug = TOKEN_STRING_INITIALIZER(struct cmd_start_result, debug, str_start_debug);
@@ -543,22 +543,22 @@ struct cmd_color_result {
 static void cmd_color_parsed(void *parsed_result, void *data)
 {
 	struct cmd_color_result *res = (struct cmd_color_result *) parsed_result;
-	if (!strcmp_P(res->color, PSTR("red"))) {
-		mainboard.our_color = I2C_COLOR_RED;
-		i2c_set_color(I2C_COBBOARD_ADDR, I2C_COLOR_RED);
-		i2c_set_color(I2C_BALLBOARD_ADDR, I2C_COLOR_RED);
+	if (!strcmp_P(res->color, PSTR("yellow"))) {
+		mainboard.our_color = I2C_COLOR_YELLOW;
+		i2c_set_color(I2C_COBBOARD_ADDR, I2C_COLOR_YELLOW);
+		i2c_set_color(I2C_BALLBOARD_ADDR, I2C_COLOR_YELLOW);
 	}
-	else if (!strcmp_P(res->color, PSTR("green"))) {
-		mainboard.our_color = I2C_COLOR_GREEN;
-		i2c_set_color(I2C_COBBOARD_ADDR, I2C_COLOR_GREEN);
-		i2c_set_color(I2C_BALLBOARD_ADDR, I2C_COLOR_GREEN);
+	else if (!strcmp_P(res->color, PSTR("blue"))) {
+		mainboard.our_color = I2C_COLOR_BLUE;
+		i2c_set_color(I2C_COBBOARD_ADDR, I2C_COLOR_BLUE);
+		i2c_set_color(I2C_BALLBOARD_ADDR, I2C_COLOR_BLUE);
 	}
 	printf_P(PSTR("Done\r\n"));
 }
 
 prog_char str_color_arg0[] = "color";
 parse_pgm_token_string_t cmd_color_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_color_result, arg0, str_color_arg0);
-prog_char str_color_color[] = "green#red";
+prog_char str_color_color[] = "blue#yellow";
 parse_pgm_token_string_t cmd_color_color = TOKEN_STRING_INITIALIZER(struct cmd_color_result, color, str_color_color);
 
 prog_char help_color[] = "Set our color";

@@ -23,10 +23,10 @@
 #define _STRAT_H_
 
 /* convert coords according to our color */
-#define COLOR_Y(y)     ((mainboard.our_color==I2C_COLOR_RED)? (y) : (AREA_Y-(y)))
-#define COLOR_A(a)     ((mainboard.our_color==I2C_COLOR_RED)? (a) : (-a))
-#define COLOR_SIGN(x)  ((mainboard.our_color==I2C_COLOR_RED)? (x) : (-x))
-#define COLOR_INVERT(x) ((mainboard.our_color==I2C_COLOR_RED)? (x) : (!x))
+#define COLOR_Y(y)     ((mainboard.our_color==I2C_COLOR_YELLOW)? (y) : (AREA_Y-(y)))
+#define COLOR_A(a)     ((mainboard.our_color==I2C_COLOR_YELLOW)? (a) : (-a))
+#define COLOR_SIGN(x)  ((mainboard.our_color==I2C_COLOR_YELLOW)? (x) : (-x))
+#define COLOR_INVERT(x) ((mainboard.our_color==I2C_COLOR_YELLOW)? (x) : (!x))
 
 /* area */
 #define AREA_X 3000
@@ -56,7 +56,7 @@
  *    C2       6  7  8   v                  C2 
  *     |------ 9 10 11   .            ------| 
  *     |     |           .            |     | 
- *     | red |           .            |green| 
+ *     | yellow |           .            |blue| 
  *     +-----+--L1--L2-------L2--L1---+-----+
  *                       x
  */

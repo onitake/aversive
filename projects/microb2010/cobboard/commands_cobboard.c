@@ -146,18 +146,18 @@ struct cmd_color_result {
 static void cmd_color_parsed(void *parsed_result, __attribute__((unused)) void *data)
 {
 	struct cmd_color_result *res = (struct cmd_color_result *) parsed_result;
-	if (!strcmp_P(res->color, PSTR("red"))) {
-		cobboard.our_color = I2C_COLOR_RED;
+	if (!strcmp_P(res->color, PSTR("yellow"))) {
+		cobboard.our_color = I2C_COLOR_YELLOW;
 	}
-	else if (!strcmp_P(res->color, PSTR("green"))) {
-		cobboard.our_color = I2C_COLOR_GREEN;
+	else if (!strcmp_P(res->color, PSTR("blue"))) {
+		cobboard.our_color = I2C_COLOR_BLUE;
 	}
 	printf_P(PSTR("Done\r\n"));
 }
 
 prog_char str_color_arg0[] = "color";
 parse_pgm_token_string_t cmd_color_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_color_result, arg0, str_color_arg0);
-prog_char str_color_color[] = "green#red";
+prog_char str_color_color[] = "blue#yellow";
 parse_pgm_token_string_t cmd_color_color = TOKEN_STRING_INITIALIZER(struct cmd_color_result, color, str_color_color);
 
 prog_char help_color[] = "Set our color";

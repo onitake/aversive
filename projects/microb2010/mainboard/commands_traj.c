@@ -743,16 +743,16 @@ static void cmd_position_parsed(void * parsed_result, void * data)
 	else if (!strcmp_P(res->arg1, PSTR("set"))) {
 		position_set(&mainboard.pos, res->arg2, res->arg3, res->arg4);
 	}
-	else if (!strcmp_P(res->arg1, PSTR("autoset_green"))) {
-		mainboard.our_color = I2C_COLOR_GREEN;
-		i2c_set_color(I2C_COBBOARD_ADDR, I2C_COLOR_GREEN);
-		i2c_set_color(I2C_BALLBOARD_ADDR, I2C_COLOR_GREEN);
+	else if (!strcmp_P(res->arg1, PSTR("autoset_blue"))) {
+		mainboard.our_color = I2C_COLOR_BLUE;
+		i2c_set_color(I2C_COBBOARD_ADDR, I2C_COLOR_BLUE);
+		i2c_set_color(I2C_BALLBOARD_ADDR, I2C_COLOR_BLUE);
 		auto_position();
 	}
 	else if (!strcmp_P(res->arg1, PSTR("autoset_red"))) {
-		mainboard.our_color = I2C_COLOR_RED;
-		i2c_set_color(I2C_COBBOARD_ADDR, I2C_COLOR_RED);
-		i2c_set_color(I2C_BALLBOARD_ADDR, I2C_COLOR_RED);
+		mainboard.our_color = I2C_COLOR_YELLOW;
+		i2c_set_color(I2C_COBBOARD_ADDR, I2C_COLOR_YELLOW);
+		i2c_set_color(I2C_BALLBOARD_ADDR, I2C_COLOR_YELLOW);
 		auto_position();
 	}
 
@@ -765,7 +765,7 @@ static void cmd_position_parsed(void * parsed_result, void * data)
 
 prog_char str_position_arg0[] = "position";
 parse_pgm_token_string_t cmd_position_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_position_result, arg0, str_position_arg0);
-prog_char str_position_arg1[] = "show#reset#autoset_green#autoset_red";
+prog_char str_position_arg1[] = "show#reset#autoset_blue#autoset_red";
 parse_pgm_token_string_t cmd_position_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_position_result, arg1, str_position_arg1);
 
 prog_char help_position[] = "Show/reset (x,y,a) position";

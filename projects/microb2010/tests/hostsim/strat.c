@@ -183,11 +183,11 @@ struct strat_infos strat_infos = {
 	
 	/* lintel dispensers */
 	.l1 = {
-		.x = 912, /* XXX for red only */
+		.x = 912, /* XXX for yellow only */
 		.name = "lin_disp1",
 	},
 	.l2 = {
-		.x = 1312,  /* XXX for red only */
+		.x = 1312,  /* XXX for yellow only */
 		.name = "lin_disp2",
 	},
 
@@ -244,7 +244,7 @@ struct strat_infos strat_infos = {
 
 void strat_set_bounding_box(void)
 {
-	if (get_color() == I2C_COLOR_RED) {
+	if (get_color() == I2C_COLOR_YELLOW) {
 		strat_infos.area_bbox.x1 = 300;
 		strat_infos.area_bbox.y1 = 200;
 		strat_infos.area_bbox.x2 = 2720; /* needed for c1 */
@@ -273,7 +273,7 @@ void strat_preinit(void)
 
 #ifndef HOST_VERSION
 	i2c_mechboard_mode_init();
-	if (get_color() == I2C_COLOR_RED)
+	if (get_color() == I2C_COLOR_YELLOW)
 		i2c_mechboard_mode_prepare_pickup(I2C_LEFT_SIDE);
 	else
 		i2c_mechboard_mode_prepare_pickup(I2C_RIGHT_SIDE);
@@ -537,7 +537,7 @@ void strat_reset_infos(void)
 	strat_set_bounding_box();
 
 	/* set lintel position, depending on color */
-	if (mainboard.our_color == I2C_COLOR_RED) {
+	if (mainboard.our_color == I2C_COLOR_YELLOW) {
 		strat_infos.l1.x = 912;
 		strat_infos.l2.x = 1312;
 	}

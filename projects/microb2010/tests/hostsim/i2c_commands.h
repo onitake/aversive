@@ -31,8 +31,8 @@
 #define I2C_AUTO_SIDE   2 /* for prepare_pickup */
 #define I2C_CENTER_SIDE 3 /* for prepare_pickup */
 
-#define I2C_COLOR_RED   0
-#define I2C_COLOR_GREEN 1
+#define I2C_COLOR_YELLOW   0
+#define I2C_COLOR_BLUE 1
 
 #define I2C_AUTOBUILD_DEFAULT_DIST 210
 

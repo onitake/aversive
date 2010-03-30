@@ -28,13 +28,13 @@
 #define I2C_COBBOARD_ADDR    2
 #define I2C_BALLBOARD_ADDR   3
 
-#define I2C_LEFT_SIDE   0
-#define I2C_RIGHT_SIDE  1
-#define I2C_AUTO_SIDE   2
-#define I2C_CENTER_SIDE 3
+#define I2C_LEFT_SIDE    0
+#define I2C_RIGHT_SIDE   1
+#define I2C_AUTO_SIDE    2
+#define I2C_CENTER_SIDE  3
 
-#define I2C_COLOR_RED   0
-#define I2C_COLOR_GREEN 1
+#define I2C_COLOR_YELLOW 0
+#define I2C_COLOR_BLUE   1
 
 #define I2C_COB_BLACK   0
 #define I2C_COB_WHITE   1

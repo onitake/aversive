@@ -665,7 +665,7 @@ static void cmd_position_parsed(void * parsed_result, void * data)
 	else if (!strcmp_P(res->arg1, PSTR("set"))) {
 		position_set(&mainboard.pos, res->arg2, res->arg3, res->arg4);
 	}
-	else if (!strcmp_P(res->arg1, PSTR("autoset_green"))) {
+	else if (!strcmp_P(res->arg1, PSTR("autoset_blue"))) {
 		auto_position();
 	}
 	else if (!strcmp_P(res->arg1, PSTR("autoset_red"))) {
@@ -681,7 +681,7 @@ static void cmd_position_parsed(void * parsed_result, void * data)
 
 prog_char str_position_arg0[] = "position";
 parse_pgm_token_string_t cmd_position_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_position_result, arg0, str_position_arg0);
-prog_char str_position_arg1[] = "show#reset#autoset_green#autoset_red";
+prog_char str_position_arg1[] = "show#reset#autoset_blue#autoset_red";
 parse_pgm_token_string_t cmd_position_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_position_result, arg1, str_position_arg1);
 
 prog_char help_position[] = "Show/reset (x,y,a) position";

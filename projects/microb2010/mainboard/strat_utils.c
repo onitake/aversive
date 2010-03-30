@@ -171,13 +171,13 @@ uint8_t robot_is_in_area(int16_t margin)
 }
 
 /* return 1 or 0 depending on which side of a line (y=cste) is the
- * robot. works in red or green color. */
+ * robot. works in yellow or blue color. */
 uint8_t y_is_more_than(int16_t y)
 {
 	int16_t posy;
 	
 	posy = position_get_y_s16(&mainboard.pos);
-	if (mainboard.our_color == I2C_COLOR_RED) {
+	if (mainboard.our_color == I2C_COLOR_YELLOW) {
 		if (posy > y)
 			return 1;
 		else
@@ -192,7 +192,7 @@ uint8_t y_is_more_than(int16_t y)
 }
 
 /* return 1 or 0 depending on which side of a line (x=cste) is the
- * robot. works in red or green color. */
+ * robot. works in yellow or blue color. */
 uint8_t x_is_more_than(int16_t x)
 {
 	int16_t posx;
@@ -256,10 +256,10 @@ uint8_t get_color(void)
 /* get the color of the opponent robot */
 uint8_t get_opponent_color(void)
 {
-	if (mainboard.our_color == I2C_COLOR_RED)
-		return I2C_COLOR_GREEN;
+	if (mainboard.our_color == I2C_COLOR_YELLOW)
+		return I2C_COLOR_BLUE;
 	else
-		return I2C_COLOR_RED;
+		return I2C_COLOR_YELLOW;
 }
 
 /* get the xy pos of the opponent robot */
