@@ -53,8 +53,6 @@
 #include "spickle.h"
 #include "shovel.h"
 
-extern uint16_t state_debug;
-
 struct cmd_event_result {
 	fixed_string_t arg0;
 	fixed_string_t arg1;
@@ -68,7 +66,7 @@ static void cmd_event_parsed(void *parsed_result, __attribute__((unused)) void *
 	u08 bit=0;
 
 	struct cmd_event_result * res = parsed_result;
-	
+
 	if (!strcmp_P(res->arg1, PSTR("all"))) {
 		bit = DO_ENCODERS | DO_CS | DO_BD | DO_POWER;
 		if (!strcmp_P(res->arg2, PSTR("on")))
@@ -374,7 +372,7 @@ prog_char str_state_debug_arg0[] = "state_debug";
 parse_pgm_token_string_t cmd_state_debug_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_state_debug_result, arg0, str_state_debug_arg0);
 parse_pgm_token_num_t cmd_state_debug_on = TOKEN_NUM_INITIALIZER(struct cmd_state_debug_result, on, UINT8);
 
-prog_char help_state_debug[] = "Set debug timer for state machine";
+prog_char help_state_debug[] = "Set debug for state machine";
 parse_pgm_inst_t cmd_state_debug = {
 	.f = cmd_state_debug_parsed,  /* function to call */
 	.data = NULL,      /* 2nd arg of func */

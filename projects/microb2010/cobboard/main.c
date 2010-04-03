@@ -253,7 +253,7 @@ int main(void)
 	spickle_init();
 	shovel_init();
 
-/* 	state_init(); */
+	state_init();
 
 	printf_P(PSTR("\r\n"));
 	printf_P(PSTR("Dass das Gluck deinen Haus setzt.\r\n"));
@@ -263,7 +263,7 @@ int main(void)
  	gen.log_level = 5;
 	cobboard.flags |= DO_CS;
 
-/* 	state_machine(); */
+ 	state_machine();
 	cmdline_interact();
 
 	return 0;

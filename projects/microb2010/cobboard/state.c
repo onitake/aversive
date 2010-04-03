@@ -139,6 +139,7 @@ static uint8_t state_want_exit(void)
 		return 0;
 	if (vt100_parser(&local_vt100, c) == KEY_CTRL_C)
 		return 1;
+	printf_P(PSTR("CTRL-C\r\n"));
 	return 0;
 }
 
@@ -155,7 +156,7 @@ static void state_do_harvest(uint8_t side)
 	/* if there is no cob, return */
 	if (state_cob_present(side))
 		return;
-		
+
 	/* if it is black, nothing to do */
 	if (state_cob_color(side) == I2C_COB_BLACK)
 		return;
@@ -163,6 +164,9 @@ static void state_do_harvest(uint8_t side)
 	/* eat the cob */
 	spickle_pack(side);
 	state_debug_wait_key_pressed();
+	/* xxx */
+	time_wait_ms(250);
+	left_cobroller_on();
 	delay = spickle_get_pack_delay(side);
 	time_wait_ms(delay);
 
@@ -177,7 +181,9 @@ static void state_do_harvest(uint8_t side)
 	wait_ms(200);
 	state_debug_wait_key_pressed();
 	shovel_down();
+	left_cobroller_off();
 	state_debug_wait_key_pressed();
+	time_wait_ms(500);
 }
 
 /* eject cobs */
@@ -205,7 +211,8 @@ void state_machine(void)
 		/* pack/deply spickles, enable/disable roller */
 		if (L_DEPLOY(state_mode)) {
 			spickle_deploy(I2C_LEFT_SIDE);
-			left_cobroller_on();
+			//left_cobroller_on();
+			left_cobroller_off();
 		}
 		else {
 			spickle_pack(I2C_LEFT_SIDE);

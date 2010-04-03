@@ -23,7 +23,7 @@
 #define _SHOVEL_H_
 
 #define SHOVEL_DOWN 100
-#define SHOVEL_MID  4000
+#define SHOVEL_MID  6000
 #define SHOVEL_UP   10000
 
 void shovel_init(void);

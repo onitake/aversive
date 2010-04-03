@@ -50,6 +50,8 @@
 #define RIGHT_SPICKLE_ENCODER  ((void *)1)
 #define SHOVEL_ENCODER         ((void *)2)
 
+#define SERVO_DOOR_PWM         ((void *)&gen.servo2)
+
 #define LEFT_SPICKLE_PWM       ((void *)&gen.pwm1_4A)
 #define RIGHT_SPICKLE_PWM      ((void *)&gen.pwm2_4B)
 #define SHOVEL_PWM             ((void *)&gen.pwm3_1A)

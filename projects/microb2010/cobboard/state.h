@@ -35,4 +35,6 @@ void state_machine(void);
 
 void state_init(void);
 
+extern uint8_t state_debug;
+
 #endif

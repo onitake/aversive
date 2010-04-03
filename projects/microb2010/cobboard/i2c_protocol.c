@@ -113,21 +113,21 @@ static int8_t i2c_set_mode(struct i2c_cmd_cobboard_set_mode *cmd)
 void i2c_recvevent(uint8_t * buf, int8_t size)
 {
 	void *void_cmd = buf;
-	
+
 	static uint8_t a = 0;
-	
+
 	a++;
 	if (a & 0x10)
 		LED2_TOGGLE();
-	
+
 	if (size <= 0) {
 		goto error;
 	}
-	
+
 	switch (buf[0]) {
 
 	/* Commands (no answer needed) */
-	case I2C_CMD_GENERIC_LED_CONTROL: 
+	case I2C_CMD_GENERIC_LED_CONTROL:
 		{
 			struct i2c_cmd_led_control *cmd = void_cmd;
 			if (size != sizeof (*cmd))
@@ -135,7 +135,7 @@ void i2c_recvevent(uint8_t * buf, int8_t size)
 			i2c_led_control(cmd->led_num, cmd->state);
 			break;
 		}
-		
+
 	case I2C_CMD_COBBOARD_SET_MODE:
 		{
 			struct i2c_cmd_cobboard_set_mode *cmd = void_cmd;

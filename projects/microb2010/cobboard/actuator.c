@@ -46,6 +46,7 @@
 #include "actuator.h"
 
 #define COBROLLER_SPEED 800
+//#define COBROLLER_SPEED 400
 
 #define SERVO_DOOR_OPEN 250
 #define SERVO_DOOR_CLOSED 470
