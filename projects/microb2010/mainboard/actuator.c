@@ -68,12 +68,12 @@ void pwm_set_and_save(void *pwm, int32_t val)
 void support_balls_deploy(void)
 {
 	pwm_ng_set(SUPPORT_BALLS_R_SERVO, 510);
-	pwm_ng_set(SUPPORT_BALLS_L_SERVO, 240);
+	pwm_ng_set(SUPPORT_BALLS_L_SERVO, 205);
 }
 
 void support_balls_pack(void)
 {
-	pwm_ng_set(SUPPORT_BALLS_R_SERVO, 200);
+	pwm_ng_set(SUPPORT_BALLS_R_SERVO, 250);
 	pwm_ng_set(SUPPORT_BALLS_L_SERVO, 480);
 }
 

@@ -270,14 +270,16 @@ void i2c_recvevent(uint8_t * buf, int8_t size)
 
 		break;
 	}
-		
+
 	case I2C_ANS_BALLBOARD_STATUS: {
 		struct i2c_ans_ballboard_status * ans = 
 			(struct i2c_ans_ballboard_status *)buf;
-		
+
 		if (size != sizeof (*ans))
 			goto error;
+		ballboard.mode = ans->mode;
 		ballboard.status = ans->status;
+		ballboard.ball_count = ans->ball_count;
 		break;
 	}
 
@@ -296,12 +298,10 @@ void i2c_recvevent(uint8_t * buf, int8_t size)
 		i2c_errors = 0;
 	}
 }
-	
+
 void i2c_recvbyteevent(uint8_t hwstatus, uint8_t i, uint8_t c)
 {
 }
-
-
 
 /* ******** ******** ******** ******** */
 /* commands */
@@ -435,6 +435,14 @@ int8_t i2c_cobboard_mode_init(void)
 	struct i2c_cmd_cobboard_set_mode buf;
 	buf.hdr.cmd = I2C_CMD_COBBOARD_SET_MODE;
 	buf.mode = I2C_COBBOARD_MODE_INIT;
+	return i2c_send_command(I2C_COBBOARD_ADDR, (uint8_t*)&buf, sizeof(buf));
+}
+
+int8_t i2c_ballboard_set_mode(uint8_t mode)
+{
+	struct i2c_cmd_ballboard_set_mode buf;
+	buf.hdr.cmd = I2C_CMD_BALLBOARD_SET_MODE;
+	buf.mode = mode;
 	return i2c_send_command(I2C_COBBOARD_ADDR, (uint8_t*)&buf, sizeof(buf));
 }
 

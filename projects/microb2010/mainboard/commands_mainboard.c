@@ -662,6 +662,7 @@ static void cmd_cobboard_show_parsed(void * parsed_result, void * data)
 {
 	printf_P(PSTR("mode = %x\r\n"), cobboard.mode);
 	printf_P(PSTR("status = %x\r\n"), cobboard.status);
+	printf_P(PSTR("cob_count = %x\r\n"), cobboard.cob_count);
 	printf_P(PSTR("left_cobroller_speed = %d\r\n"), cobboard.left_cobroller_speed);
 	printf_P(PSTR("right_cobroller_speed = %d\r\n"), cobboard.right_cobroller_speed);
 }
@@ -802,6 +803,171 @@ parse_pgm_inst_t cmd_cobboard_setmode3 = {
 		(prog_void *)&cmd_cobboard_setmode3_arg0, 
 		(prog_void *)&cmd_cobboard_setmode3_arg1, 
 		(prog_void *)&cmd_cobboard_setmode3_arg2, 
+		NULL,
+	},
+};
+
+/**********************************************************/
+/* Ballboard_Show */
+
+/* this structure is filled when cmd_ballboard_show is parsed successfully */
+struct cmd_ballboard_show_result {
+	fixed_string_t arg0;
+	fixed_string_t arg1;
+};
+
+/* function called when cmd_ballboard_show is parsed successfully */
+static void cmd_ballboard_show_parsed(void * parsed_result, void * data)
+{
+	printf_P(PSTR("mode = %x\r\n"), ballboard.mode);
+	printf_P(PSTR("status = %x\r\n"), ballboard.status);
+	printf_P(PSTR("ball_count = %d\r\n"), ballboard.ball_count);
+}
+
+prog_char str_ballboard_show_arg0[] = "ballboard";
+parse_pgm_token_string_t cmd_ballboard_show_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_ballboard_show_result, arg0, str_ballboard_show_arg0);
+prog_char str_ballboard_show_arg1[] = "show";
+parse_pgm_token_string_t cmd_ballboard_show_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_ballboard_show_result, arg1, str_ballboard_show_arg1);
+
+prog_char help_ballboard_show[] = "show ballboard status";
+parse_pgm_inst_t cmd_ballboard_show = {
+	.f = cmd_ballboard_show_parsed,  /* function to call */
+	.data = NULL,      /* 2nd arg of func */
+	.help_str = help_ballboard_show,
+	.tokens = {        /* token list, NULL terminated */
+		(prog_void *)&cmd_ballboard_show_arg0, 
+		(prog_void *)&cmd_ballboard_show_arg1, 
+		NULL,
+	},
+};
+
+/**********************************************************/
+/* Ballboard_Setmode1 */
+
+/* this structure is filled when cmd_ballboard_setmode1 is parsed successfully */
+struct cmd_ballboard_setmode1_result {
+	fixed_string_t arg0;
+	fixed_string_t arg1;
+};
+
+/* function called when cmd_ballboard_setmode1 is parsed successfully */
+static void cmd_ballboard_setmode1_parsed(void *parsed_result, void *data)
+{
+	struct cmd_ballboard_setmode1_result *res = parsed_result;
+
+	if (!strcmp_P(res->arg1, PSTR("init")))
+		i2c_ballboard_set_mode(I2C_BALLBOARD_MODE_INIT);
+	else if (!strcmp_P(res->arg1, PSTR("off")))
+		i2c_ballboard_set_mode(I2C_BALLBOARD_MODE_OFF);
+	else if (!strcmp_P(res->arg1, PSTR("eject")))
+		i2c_ballboard_set_mode(I2C_BALLBOARD_MODE_EJECT);
+	else if (!strcmp_P(res->arg1, PSTR("harvest")))
+		i2c_ballboard_set_mode(I2C_BALLBOARD_MODE_HARVEST);
+
+	/* other commands */
+}
+
+prog_char str_ballboard_setmode1_arg0[] = "ballboard";
+parse_pgm_token_string_t cmd_ballboard_setmode1_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_ballboard_setmode1_result, arg0, str_ballboard_setmode1_arg0);
+prog_char str_ballboard_setmode1_arg1[] = "init#eject#harvest#off";
+parse_pgm_token_string_t cmd_ballboard_setmode1_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_ballboard_setmode1_result, arg1, str_ballboard_setmode1_arg1);
+
+prog_char help_ballboard_setmode1[] = "set ballboard mode (mode)";
+parse_pgm_inst_t cmd_ballboard_setmode1 = {
+	.f = cmd_ballboard_setmode1_parsed,  /* function to call */
+	.data = NULL,      /* 2nd arg of func */
+	.help_str = help_ballboard_setmode1,
+	.tokens = {        /* token list, NULL terminated */
+		(prog_void *)&cmd_ballboard_setmode1_arg0, 
+		(prog_void *)&cmd_ballboard_setmode1_arg1, 
+		NULL,
+	},
+};
+
+/**********************************************************/
+/* Ballboard_Setmode2 */
+
+/* this structure is filled when cmd_ballboard_setmode2 is parsed successfully */
+struct cmd_ballboard_setmode2_result {
+	fixed_string_t arg0;
+	fixed_string_t arg1;
+	fixed_string_t arg2;
+};
+
+/* function called when cmd_ballboard_setmode2 is parsed successfully */
+static void cmd_ballboard_setmode2_parsed(void * parsed_result, void * data)
+{
+	struct cmd_ballboard_setmode2_result *res = parsed_result;
+	uint8_t mode = I2C_BALLBOARD_MODE_INIT;
+
+	if (!strcmp_P(res->arg2, PSTR("left"))) {
+		if (!strcmp_P(res->arg1, PSTR("prepare")))
+			mode = I2C_BALLBOARD_MODE_PREP_L_FORK;
+		else if (!strcmp_P(res->arg1, PSTR("take")))
+			mode = I2C_BALLBOARD_MODE_TAKE_L_FORK;
+	}
+	else {
+		if (!strcmp_P(res->arg1, PSTR("prepare")))
+			mode = I2C_BALLBOARD_MODE_PREP_R_FORK;
+		else if (!strcmp_P(res->arg1, PSTR("take")))
+			mode = I2C_BALLBOARD_MODE_TAKE_R_FORK;
+	}
+	i2c_ballboard_set_mode(mode);
+}
+
+prog_char str_ballboard_setmode2_arg0[] = "ballboard";
+parse_pgm_token_string_t cmd_ballboard_setmode2_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_ballboard_setmode2_result, arg0, str_ballboard_setmode2_arg0);
+prog_char str_ballboard_setmode2_arg1[] = "prepare#take";
+parse_pgm_token_string_t cmd_ballboard_setmode2_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_ballboard_setmode2_result, arg1, str_ballboard_setmode2_arg1);
+prog_char str_ballboard_setmode2_arg2[] = "left#right";
+parse_pgm_token_string_t cmd_ballboard_setmode2_arg2 = TOKEN_STRING_INITIALIZER(struct cmd_ballboard_setmode2_result, arg2, str_ballboard_setmode2_arg2);
+
+prog_char help_ballboard_setmode2[] = "set ballboard mode (mode, side)";
+parse_pgm_inst_t cmd_ballboard_setmode2 = {
+	.f = cmd_ballboard_setmode2_parsed,  /* function to call */
+	.data = NULL,      /* 2nd arg of func */
+	.help_str = help_ballboard_setmode2,
+	.tokens = {        /* token list, NULL terminated */
+		(prog_void *)&cmd_ballboard_setmode2_arg0, 
+		(prog_void *)&cmd_ballboard_setmode2_arg1, 
+		(prog_void *)&cmd_ballboard_setmode2_arg2, 
+		NULL,
+	},
+};
+
+/**********************************************************/
+/* Ballboard_Setmode3 */
+
+/* this structure is filled when cmd_ballboard_setmode3 is parsed successfully */
+struct cmd_ballboard_setmode3_result {
+	fixed_string_t arg0;
+	fixed_string_t arg1;
+	uint8_t level;
+};
+
+/* function called when cmd_ballboard_setmode3 is parsed successfully */
+static void cmd_ballboard_setmode3_parsed(void *parsed_result, void *data)
+{
+	struct cmd_ballboard_setmode3_result *res = parsed_result;
+	if (!strcmp_P(res->arg1, PSTR("xxx")))
+		printf("faux\r\n");
+}
+
+prog_char str_ballboard_setmode3_arg0[] = "ballboard";
+parse_pgm_token_string_t cmd_ballboard_setmode3_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_ballboard_setmode3_result, arg0, str_ballboard_setmode3_arg0);
+prog_char str_ballboard_setmode3_arg1[] = "xxx";
+parse_pgm_token_string_t cmd_ballboard_setmode3_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_ballboard_setmode3_result, arg1, str_ballboard_setmode3_arg1);
+parse_pgm_token_num_t cmd_ballboard_setmode3_arg2 = TOKEN_NUM_INITIALIZER(struct cmd_ballboard_setmode3_result, level, UINT8);
+
+prog_char help_ballboard_setmode3[] = "set ballboard mode (mode, level)";
+parse_pgm_inst_t cmd_ballboard_setmode3 = {
+	.f = cmd_ballboard_setmode3_parsed,  /* function to call */
+	.data = NULL,      /* 2nd arg of func */
+	.help_str = help_ballboard_setmode3,
+	.tokens = {        /* token list, NULL terminated */
+		(prog_void *)&cmd_ballboard_setmode3_arg0, 
+		(prog_void *)&cmd_ballboard_setmode3_arg1, 
+		(prog_void *)&cmd_ballboard_setmode3_arg2, 
 		NULL,
 	},
 };

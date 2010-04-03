@@ -41,4 +41,6 @@ int8_t i2c_cobboard_mode_harvest(uint8_t side);
 int8_t i2c_cobboard_mode_deploy(uint8_t side);
 int8_t i2c_cobboard_mode_pack(uint8_t side);
 
+int8_t i2c_ballboard_set_mode(uint8_t mode);
+
 #endif

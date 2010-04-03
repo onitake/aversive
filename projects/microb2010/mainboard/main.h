@@ -115,7 +115,7 @@ struct genboard {
 	struct pwm_ng servo2;
 	struct pwm_ng servo3;
 	struct pwm_ng servo4;
-	
+
 	/* ax12 interface */
 	AX12 ax12;
 
@@ -165,7 +165,7 @@ struct mainboard {
 
 /* state of cobboard, synchronized through i2c */
 struct cobboard {
-	uint8_t mode;	
+	uint8_t mode;
 	uint8_t status;
 	int16_t left_cobroller_speed;
 	int16_t right_cobroller_speed;
@@ -174,7 +174,9 @@ struct cobboard {
 
 /* state of ballboard, synchronized through i2c */
 struct ballboard {
+	uint8_t mode;
 	uint8_t status;
+	uint8_t ball_count;
 };
 
 extern struct genboard gen;
