@@ -1,6 +1,6 @@
-/*  
+/*
  *  Copyright Droids Corporation, Microb Technology, Eirbot (2005)
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -25,6 +25,8 @@
 #include <aversive.h>
 #include <vect2.h>
 #include <robot_system.h>
+#include <vect_base.h>
+#include <lines.h>
 
 enum trajectory_state {
 	READY,
@@ -44,7 +46,12 @@ enum trajectory_state {
 	RUNNING_XY_B_START,
 	RUNNING_XY_B_ANGLE,
 	RUNNING_XY_B_ANGLE_OK,
+
+	/* circle */
 	RUNNING_CIRCLE,
+
+	/* line */
+	RUNNING_LINE,
 };
 
 struct circle_target {
@@ -57,6 +64,12 @@ struct circle_target {
 	uint8_t flags;   /**< flags for this trajectory */
 };
 
+struct line_target {
+	line_t line;
+	double angle;
+	double advance;
+};
+
 struct trajectory {
 	enum trajectory_state state; /*<< describe the type of target, and if we reached the target */
 
@@ -64,6 +77,7 @@ struct trajectory {
 		vect2_cart cart;     /**<< target, if it is a x,y vector */
 		struct rs_polar pol; /**<< target, if it is a d,a vector */
 		struct circle_target circle; /**<< target, if it is a circle */
+		struct line_target line; /**<< target, if it is a line */
 	} target;
 
 	double d_win; 	   /**<< distance window (for END_NEAR) */
@@ -87,26 +101,26 @@ struct trajectory {
 void trajectory_init(struct trajectory *traj);
 
 /** structure initialization */
-void trajectory_set_cs(struct trajectory *traj, struct cs *cs_d, 
+void trajectory_set_cs(struct trajectory *traj, struct cs *cs_d,
 		       struct cs * cs_a);
 
 /** structure initialization */
-void trajectory_set_robot_params(struct trajectory *traj, 
-				 struct robot_system *rs, 
+void trajectory_set_robot_params(struct trajectory *traj,
+				 struct robot_system *rs,
 				 struct robot_position *pos) ;
 
 /** set speed consign */
 void trajectory_set_speed(struct trajectory *traj, int16_t d_speed, int16_t a_speed);
 
-/** 
- * set windows for trajectory. 
+/**
+ * set windows for trajectory.
  * params: distance window, angle window: we the robot enters this
- * position window, we deletes the event and the last consign is 
+ * position window, we deletes the event and the last consign is
  * used.
- * a_start_deg used in xy consigns (start to move in distance when 
+ * a_start_deg used in xy consigns (start to move in distance when
  * a_target < a_start)
  */
-void trajectory_set_windows(struct trajectory *traj, double d_win, 
+void trajectory_set_windows(struct trajectory *traj, double d_win,
 			    double a_win_deg, double a_start_deg);
 
 /**
@@ -145,10 +159,10 @@ void trajectory_a_rel(struct trajectory *traj, double a_deg);
 /** go to angle 'a' in degrees */
 void trajectory_a_abs(struct trajectory *traj, double a_deg);
 
-/** turn the robot until the point x,y is in front of us */ 
+/** turn the robot until the point x,y is in front of us */
 void trajectory_turnto_xy(struct trajectory*traj, double x_abs_mm, double y_abs_mm);
 
-/** turn the robot until the point x,y is behind us */ 
+/** turn the robot until the point x,y is behind us */
 void trajectory_turnto_xy_behind(struct trajectory*traj, double x_abs_mm, double y_abs_mm);
 
 /** update angle consign without changing distance consign */
@@ -182,5 +196,9 @@ void trajectory_goto_xy_rel(struct trajectory *traj, double x_rel_mm, double y_r
  * flags set if we go forward or backwards, and CW/CCW. */
 void trajectory_circle_rel(struct trajectory *traj, double x, double y,
 			   double radius_mm, double rel_a_deg, uint8_t flags);
+
+/* do a line */
+void trajectory_line_abs(struct trajectory *traj, double x1, double y1,
+			 double x2, double y2, double advance);
 
 #endif //TRAJECTORY_MANAGER

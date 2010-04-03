@@ -29,6 +29,8 @@
 #include <aversive/error.h>
 #include <scheduler.h>
 #include <vect2.h>
+#include <vect_base.h>
+#include <lines.h>
 
 #include <position_manager.h>
 #include <robot_system.h>
@@ -389,8 +391,6 @@ void trajectory_manager_xy_event(struct trajectory *traj)
 			}
 		}
 
-		/* XXX circle */
-
 		/* If the robot is correctly oriented to start moving in distance */
 		/* here limit dist speed depending on v2pol_target.theta */
 		if (ABS(v2pol_target.theta) > traj->a_start_rad) // || ABS(v2pol_target.r) < traj->d_win)
@@ -585,6 +585,66 @@ void trajectory_manager_circle_event(struct trajectory *traj)
 	cs_set_consign(traj->csm_distance, d_consign);
 }
 
+/* trajectory event for lines */
+static void trajectory_manager_line_event(struct trajectory *traj)
+{
+	double x = position_get_x_double(traj->position);
+	double y = position_get_y_double(traj->position);
+	double a = position_get_a_rad_double(traj->position);
+	double advance, dist_to_line;
+	point_t robot, proj, target_pt;
+	int32_t d_consign = 0, a_consign = 0;
+	vect2_cart v2cart_pos;
+	vect2_pol v2pol_target;
+
+	robot.x = x;
+	robot.y = y;
+
+	/* target point on the line is further on the line */
+	proj_pt_line(&robot, &traj->target.line.line, &proj);
+	dist_to_line = pt_norm(&robot, &proj);
+	if (dist_to_line > traj->target.line.advance)
+		advance = 0;
+	else
+		advance = traj->target.line.advance - dist_to_line;
+	target_pt.x = proj.x + advance * cos(traj->target.line.angle);
+	target_pt.y = proj.y + advance * sin(traj->target.line.angle);
+
+	/* target vector */
+	v2cart_pos.x = target_pt.x - x;
+	v2cart_pos.y = target_pt.y - y;
+	vect2_cart2pol(&v2cart_pos, &v2pol_target);
+	v2pol_target.theta = simple_modulo_2pi(v2pol_target.theta - a);
+
+	/* If the robot is correctly oriented to start moving in distance */
+	/* here limit dist speed depending on v2pol_target.theta */
+	if (ABS(v2pol_target.theta) > traj->a_start_rad) // || ABS(v2pol_target.r) < traj->d_win)
+		set_quadramp_speed(traj, 0, traj->a_speed);
+	else {
+		double coef;
+		coef = (traj->a_start_rad - ABS(v2pol_target.theta)) / traj->a_start_rad;
+		set_quadramp_speed(traj, traj->d_speed * coef, traj->a_speed);
+	}
+
+	/* position consign is infinite */
+	d_consign = (int32_t)(v2pol_target.r * (traj->position->phys.distance_imp_per_mm));
+	d_consign += rs_get_distance(traj->robot);
+
+	/* angle consign */
+	a_consign = (int32_t)(v2pol_target.theta *
+			      (traj->position->phys.distance_imp_per_mm) *
+			      (traj->position->phys.track_mm) / 2.2);
+	a_consign += rs_get_angle(traj->robot);
+
+	EVT_DEBUG(E_TRAJECTORY, "target.x=%2.2f target.y=%2.2f "
+		  "a_consign=%"PRIi32" d_consign=%"PRIi32,
+		  target_pt.x, target_pt.y, a_consign, d_consign);
+
+	cs_set_consign(traj->csm_angle, a_consign);
+	cs_set_consign(traj->csm_distance, d_consign);
+}
+
+
 /* trajectory event */
 void trajectory_manager_event(void * param)
 {
@@ -605,6 +665,10 @@ void trajectory_manager_event(void * param)
 
 	case RUNNING_CIRCLE:
 		trajectory_manager_circle_event(traj);
+		break;
+
+	case RUNNING_LINE:
+		trajectory_manager_line_event(traj);
 		break;
 
 	default:
@@ -694,3 +758,38 @@ void trajectory_circle_abs_dist_deg(struct trajectory *traj,
 {
 
 }
+
+/*********** *LINE */
+
+/* Follow a line */
+void trajectory_line_abs(struct trajectory *traj,
+			 double x1, double y1,
+			 double x2, double y2,
+			 double advance)
+{
+	point_t p1, p2;
+
+	delete_event(traj);
+
+	/* find the line EQ */
+	p1.x = x1;
+	p1.y = y1;
+	p2.x = x2;
+	p2.y = y2;
+	pts2line(&p1, &p2, &traj->target.line.line);
+
+	/* find the line angle */
+	traj->target.line.angle = atan2(y2-y1, x2-x1);
+	traj->target.line.advance = advance;
+
+	DEBUG(E_TRAJECTORY, "Line rel (a,b,c)=%2.2f,%2.2f,%2.2f",
+	      traj->target.line.line.a,
+	      traj->target.line.line.b,
+	      traj->target.line.line.c,
+	      traj->target.line.angle);
+
+	traj->state = RUNNING_LINE;
+	trajectory_manager_event(traj);
+	schedule_event(traj);
+}
+

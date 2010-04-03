@@ -2241,7 +2241,6 @@ parse_pgm_inst_t cmd_circle_radius = {
 /* this structure is filled when cmd_test is parsed successfully */
 struct cmd_test_result {
 	fixed_string_t arg0;
-	int32_t radius;
 };
 void circle_get_da_speed_from_radius(struct trajectory *traj,
 				double radius_mm,
@@ -2250,24 +2249,12 @@ void circle_get_da_speed_from_radius(struct trajectory *traj,
 /* function called when cmd_test is parsed successfully */
 static void cmd_test_parsed(void *parsed_result, void *data)
 {
-	struct cmd_test_result *res = parsed_result;
-	double d,a;
-	uint8_t err;
-
-	strat_reset_pos(1000, 500, 0);
-	strat_set_speed(SPEED_DIST_SLOW, SPEED_ANGLE_SLOW);
-	circle_get_da_speed_from_radius(&mainboard.traj, res->radius, &d, &a);
-	trajectory_d_rel(&mainboard.traj, 1000);
-	err = WAIT_COND_OR_TRAJ_END(position_get_x_double(&mainboard.pos) > 1500, 0xFF);
-	if (err)
-		return;
-	strat_set_speed(d, a);
-	trajectory_d_a_rel(&mainboard.traj, 10000, 1000);
+	trajectory_line_abs(&mainboard.traj, 0, 1050,
+			    1500, 1050, 100.);
 }
 
 prog_char str_test_arg0[] = "test";
 parse_pgm_token_string_t cmd_test_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_test_result, arg0, str_test_arg0);
-parse_pgm_token_num_t cmd_test_arg1 = TOKEN_NUM_INITIALIZER(struct cmd_test_result, radius, INT32);
 
 prog_char help_test[] = "Test function";
 parse_pgm_inst_t cmd_test = {
@@ -2276,7 +2263,6 @@ parse_pgm_inst_t cmd_test = {
 	.help_str = help_test,
 	.tokens = {        /* token list, NULL terminated */
 		(prog_void *)&cmd_test_arg0,
-		(prog_void *)&cmd_test_arg1,
 		NULL,
 	},
 };
