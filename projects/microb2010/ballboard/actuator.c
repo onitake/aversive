@@ -42,3 +42,53 @@
 
 #include "main.h"
 
+#define ROLLER_ON      800
+#define ROLLER_OFF     0
+#define ROLLER_REVERSE -800
+
+#define FORKROT_DEPLOYED 1000
+#define FORKROT_PACKED   0
+
+#define FORKTRANS_LEFT   0
+#define FORKTRANS_MIDDLE 500
+#define FORKTRANS_RIGHT  1000
+
+void roller_on(void)
+{
+	cs_set_consign(&ballboard.roller.cs, ROLLER_ON);
+}
+
+void roller_off(void)
+{
+	cs_set_consign(&ballboard.roller.cs, ROLLER_OFF);
+}
+
+void roller_reverse(void)
+{
+	cs_set_consign(&ballboard.roller.cs, ROLLER_REVERSE);
+}
+
+void fork_deploy(void)
+{
+	cs_set_consign(&ballboard.forkrot.cs, FORKROT_DEPLOYED);
+}
+
+void fork_pack(void)
+{
+	cs_set_consign(&ballboard.forkrot.cs, FORKROT_PACKED);
+}
+
+void fork_left(void)
+{
+	cs_set_consign(&ballboard.forktrans.cs, FORKTRANS_LEFT);
+}
+
+void fork_right(void)
+{
+	cs_set_consign(&ballboard.forktrans.cs, FORKTRANS_RIGHT);
+}
+
+void fork_middle(void)
+{
+	cs_set_consign(&ballboard.forktrans.cs, FORKTRANS_MIDDLE);
+}

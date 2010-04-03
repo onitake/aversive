@@ -46,6 +46,7 @@
 
 #include "../common/i2c_commands.h"
 #include "main.h"
+#include "state.h"
 #include "actuator.h"
 
 void i2c_protocol_init(void)
@@ -73,9 +74,16 @@ void i2c_send_status(void)
 	i2c_flush();
 	ans.hdr.cmd =  I2C_ANS_BALLBOARD_STATUS;
 	ans.status = 0x55; /* XXX */
+	ans.ball_count = state_get_ball_count();
 
 	i2c_send(I2C_ADD_MASTER, (uint8_t *) &ans,
 		 sizeof(ans), I2C_CTRL_GENERIC);
+}
+
+static int8_t i2c_set_mode(struct i2c_cmd_ballboard_set_mode *cmd)
+{
+	state_set_mode(cmd->mode);
+	return 0;
 }
 
 void i2c_recvevent(uint8_t * buf, int8_t size)
@@ -91,11 +99,11 @@ void i2c_recvevent(uint8_t * buf, int8_t size)
 	if (size <= 0) {
 		goto error;
 	}
-	
+
 	switch (buf[0]) {
 
 	/* Commands (no answer needed) */
-	case I2C_CMD_GENERIC_LED_CONTROL: 
+	case I2C_CMD_GENERIC_LED_CONTROL:
 		{
 			struct i2c_cmd_led_control *cmd = void_cmd;
 			if (size != sizeof (*cmd))
@@ -103,7 +111,7 @@ void i2c_recvevent(uint8_t * buf, int8_t size)
 			i2c_led_control(cmd->led_num, cmd->state);
 			break;
 		}
-		
+
 	case I2C_CMD_GENERIC_SET_COLOR:
 		{
 			struct i2c_cmd_generic_color *cmd = void_cmd;
@@ -113,16 +121,25 @@ void i2c_recvevent(uint8_t * buf, int8_t size)
 			break;
 		}
 
+	case I2C_CMD_BALLBOARD_SET_MODE:
+		{
+			struct i2c_cmd_ballboard_set_mode *cmd = void_cmd;
+			if (size != sizeof(struct i2c_cmd_ballboard_set_mode))
+				goto error;
+			i2c_set_mode(cmd);
+			break;
+		}
+
 
 	/* Add other commands here ...*/
 
 
 	case I2C_REQ_BALLBOARD_STATUS:
 		{
-			struct i2c_req_ballboard_status *cmd = void_cmd;			
+			struct i2c_req_ballboard_status *cmd = void_cmd;
 			if (size != sizeof (*cmd))
 				goto error;
-				
+
 			i2c_send_status();
 			break;
 		}

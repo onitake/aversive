@@ -57,7 +57,7 @@ int32_t encoders_spi_update_roller_speed(void *number)
 }
 
 /* called every 5 ms */
-static void do_cs(void *dummy) 
+static void do_cs(void *dummy)
 {
 	/* read encoders */
 	if (ballboard.flags & DO_ENCODERS) {
@@ -177,7 +177,7 @@ void microb_cs_init(void)
 	ballboard.forkrot.on = 1;
 
 
-	scheduler_add_periodical_event_priority(do_cs, NULL, 
+	scheduler_add_periodical_event_priority(do_cs, NULL,
 						5000L / SCHEDULER_UNIT, 
 						CS_PRIO);
 }

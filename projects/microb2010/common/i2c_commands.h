@@ -85,13 +85,14 @@ struct i2c_cmd_cobboard_set_mode {
 struct i2c_cmd_ballboard_set_mode {
 	struct i2c_cmd_hdr hdr;
 
-#define I2C_BALLBOARD_MODE_OFF         0x00
-#define I2C_BALLBOARD_MODE_HARVEST     0x01
-#define I2C_BALLBOARD_MODE_EJECT       0x02
-#define I2C_BALLBOARD_MODE_PREP_L_FORK 0x03
-#define I2C_BALLBOARD_MODE_TAKE_L_FORK 0x04
-#define I2C_BALLBOARD_MODE_PREP_R_FORK 0x05
-#define I2C_BALLBOARD_MODE_TAKE_R_FORK 0x06
+#define I2C_BALLBOARD_MODE_INIT        0x00
+#define I2C_BALLBOARD_MODE_OFF         0x01
+#define I2C_BALLBOARD_MODE_HARVEST     0x02
+#define I2C_BALLBOARD_MODE_EJECT       0x03
+#define I2C_BALLBOARD_MODE_PREP_L_FORK 0x04
+#define I2C_BALLBOARD_MODE_TAKE_L_FORK 0x05
+#define I2C_BALLBOARD_MODE_PREP_R_FORK 0x06
+#define I2C_BALLBOARD_MODE_TAKE_R_FORK 0x07
 	uint8_t mode;
 };
 
@@ -136,6 +137,7 @@ struct i2c_req_ballboard_status {
 struct i2c_ans_ballboard_status {
 	struct i2c_cmd_hdr hdr;
 
+	uint8_t mode;
 
 #define I2C_BALLBOARD_STATUS_F_READY         0x00
 #define I2C_BALLBOARD_STATUS_F_BUSY          0x01

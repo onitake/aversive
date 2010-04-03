@@ -44,6 +44,7 @@
 #include <parse_num.h>
 
 #include "main.h"
+#include "state.h"
 #include "cmdline.h"
 #include "../common/i2c_commands.h"
 #include "i2c_protocol.h"
@@ -168,6 +169,289 @@ parse_pgm_inst_t cmd_color = {
 
 
 /**********************************************************/
+/* State1 */
+
+/* this structure is filled when cmd_state1 is parsed successfully */
+struct cmd_state1_result {
+	fixed_string_t arg0;
+	fixed_string_t arg1;
+};
+
+/* function called when cmd_state1 is parsed successfully */
+static void cmd_state1_parsed(void *parsed_result,
+			      __attribute__((unused)) void *data)
+{
+	struct cmd_state1_result *res = parsed_result;
+
+	if (!strcmp_P(res->arg1, PSTR("init")))
+		state_init();
+	else if (!strcmp_P(res->arg1, PSTR("off")))
+		state_set_mode(I2C_BALLBOARD_MODE_OFF);
+	else if (!strcmp_P(res->arg1, PSTR("eject")))
+		state_set_mode(I2C_BALLBOARD_MODE_EJECT);
+	else if (!strcmp_P(res->arg1, PSTR("harvest")))
+		state_set_mode(I2C_BALLBOARD_MODE_HARVEST);
+
+	/* other commands */
+}
+
+prog_char str_state1_arg0[] = "ballboard";
+parse_pgm_token_string_t cmd_state1_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_state1_result, arg0, str_state1_arg0);
+prog_char str_state1_arg1[] = "init#eject#harvest#off";
+parse_pgm_token_string_t cmd_state1_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_state1_result, arg1, str_state1_arg1);
+
+prog_char help_state1[] = "set ballboard mode";
+parse_pgm_inst_t cmd_state1 = {
+	.f = cmd_state1_parsed,  /* function to call */
+	.data = NULL,      /* 2nd arg of func */
+	.help_str = help_state1,
+	.tokens = {        /* token list, NULL terminated */
+		(prog_void *)&cmd_state1_arg0,
+		(prog_void *)&cmd_state1_arg1,
+		NULL,
+	},
+};
+
+/**********************************************************/
+/* State2 */
+
+/* this structure is filled when cmd_state2 is parsed successfully */
+struct cmd_state2_result {
+	fixed_string_t arg0;
+	fixed_string_t arg1;
+	fixed_string_t arg2;
+};
+
+/* function called when cmd_state2 is parsed successfully */
+static void cmd_state2_parsed(void *parsed_result,
+			      __attribute__((unused)) void *data)
+{
+	struct cmd_state2_result *res = parsed_result;
+	uint8_t mode;
+
+	if (!strcmp_P(res->arg2, PSTR("left"))) {
+		if (!strcmp_P(res->arg1, PSTR("prepare")))
+			mode = I2C_BALLBOARD_MODE_PREP_L_FORK;
+		else if (!strcmp_P(res->arg1, PSTR("take")))
+			mode = I2C_BALLBOARD_MODE_TAKE_L_FORK;
+	}
+	else {
+		if (!strcmp_P(res->arg1, PSTR("prepare")))
+			mode = I2C_BALLBOARD_MODE_PREP_R_FORK;
+		else if (!strcmp_P(res->arg1, PSTR("take")))
+			mode = I2C_BALLBOARD_MODE_TAKE_R_FORK;
+	}
+	//state_set_mode(mode);
+}
+
+prog_char str_state2_arg0[] = "ballboard";
+parse_pgm_token_string_t cmd_state2_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_state2_result, arg0, str_state2_arg0);
+prog_char str_state2_arg1[] = "prepare#take";
+parse_pgm_token_string_t cmd_state2_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_state2_result, arg1, str_state2_arg1);
+prog_char str_state2_arg2[] = "left#right";
+parse_pgm_token_string_t cmd_state2_arg2 = TOKEN_STRING_INITIALIZER(struct cmd_state2_result, arg2, str_state2_arg2);
+
+prog_char help_state2[] = "set ballboard mode";
+parse_pgm_inst_t cmd_state2 = {
+	.f = cmd_state2_parsed,  /* function to call */
+	.data = NULL,      /* 2nd arg of func */
+	.help_str = help_state2,
+	.tokens = {        /* token list, NULL terminated */
+		(prog_void *)&cmd_state2_arg0,
+		(prog_void *)&cmd_state2_arg1,
+		(prog_void *)&cmd_state2_arg2,
+		NULL,
+	},
+};
+
+/**********************************************************/
+/* State3 */
+
+/* this structure is filled when cmd_state3 is parsed successfully */
+struct cmd_state3_result {
+	fixed_string_t arg0;
+	fixed_string_t arg1;
+	uint8_t arg2;
+};
+
+/* function called when cmd_state3 is parsed successfully */
+static void cmd_state3_parsed(void *parsed_result, 
+			      __attribute__((unused)) void *data)
+{
+	struct cmd_state3_result *res = parsed_result;
+
+	if (!strcmp_P(res->arg1, PSTR("xxx"))) {
+		/* xxx = res->arg2 */
+	}
+	else if (!strcmp_P(res->arg1, PSTR("yyy"))) {
+	}
+	state_set_mode(0);
+}
+
+prog_char str_state3_arg0[] = "ballboard";
+parse_pgm_token_string_t cmd_state3_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_state3_result, arg0, str_state3_arg0);
+prog_char str_state3_arg1[] = "xxx";
+parse_pgm_token_string_t cmd_state3_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_state3_result, arg1, str_state3_arg1);
+parse_pgm_token_num_t cmd_state3_arg2 = TOKEN_NUM_INITIALIZER(struct cmd_state3_result, arg2, UINT8);
+
+prog_char help_state3[] = "set ballboard mode";
+parse_pgm_inst_t cmd_state3 = {
+	.f = cmd_state3_parsed,  /* function to call */
+	.data = NULL,      /* 2nd arg of func */
+	.help_str = help_state3,
+	.tokens = {        /* token list, NULL terminated */
+		(prog_void *)&cmd_state3_arg0, 
+		(prog_void *)&cmd_state3_arg1, 
+		(prog_void *)&cmd_state3_arg2, 
+		NULL,
+	},
+};
+
+/**********************************************************/
+/* State_Machine */
+
+/* this structure is filled when cmd_state_machine is parsed successfully */
+struct cmd_state_machine_result {
+	fixed_string_t arg0;
+};
+
+/* function called when cmd_state_machine is parsed successfully */
+static void cmd_state_machine_parsed(__attribute__((unused)) void *parsed_result,
+				     __attribute__((unused)) void *data)
+{
+	state_machine();
+}
+
+prog_char str_state_machine_arg0[] = "state_machine";
+parse_pgm_token_string_t cmd_state_machine_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_state_machine_result, arg0, str_state_machine_arg0);
+
+prog_char help_state_machine[] = "launch state machine";
+parse_pgm_inst_t cmd_state_machine = {
+	.f = cmd_state_machine_parsed,  /* function to call */
+	.data = NULL,      /* 2nd arg of func */
+	.help_str = help_state_machine,
+	.tokens = {        /* token list, NULL terminated */
+		(prog_void *)&cmd_state_machine_arg0, 
+		NULL,
+	},
+};
+
+/**********************************************************/
+/* State_Debug */
+
+/* this structure is filled when cmd_state_debug is parsed successfully */
+struct cmd_state_debug_result {
+	fixed_string_t arg0;
+	uint8_t on;
+};
+
+/* function called when cmd_state_debug is parsed successfully */
+static void cmd_state_debug_parsed(void *parsed_result,
+				   __attribute__((unused)) void *data)
+{
+	struct cmd_state_debug_result *res = parsed_result;
+	state_debug = res->on;
+}
+
+prog_char str_state_debug_arg0[] = "state_debug";
+parse_pgm_token_string_t cmd_state_debug_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_state_debug_result, arg0, str_state_debug_arg0);
+parse_pgm_token_num_t cmd_state_debug_on = TOKEN_NUM_INITIALIZER(struct cmd_state_debug_result, on, UINT8);
+
+prog_char help_state_debug[] = "Set debug for state machine";
+parse_pgm_inst_t cmd_state_debug = {
+	.f = cmd_state_debug_parsed,  /* function to call */
+	.data = NULL,      /* 2nd arg of func */
+	.help_str = help_state_debug,
+	.tokens = {        /* token list, NULL terminated */
+		(prog_void *)&cmd_state_debug_arg0, 
+		(prog_void *)&cmd_state_debug_on, 
+		NULL,
+	},
+};
+
+/**********************************************************/
+/* Fork */
+
+/* this structure is filled when cmd_fork is parsed successfully */
+struct cmd_fork_result {
+	fixed_string_t arg0;
+	fixed_string_t arg1;
+};
+
+/* function called when cmd_fork is parsed successfully */
+static void cmd_fork_parsed(void *parsed_result,
+				    __attribute__((unused)) void *data)
+{
+	struct cmd_fork_result *res = parsed_result;
+	if (!strcmp_P(res->arg1, PSTR("deploy")))
+		fork_deploy();
+	else if (!strcmp_P(res->arg1, PSTR("pack")))
+		fork_pack();
+	else if (!strcmp_P(res->arg1, PSTR("left")))
+		fork_left();
+	else if (!strcmp_P(res->arg1, PSTR("right")))
+		fork_right();
+	else if (!strcmp_P(res->arg1, PSTR("middle")))
+		fork_middle();
+}
+
+prog_char str_fork_arg0[] = "fork";
+parse_pgm_token_string_t cmd_fork_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_fork_result, arg0, str_fork_arg0);
+prog_char str_fork_arg1[] = "deploy#pack#left#right#middle";
+parse_pgm_token_string_t cmd_fork_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_fork_result, arg1, str_fork_arg1);
+
+prog_char help_fork[] = "move fork";
+parse_pgm_inst_t cmd_fork = {
+	.f = cmd_fork_parsed,  /* function to call */
+	.data = NULL,      /* 2nd arg of func */
+	.help_str = help_fork,
+	.tokens = {        /* token list, NULL terminated */
+		(prog_void *)&cmd_fork_arg0, 
+		(prog_void *)&cmd_fork_arg1, 
+		NULL,
+	},
+};
+
+/**********************************************************/
+/* Roller */
+
+/* this structure is filled when cmd_roller is parsed successfully */
+struct cmd_roller_result {
+	fixed_string_t arg0;
+	fixed_string_t arg1;
+};
+
+/* function called when cmd_roller is parsed successfully */
+static void cmd_roller_parsed(void *parsed_result,
+				    __attribute__((unused)) void *data)
+{
+	struct cmd_roller_result *res = parsed_result;
+	if (!strcmp_P(res->arg1, PSTR("on")))
+		roller_on();
+	else if (!strcmp_P(res->arg1, PSTR("off")))
+		roller_off();
+	else if (!strcmp_P(res->arg1, PSTR("reverse")))
+		roller_reverse();
+}
+
+prog_char str_roller_arg0[] = "roller";
+parse_pgm_token_string_t cmd_roller_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_roller_result, arg0, str_roller_arg0);
+prog_char str_roller_arg1[] = "on#off#reverse";
+parse_pgm_token_string_t cmd_roller_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_roller_result, arg1, str_roller_arg1);
+
+prog_char help_roller[] = "Servo door function";
+parse_pgm_inst_t cmd_roller = {
+	.f = cmd_roller_parsed,  /* function to call */
+	.data = NULL,      /* 2nd arg of func */
+	.help_str = help_roller,
+	.tokens = {        /* token list, NULL terminated */
+		(prog_void *)&cmd_roller_arg0, 
+		(prog_void *)&cmd_roller_arg1, 
+		NULL,
+	},
+};
+
+/**********************************************************/
 /* Test */
 
 /* this structure is filled when cmd_test is parsed successfully */
@@ -179,7 +463,6 @@ struct cmd_test_result {
 static void cmd_test_parsed(void *parsed_result, void *data)
 {
 	//struct cmd_test_result *res = parsed_result;
-	
 }
 
 prog_char str_test_arg0[] = "test";

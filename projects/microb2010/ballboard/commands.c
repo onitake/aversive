@@ -62,6 +62,14 @@ extern parse_pgm_inst_t cmd_blocking_i_show;
 
 /* commands_ballboard.c */
 extern parse_pgm_inst_t cmd_event;
+extern parse_pgm_inst_t cmd_color;
+extern parse_pgm_inst_t cmd_state1;
+extern parse_pgm_inst_t cmd_state2;
+extern parse_pgm_inst_t cmd_state3;
+extern parse_pgm_inst_t cmd_state_debug;
+extern parse_pgm_inst_t cmd_state_machine;
+extern parse_pgm_inst_t cmd_fork;
+extern parse_pgm_inst_t cmd_roller;
 extern parse_pgm_inst_t cmd_test;
 
 /* in progmem */
@@ -105,6 +113,14 @@ parse_pgm_ctx_t main_ctx[] = {
 
 	/* commands_ballboard.c */
 	(parse_pgm_inst_t *)&cmd_event,
+	(parse_pgm_inst_t *)&cmd_color,
+	(parse_pgm_inst_t *)&cmd_state1,
+	(parse_pgm_inst_t *)&cmd_state2,
+	(parse_pgm_inst_t *)&cmd_state3,
+	(parse_pgm_inst_t *)&cmd_state_debug,
+	(parse_pgm_inst_t *)&cmd_state_machine,
+	(parse_pgm_inst_t *)&cmd_fork,
+	(parse_pgm_inst_t *)&cmd_roller,
 	(parse_pgm_inst_t *)&cmd_test,
 
 	NULL,

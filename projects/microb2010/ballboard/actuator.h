@@ -1,6 +1,6 @@
-/*  
- *  Copyright Droids Corporation (2009)
- * 
+/*
+ *  Copyright Droids Corporation (2010)
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -19,3 +19,12 @@
  *
  */
 
+void roller_on(void);
+void roller_off(void);
+void roller_reverse(void);
+
+void fork_deploy(void);
+void fork_pack(void);
+void fork_left(void);
+void fork_right(void);
+void fork_middle(void);

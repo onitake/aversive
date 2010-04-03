@@ -91,7 +91,7 @@ struct genboard {
 	struct pwm_ng servo2;
 	struct pwm_ng servo3;
 	struct pwm_ng servo4;
-	
+
 	/* ax12 interface */
 	AX12 ax12;
 
