@@ -2249,8 +2249,48 @@ void circle_get_da_speed_from_radius(struct trajectory *traj,
 /* function called when cmd_test is parsed successfully */
 static void cmd_test_parsed(void *parsed_result, void *data)
 {
-	trajectory_line_abs(&mainboard.traj, 0, 1050,
-			    1500, 1050, 100.);
+	uint8_t err;
+	double d,a;
+
+#if 0
+	strat_set_speed(500, 500);
+	circle_get_da_speed_from_radius(&mainboard.traj, 225, &d, &a);
+	trajectory_line_abs(&mainboard.traj,
+			    375, 347,
+			    375, 1847, 100.);
+	err = WAIT_COND_OR_TRAJ_END(y_is_more_than(945),
+				    TRAJ_FLAGS_NO_NEAR);
+	/* circle */
+	strat_set_speed(d, a);
+	trajectory_d_a_rel(&mainboard.traj, 350, -61);
+
+	err = WAIT_COND_OR_TRAJ_END(x_is_more_than(600),
+				    TRAJ_FLAGS_NO_NEAR);
+
+	strat_set_speed(500, 500);
+	trajectory_line_abs(&mainboard.traj,
+			    375, 1097,
+			    1725, 1847, 100.);
+#else
+	strat_set_speed(500, 500);
+	circle_get_da_speed_from_radius(&mainboard.traj, 225, &d, &a);
+	trajectory_line_abs(&mainboard.traj,
+			    375, 347,
+			    375, 1847, 100.);
+	err = WAIT_COND_OR_TRAJ_END(y_is_more_than(1445),
+				    TRAJ_FLAGS_NO_NEAR);
+	/* circle */
+	strat_set_speed(d, a);
+	trajectory_d_a_rel(&mainboard.traj, 700, -121);
+
+	err = WAIT_COND_OR_TRAJ_END(x_is_more_than(750),
+				    TRAJ_FLAGS_NO_NEAR);
+
+	strat_set_speed(500, 500);
+	trajectory_line_abs(&mainboard.traj,
+			    825, 1596,
+			    1950, 972, 100.);
+#endif
 }
 
 prog_char str_test_arg0[] = "test";

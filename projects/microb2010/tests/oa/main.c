@@ -48,7 +48,7 @@ struct djpoint {
 	struct point pos;
 	uint16_t weight;
 	struct djpoint *parent;
-	
+
 	uint8_t type:3;
 	uint8_t parent_pos:3;
 	uint8_t updated:1;
@@ -60,7 +60,7 @@ static struct djpoint djpoints[WAYPOINTS_NBX][WAYPOINTS_NBY];
 
 /* table to find the symetric idx */
 uint8_t corn_sym[] = {
-	15, 16, 17, 12, 13, 14, 10, 11, 8, 9, 6, 7, 3, 4, 5, 0, 1, 2 
+	15, 16, 17, 12, 13, 14, 10, 11, 8, 9, 6, 7, 3, 4, 5, 0, 1, 2
 };
 
 uint8_t corn_side_confs[9][2] = {
@@ -95,7 +95,7 @@ void dump(void)
 		printf(" %2d ", i);
 	}
 	printf("\n");
-			
+
 	for (j=WAYPOINTS_NBY*2-1; j>=0; j--) {
 		printf("%3d   ", j/2);
 
@@ -104,7 +104,7 @@ void dump(void)
 
 		for (i=0; i<WAYPOINTS_NBX; i++) {
 			pt = &djpoints[i][j/2];
-			
+
 			if (((i+j) & 1) == 0)
 				continue;
 
@@ -119,7 +119,7 @@ void dump(void)
  			else if (pt->type == TYPE_WAYPOINT)
 				printf(" %5d  ", pt->weight);
  			else
- 				printf("     ?  "); 
+ 				printf("     ?  ");
 		}
 		printf("\n");
 	}
@@ -285,7 +285,7 @@ int dijkstra(struct djpoint *start)
 			todolist = 1;
 			cur->todo = 1;
 			cur->updated = 0;
-		}		
+		}
 	}
 	return 0; /* XXX */
 }
@@ -365,7 +365,7 @@ void init_waypoints(void)
 		if (i & 1)
 			y = OFFSET_CORN_Y - STEP_CORN_Y/2;
 		else
-			y = OFFSET_CORN_Y;			
+			y = OFFSET_CORN_Y;
 
 		for (j=0; j<WAYPOINTS_NBY; j++) {
 			pt = &djpoints[i][j];
@@ -450,7 +450,7 @@ int main(void)
 {
  	struct djpoint *start;
  	struct djpoint *end;
-	
+
 	start = &djpoints[1][1];
 	end = &djpoints[12][1];
 

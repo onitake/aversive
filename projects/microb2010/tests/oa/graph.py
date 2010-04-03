@@ -170,7 +170,7 @@ def build_area(ax):
     # area
     x,y = build_poly([(0,0), (3000,0), (3000,2100), (0,2100)])
     ax.plot(x, y, 'g-')
-    
+
     x,y = build_poly([(0,0), (0,500), (500,500), (500,0)])
     ax.plot(x, y, 'y-')
 
@@ -179,16 +179,38 @@ def build_area(ax):
 
     x,y = build_poly([(740,0), (740,500), (2260,500), (2260,0)])
     ax.plot(x, y, 'g--')
- 
+
+    x,y = build_path([(375,0), (375,2050)])
+    ax.plot(x, y, 'r-')
+
+    x,y = build_path([(150,1972), (2850,472)])
+    ax.plot(x, y, 'r-')
+
+    x,y = build_path([(0,1722), (3000,1722)])
+    ax.plot(x, y, 'r-')
+
+    x,y = build_path([(150,972), (1950,1972)])
+    ax.plot(x, y, 'r-')
+
+    acoef = (2850-150)/5.
+    bcoef = (472-1972)/5.
+    x,y = build_path([(600,1972), (600+bcoef, 1972-acoef)])
+    ax.plot(x, y, 'r-')
+
    # limit
     #x,y = build_poly([(250,250), (2750,250), (2750,1850), (250,1850)])
     #ax.plot(x, y, 'g--')
-    
+
+    xtick = [i * STEP_CORN_X + OFFSET_CORN_X for i in range(WAYPOINTS_NBX)]
+    ax.set_xticks(xtick)
+    ytick = [(i-1) * STEP_CORN_Y/2 + OFFSET_CORN_Y for i in range(WAYPOINTS_NBY*2)]
+    ax.set_yticks(ytick)
+
     init_corn_table(random.randint(0,8), random.randint(0,3))
 
     waypoints = init_waypoints()
     mark_all_neigh(5,6)
-    
+
     wcorn = []
     bcorn = []
     points = []
@@ -250,7 +272,7 @@ def graph(filename):
 
     build_area(ax)
 
-    ax.grid()
+    ax.grid(color = (0.3, 0.3, 0.3))
     ax.set_xlim(-100, 3100)
     ax.set_ylim(-100, 2200)
     #ax.set_title('spline paths')
