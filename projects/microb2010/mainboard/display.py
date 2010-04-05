@@ -15,13 +15,25 @@ save_pos = []
 
 robot = box(pos = (0, 0, 150),
             size = (250,320,350),
-            color = (1, 0, 0) )
+            color = (0.3, 0.3, 0.3) )
 
 last_pos = robot.pos.x, robot.pos.y, robot.pos.z
 hcenter_line = curve()
 hcenter_line.pos = [(-AREA_X/2, 0., 0.3), (AREA_X/2, 0., 0.3)]
 vcenter_line = curve()
 vcenter_line.pos = [(0., -AREA_Y/2, 0.3), (0., AREA_Y/2, 0.3)]
+
+yellowarea = [ (0.0, 0.0, -0.5), (500.0, 500.0, 0.5) ]
+yellowareasize = reduce(lambda x,y:tuple([abs(x[i])+abs(y[i]) for i in range(len(x))]) , yellowarea)
+yellowarea_box = box(pos=(-AREA_X/2+250,-AREA_Y/2+250,0), size=yellowareasize, color=(1.0, 1.0, 0.0))
+
+bluearea = [ (0.0, 0.0, -0.5), (500.0, 500.0, 0.5) ]
+blueareasize = reduce(lambda x,y:tuple([abs(x[i])+abs(y[i]) for i in range(len(x))]) , bluearea)
+bluearea_box = box(pos=(AREA_X/2-250,-AREA_Y/2+250,0), size=blueareasize, color=(0.0, 0.0, 1.0))
+
+greyarea = [ (0.0, 0.0, -0.5), (1520.0, 500.0, 0.5) ]
+greyareasize = reduce(lambda x,y:tuple([abs(x[i])+abs(y[i]) for i in range(len(x))]) , greyarea)
+greyarea_box = box(pos=(0,-AREA_Y/2+250,0), size=greyareasize, color=(0.3, 0.6, 0.3))
 
 def square(sz):
     sq = curve()
@@ -54,7 +66,8 @@ TYPE_DANGEROUS=1
 TYPE_WHITE_CORN=2
 TYPE_BLACK_CORN=3
 TYPE_OBSTACLE=4
-TYPE_NEIGH=5
+TYPE_BALL=5
+TYPE_NEIGH=6
 
 col = [TYPE_WAYPOINT] * WAYPOINTS_NBY
 waypoints = [col[:] for i in range(WAYPOINTS_NBX)]
@@ -131,6 +144,15 @@ def init_waypoints():
             if c >= 0:
                 waypoints[i][j] = corn_table[c]
                 continue
+
+            # balls
+            if (i & 1) == 0 and j > 3:
+                waypoints[i][j] = TYPE_BALL
+                continue
+            if (i == 0 or i == WAYPOINTS_NBX-1) and j > 2:
+                waypoints[i][j] = TYPE_BALL
+                continue
+
             # too close of border
             if (i & 1) == 1 and j == WAYPOINTS_NBY -1:
                 waypoints[i][j] = TYPE_OBSTACLE
@@ -177,6 +199,14 @@ def toggle_obj_disp():
                     c = cylinder(axis=(0,0,1), length=150,
                                  radius=25, color=(0.2,0.2,0.2),
                                  pos=(x-AREA_X/2,y-AREA_Y/2,75))
+                    area_objects.append(c)
+                elif waypoints[i][j] == TYPE_BALL:
+                    c = sphere(radius=50, color=(1., 0.,0.),
+                               pos=(x-AREA_X/2,y-AREA_Y/2,50))
+                    area_objects.append(c)
+                else:
+                    c = sphere(radius=5, color=(0., 0.,1.),
+                               pos=(x-AREA_X/2,y-AREA_Y/2,5))
                     area_objects.append(c)
                 j += 1
                 y += STEP_CORN_Y

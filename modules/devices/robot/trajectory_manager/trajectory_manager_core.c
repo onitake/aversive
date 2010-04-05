@@ -479,10 +479,10 @@ void trajectory_manager_xy_event(struct trajectory *traj)
  * Compute the fastest distance and angle speeds matching the radius
  * from current traj_speed
  */
-/* static  */void circle_get_da_speed_from_radius(struct trajectory *traj,
-						  double radius_mm,
-						  double *speed_d,
-						  double *speed_a)
+void circle_get_da_speed_from_radius(struct trajectory *traj,
+				     double radius_mm,
+				     double *speed_d,
+				     double *speed_a)
 {
 	/* speed_d = coef * speed_a */
 	double coef;

@@ -197,6 +197,15 @@ void trajectory_goto_xy_rel(struct trajectory *traj, double x_rel_mm, double y_r
 void trajectory_circle_rel(struct trajectory *traj, double x, double y,
 			   double radius_mm, double rel_a_deg, uint8_t flags);
 
+/*
+ * Compute the fastest distance and angle speeds matching the radius
+ * from current traj_speed
+ */
+void circle_get_da_speed_from_radius(struct trajectory *traj,
+				     double radius_mm,
+				     double *speed_d,
+				     double *speed_a);
+
 /* do a line */
 void trajectory_line_abs(struct trajectory *traj, double x1, double y1,
 			 double x2, double y2, double advance);

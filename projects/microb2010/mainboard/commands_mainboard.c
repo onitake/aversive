@@ -1074,16 +1074,92 @@ parse_pgm_inst_t cmd_servo_balls = {
 struct cmd_test_result {
 	fixed_string_t arg0;
 	int32_t radius;
+	int32_t dist;
 };
+
+/* function called when cmd_test is parsed successfully */
+static void line2line(double line1x1, double line1y1,
+		      double line1x2, double line1y2,
+		      double line2x1, double line2y1,
+		      double line2x2, double line2y2,
+		      double radius, double dist)
+{
+	uint8_t err;
+	int32_t dist_imp_target;
+	double speed_d, speed_a;
+	double distance, angle;
+	double line1_angle = atan2(line1y2-line1y1, line1x2-line1x1);
+	double line2_angle = atan2(line2y2-line2y1, line2x2-line2x1);
+
+	printf("%s()\n", __FUNCTION__);
+	strat_set_speed(500, 500);
+	circle_get_da_speed_from_radius(&mainboard.traj, radius,
+					&speed_d, &speed_a);
+	trajectory_line_abs(&mainboard.traj,
+			    line1x1, line1y1,
+			    line1x2, line1y2, 150.);
+	err = WAIT_COND_OR_TRAJ_END(distance_from_robot(line1x2, line1y2) <
+				    dist, TRAJ_FLAGS_NO_NEAR);
+	/* circle */
+	strat_set_speed(speed_d, speed_a);
+	angle = line2_angle - line1_angle;
+	distance = angle * radius;
+	if (distance < 0)
+		distance = -distance;
+	dist_imp_target = rs_get_distance(&mainboard.rs) +
+		distance * mainboard.pos.phys.distance_imp_per_mm;
+	angle = DEG(angle);
+	distance += 100; /* take some margin to avoid deceleration */
+	trajectory_d_a_rel(&mainboard.traj, distance, angle);
+
+	err = WAIT_COND_OR_TRAJ_END(rs_get_distance(&mainboard.rs) > dist_imp_target,
+				    TRAJ_FLAGS_NO_NEAR);
+
+	strat_set_speed(500, 500);
+	trajectory_line_abs(&mainboard.traj,
+			    line2x1, line2y1,
+			    line2x2, line2y2, 150.);
+}
 
 /* function called when cmd_test is parsed successfully */
 static void cmd_test_parsed(void *parsed_result, void *data)
 {
+	//	struct cmd_test_result *res = parsed_result;
+#ifdef HOST_VERSION
+	strat_reset_pos(400, 400, 90);
+	mainboard.angle.on = 1;
+	mainboard.distance.on = 1;
+#endif
+	line2line(375, 347, 375, 1847,
+		  375, 1847, 1050, 1472,
+		  100, 200);
+	line2line(825, 1596, 1050, 1472,
+		  1050, 1472, 1500, 1722,
+		  180, 120);
+	line2line(1050, 1472, 1500, 1722,
+		  1500, 1722, 2175, 1347,
+		  180, 120);
+	line2line(1500, 1722, 2175, 1347,
+		  2175, 1347, 2175, 847,
+		  150, 120);
+	line2line(2175, 1347, 2175, 847,
+		  2175, 847, 2400, 722,
+		  150, 120);
+	line2line(2175, 847, 2400, 722,
+		  2400, 722, 2625, 847,
+		  150, 100);
+	line2line(2400, 722, 2625, 847,
+		  2625, 847, 2625, 1847,
+		  150, 100);
+	line2line(2625, 847, 2625, 1847,
+		  2625, 1847, 375, 597,
+		  100, 200);
 }
 
 prog_char str_test_arg0[] = "test";
 parse_pgm_token_string_t cmd_test_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_test_result, arg0, str_test_arg0);
 parse_pgm_token_num_t cmd_test_arg1 = TOKEN_NUM_INITIALIZER(struct cmd_test_result, radius, INT32);
+parse_pgm_token_num_t cmd_test_arg2 = TOKEN_NUM_INITIALIZER(struct cmd_test_result, dist, INT32);
 
 prog_char help_test[] = "Test function";
 parse_pgm_inst_t cmd_test = {
@@ -1092,7 +1168,6 @@ parse_pgm_inst_t cmd_test = {
 	.help_str = help_test,
 	.tokens = {        /* token list, NULL terminated */
 		(prog_void *)&cmd_test_arg0,
-		(prog_void *)&cmd_test_arg1,
 		NULL,
 	},
 };
