@@ -1,7 +1,7 @@
-/*  
+/*
  *  Copyright Droids Corporation
  *  Olivier Matz <zer0@droids-corp.org>
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -115,16 +115,16 @@
 #endif
 
 
-static char uart_recv(void) 
-{ 
-	while ( !(UCSRxA & (1<<RXCx)) ) ; 
-	return UDRx; 
+static char uart_recv(void)
+{
+	while ( !(UCSRxA & (1<<RXCx)) ) ;
+	return UDRx;
 }
 
-static void uart_send(char c) 
-{ 
+static void uart_send(char c)
+{
 	while ( !( UCSRxA & (1<<UDREx)) ) ;
-	UDRx = c; 
+	UDRx = c;
 }
 
 static void uart_puts(const char *buf)
@@ -149,15 +149,15 @@ static int8_t bootloader_query_hex(uint32_t *val)
 		else if (c >= '0' && c <= '9') {
 			tmp <<= 4;
 			tmp += (c - '0');
-		} 
+		}
 		else if (c >= 'a' && c <= 'f') {
 			tmp <<= 4;
 			tmp += (c - 'a' + 10);
-		} 
+		}
 		else if (c >= 'A' && c <= 'F') {
 			tmp <<= 4;
 			tmp += (c - 'A' + 10);
-		} 
+		}
 		else
 			return -1;
 	}
@@ -192,6 +192,12 @@ static void disp_hex16(uint16_t x)
 {
 	disp_hex8(x>>8);
 	disp_hex8(x);
+}
+
+static void disp_hex32(uint32_t x)
+{
+	disp_hex16(x>>16);
+	disp_hex16(x);
 }
 
 static void crc_app(void)
@@ -243,7 +249,7 @@ static void read32(void)
 		val <<= 8;
 		val |= c;
 	}
-	disp_hex16(val);
+	disp_hex32(val);
 	return;
  fail:
 	uart_puts("KO");
@@ -291,22 +297,22 @@ static void prog_page(void)
         eeprom_busy_wait();
         boot_page_erase(addr);
         boot_spm_busy_wait();
-	
+
 	/* Set up little-endian word and fill tmp buf. */
 	for (i=0; i<SPM_PAGESIZE; i+=2) {
 		uint16_t w = buf[i] + ((uint16_t)(buf[i+1]) << 8);
 		boot_page_fill(addr + i, w);
 	}
-	
+
 	PORTJ = 0xFC;
 
 	boot_page_write(addr);
 	boot_spm_busy_wait();
-	
+
 	/* Reenable RWW-section again. We need this if we want to jump
 	 * back to the application after bootloading. */
 	boot_rww_enable();
-	
+
 	uart_puts("OK");
 	return;
  fail:
@@ -356,6 +362,6 @@ int main(void)
 		else
 			uart_puts("p:prog_page c:crc x:exec d:dump32");
 	}
-	
+
 	return 0;
 }
