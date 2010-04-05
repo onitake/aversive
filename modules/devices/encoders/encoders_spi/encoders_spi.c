@@ -37,7 +37,7 @@
 #include <encoders_spi_config.h>
 
 static int32_t g_encoders_spi_values[ENCODERS_SPI_NUMBER];
-static int16_t g_encoders_spi_previous[ENCODERS_SPI_NUMBER];
+/* static  */int16_t g_encoders_spi_previous[ENCODERS_SPI_NUMBER];
 
 
 /* Initialisation of encoders, variables */
