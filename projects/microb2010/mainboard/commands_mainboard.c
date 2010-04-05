@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <hostsim.h>
 #include <aversive/pgmspace.h>
 #include <aversive/wait.h>
 #include <aversive/error.h>
@@ -56,6 +57,7 @@
 #include "../common/eeprom_mapping.h"
 
 #include "main.h"
+#include "robotsim.h"
 #include "sensor.h"
 #include "cmdline.h"
 #include "strat.h"
@@ -127,8 +129,13 @@ static void cmd_event_parsed(void *parsed_result, void *data)
 		mainboard.flags |= bit;
 	else if (!strcmp_P(res->arg2, PSTR("off"))) {
 		if (!strcmp_P(res->arg1, PSTR("cs"))) {
+#ifdef HOST_VERSION
+			robotsim_pwm(LEFT_PWM, 0);
+			robotsim_pwm(RIGHT_PWM, 0);
+#else
 			pwm_ng_set(LEFT_PWM, 0);
 			pwm_ng_set(RIGHT_PWM, 0);
+#endif
 		}
 		mainboard.flags &= (~bit);
 	}
@@ -168,6 +175,9 @@ struct cmd_spi_test_result {
 /* function called when cmd_spi_test is parsed successfully */
 static void cmd_spi_test_parsed(void * parsed_result, void * data)
 {
+#ifdef HOST_VERSION
+	printf("not implemented\n");
+#else
 	uint16_t i = 0, ret = 0, ret2 = 0;
 	
 	if (mainboard.flags & DO_ENCODERS) {
@@ -187,6 +197,7 @@ static void cmd_spi_test_parsed(void * parsed_result, void * data)
 
 		i++;
 	} while(!cmdline_keypressed());
+#endif
 }
 
 prog_char str_spi_test_arg0[] = "spi_test";
@@ -278,6 +289,9 @@ struct cmd_start_result {
 /* function called when cmd_start is parsed successfully */
 static void cmd_start_parsed(void *parsed_result, void *data)
 {
+#ifdef HOST_VERSION
+	printf("not implemented\n");
+#else
 	struct cmd_start_result *res = parsed_result;
 	uint8_t old_level = gen.log_level;
 
@@ -306,6 +320,7 @@ static void cmd_start_parsed(void *parsed_result, void *data)
 
 	gen.logs[NB_LOGS] = 0;
 	gen.log_level = old_level;
+#endif
 }
 
 prog_char str_start_arg0[] = "start";
@@ -340,8 +355,8 @@ struct cmd_interact_result {
 
 static void print_cs(void)
 {
-	printf_P(PSTR("cons_d=% .8ld cons_a=% .8ld fil_d=% .8ld fil_a=% .8ld "
-		      "err_d=% .8ld err_a=% .8ld out_d=% .8ld out_a=% .8ld\r\n"), 
+	printf_P(PSTR("cons_d=% .8"PRIi32" cons_a=% .8"PRIi32" fil_d=% .8"PRIi32" fil_a=% .8"PRIi32" "
+		      "err_d=% .8"PRIi32" err_a=% .8"PRIi32" out_d=% .8"PRIi32" out_a=% .8"PRIi32"\r\n"), 
 		 cs_get_consign(&mainboard.distance.cs),
 		 cs_get_consign(&mainboard.angle.cs),
 		 cs_get_filtered_consign(&mainboard.distance.cs),
@@ -385,8 +400,8 @@ static void print_sensors(void)
 
 static void print_pid(void)
 {
-	printf_P(PSTR("P=% .8ld I=% .8ld D=% .8ld out=% .8ld | "
-		      "P=% .8ld I=% .8ld D=% .8ld out=% .8ld\r\n"),
+	printf_P(PSTR("P=% .8"PRIi32" I=% .8"PRIi32" D=% .8"PRIi32" out=% .8"PRIi32" | "
+		      "P=% .8"PRIi32" I=% .8"PRIi32" D=% .8"PRIi32" out=% .8"PRIi32"\r\n"),
 		 pid_get_value_in(&mainboard.distance.pid) * pid_get_gain_P(&mainboard.distance.pid),
 		 pid_get_value_I(&mainboard.distance.pid) * pid_get_gain_I(&mainboard.distance.pid),
 		 pid_get_value_D(&mainboard.distance.pid) * pid_get_gain_D(&mainboard.distance.pid),
@@ -542,6 +557,9 @@ struct cmd_color_result {
 /* function called when cmd_color is parsed successfully */
 static void cmd_color_parsed(void *parsed_result, void *data)
 {
+#ifdef HOST_VERSION
+	printf("not implemented\n");
+#else
 	struct cmd_color_result *res = (struct cmd_color_result *) parsed_result;
 	if (!strcmp_P(res->color, PSTR("yellow"))) {
 		mainboard.our_color = I2C_COLOR_YELLOW;
@@ -554,6 +572,7 @@ static void cmd_color_parsed(void *parsed_result, void *data)
 		i2c_set_color(I2C_BALLBOARD_ADDR, I2C_COLOR_BLUE);
 	}
 	printf_P(PSTR("Done\r\n"));
+#endif
 }
 
 prog_char str_color_arg0[] = "color";
@@ -588,15 +607,15 @@ static void cmd_rs_parsed(void *parsed_result, void *data)
 {
 	//	struct cmd_rs_result *res = parsed_result;
 	do {
-		printf_P(PSTR("angle cons=% .6ld in=% .6ld out=% .6ld / "), 
+		printf_P(PSTR("angle cons=% .6"PRIi32" in=% .6"PRIi32" out=% .6"PRIi32" / "), 
 			 cs_get_consign(&mainboard.angle.cs),
 			 cs_get_filtered_feedback(&mainboard.angle.cs),
 			 cs_get_out(&mainboard.angle.cs));
-		printf_P(PSTR("distance cons=% .6ld in=% .6ld out=% .6ld / "), 
+		printf_P(PSTR("distance cons=% .6"PRIi32" in=% .6"PRIi32" out=% .6"PRIi32" / "), 
 			 cs_get_consign(&mainboard.distance.cs),
 			 cs_get_filtered_feedback(&mainboard.distance.cs),
 			 cs_get_out(&mainboard.distance.cs));
-		printf_P(PSTR("l=% .4ld r=% .4ld\r\n"), mainboard.pwm_l,
+		printf_P(PSTR("l=% .4"PRIi32" r=% .4"PRIi32"\r\n"), mainboard.pwm_l,
 			 mainboard.pwm_r);
 		wait_ms(100);
 	} while(!cmdline_keypressed());
@@ -630,8 +649,12 @@ struct cmd_i2cdebug_result {
 /* function called when cmd_i2cdebug is parsed successfully */
 static void cmd_i2cdebug_parsed(void * parsed_result, void * data)
 {
+#ifdef HOST_VERSION
+	printf("not implemented\n");
+#else
 	i2c_debug();
 	i2c_protocol_debug();
+#endif
 }
 
 prog_char str_i2cdebug_arg0[] = "i2cdebug";
@@ -660,11 +683,15 @@ struct cmd_cobboard_show_result {
 /* function called when cmd_cobboard_show is parsed successfully */
 static void cmd_cobboard_show_parsed(void * parsed_result, void * data)
 {
+#ifdef HOST_VERSION
+	printf("not implemented\n");
+#else
 	printf_P(PSTR("mode = %x\r\n"), cobboard.mode);
 	printf_P(PSTR("status = %x\r\n"), cobboard.status);
 	printf_P(PSTR("cob_count = %x\r\n"), cobboard.cob_count);
 	printf_P(PSTR("left_cobroller_speed = %d\r\n"), cobboard.left_cobroller_speed);
 	printf_P(PSTR("right_cobroller_speed = %d\r\n"), cobboard.right_cobroller_speed);
+#endif
 }
 
 prog_char str_cobboard_show_arg0[] = "cobboard";
@@ -696,12 +723,16 @@ struct cmd_cobboard_setmode1_result {
 /* function called when cmd_cobboard_setmode1 is parsed successfully */
 static void cmd_cobboard_setmode1_parsed(void *parsed_result, void *data)
 {
+#ifdef HOST_VERSION
+	printf("not implemented\n");
+#else
 	struct cmd_cobboard_setmode1_result *res = parsed_result;
 
 	if (!strcmp_P(res->arg1, PSTR("init")))
 		i2c_cobboard_mode_init();
 	else if (!strcmp_P(res->arg1, PSTR("eject")))
 		i2c_cobboard_mode_eject();
+#endif
 }
 
 prog_char str_cobboard_setmode1_arg0[] = "cobboard";
@@ -734,6 +765,9 @@ struct cmd_cobboard_setmode2_result {
 /* function called when cmd_cobboard_setmode2 is parsed successfully */
 static void cmd_cobboard_setmode2_parsed(void * parsed_result, void * data)
 {
+#ifdef HOST_VERSION
+	printf("not implemented\n");
+#else
 	struct cmd_cobboard_setmode2_result *res = parsed_result;
 	uint8_t side = I2C_LEFT_SIDE;
 
@@ -748,6 +782,7 @@ static void cmd_cobboard_setmode2_parsed(void * parsed_result, void * data)
 		i2c_cobboard_mode_harvest(side);
 	else if (!strcmp_P(res->arg1, PSTR("pack")))
 		i2c_cobboard_mode_pack(side);
+#endif
 }
 
 prog_char str_cobboard_setmode2_arg0[] = "cobboard";
@@ -783,9 +818,13 @@ struct cmd_cobboard_setmode3_result {
 /* function called when cmd_cobboard_setmode3 is parsed successfully */
 static void cmd_cobboard_setmode3_parsed(void *parsed_result, void *data)
 {
+#ifdef HOST_VERSION
+	printf("not implemented\n");
+#else
 	struct cmd_cobboard_setmode3_result *res = parsed_result;
 	if (!strcmp_P(res->arg1, PSTR("xxx")))
 		printf("faux\r\n");
+#endif
 }
 
 prog_char str_cobboard_setmode3_arg0[] = "cobboard";
@@ -819,9 +858,13 @@ struct cmd_ballboard_show_result {
 /* function called when cmd_ballboard_show is parsed successfully */
 static void cmd_ballboard_show_parsed(void * parsed_result, void * data)
 {
+#ifdef HOST_VERSION
+	printf("not implemented\n");
+#else
 	printf_P(PSTR("mode = %x\r\n"), ballboard.mode);
 	printf_P(PSTR("status = %x\r\n"), ballboard.status);
 	printf_P(PSTR("ball_count = %d\r\n"), ballboard.ball_count);
+#endif
 }
 
 prog_char str_ballboard_show_arg0[] = "ballboard";
@@ -853,6 +896,9 @@ struct cmd_ballboard_setmode1_result {
 /* function called when cmd_ballboard_setmode1 is parsed successfully */
 static void cmd_ballboard_setmode1_parsed(void *parsed_result, void *data)
 {
+#ifdef HOST_VERSION
+	printf("not implemented\n");
+#else
 	struct cmd_ballboard_setmode1_result *res = parsed_result;
 
 	if (!strcmp_P(res->arg1, PSTR("init")))
@@ -865,6 +911,7 @@ static void cmd_ballboard_setmode1_parsed(void *parsed_result, void *data)
 		i2c_ballboard_set_mode(I2C_BALLBOARD_MODE_HARVEST);
 
 	/* other commands */
+#endif
 }
 
 prog_char str_ballboard_setmode1_arg0[] = "ballboard";
@@ -897,6 +944,9 @@ struct cmd_ballboard_setmode2_result {
 /* function called when cmd_ballboard_setmode2 is parsed successfully */
 static void cmd_ballboard_setmode2_parsed(void * parsed_result, void * data)
 {
+#ifdef HOST_VERSION
+	printf("not implemented\n");
+#else
 	struct cmd_ballboard_setmode2_result *res = parsed_result;
 	uint8_t mode = I2C_BALLBOARD_MODE_INIT;
 
@@ -913,6 +963,7 @@ static void cmd_ballboard_setmode2_parsed(void * parsed_result, void * data)
 			mode = I2C_BALLBOARD_MODE_TAKE_R_FORK;
 	}
 	i2c_ballboard_set_mode(mode);
+#endif
 }
 
 prog_char str_ballboard_setmode2_arg0[] = "ballboard";
@@ -948,9 +999,13 @@ struct cmd_ballboard_setmode3_result {
 /* function called when cmd_ballboard_setmode3 is parsed successfully */
 static void cmd_ballboard_setmode3_parsed(void *parsed_result, void *data)
 {
+#ifdef HOST_VERSION
+	printf("not implemented\n");
+#else
 	struct cmd_ballboard_setmode3_result *res = parsed_result;
 	if (!strcmp_P(res->arg1, PSTR("xxx")))
 		printf("faux\r\n");
+#endif
 }
 
 prog_char str_ballboard_setmode3_arg0[] = "ballboard";

@@ -1,6 +1,6 @@
 /*
  *  Copyright Droids Corporation (2009)
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -70,15 +70,18 @@ static volatile uint16_t i2c_errors = 0;
 static volatile uint8_t running_op = OP_READY;
 
 #define I2C_MAX_LOG 3
+#ifndef HOST_VERSION
 static uint8_t error_log = 0;
+
+static int8_t i2c_req_cobboard_status(void);
+static int8_t i2c_req_ballboard_status(void);
+
+#endif
 
 /* used for commands */
 uint8_t command_buf[I2C_SEND_BUFFER_SIZE];
 volatile int8_t command_dest=-1;
 volatile uint8_t command_size=0;
-
-static int8_t i2c_req_cobboard_status(void);
-static int8_t i2c_req_ballboard_status(void);
 
 #define I2C_ERROR(args...) do {						\
 		if (error_log < I2C_MAX_LOG) {				\
@@ -99,6 +102,9 @@ void i2c_protocol_init(void)
 
 void i2c_protocol_debug(void)
 {
+#ifdef HOST_VERSION
+	return;
+#else
 	printf_P(PSTR("I2C protocol debug infos:\r\n"));
 	printf_P(PSTR("  i2c_state=%d\r\n"), i2c_state);
 	printf_P(PSTR("  i2c_errors=%d\r\n"), i2c_errors);
@@ -106,8 +112,10 @@ void i2c_protocol_debug(void)
 	printf_P(PSTR("  command_size=%d\r\n"), command_size);
 	printf_P(PSTR("  command_dest=%d\r\n"), command_dest);
 	printf_P(PSTR("  i2c_status=%x\r\n"), i2c_status());
+#endif
 }
 
+#ifndef HOST_VERSION
 static void i2cproto_next_state(uint8_t inc)
 {
 	i2c_state += inc;
@@ -131,11 +139,11 @@ void i2c_poll_slaves(void *dummy)
 	uint8_t flags;
 	int8_t err;
 	static uint8_t a = 0;
-	
+
 	a++;
 	if (a & 0x4)
 		LED2_TOGGLE();
-	
+
 	/* already running */
 	IRQ_LOCK(flags);
 	if (running_op != OP_READY) {
@@ -168,8 +176,8 @@ void i2c_poll_slaves(void *dummy)
 
 #define I2C_ANS_COBBOARD 1
 	case I2C_ANS_COBBOARD:
-		if ((err = i2c_recv(I2C_COBBOARD_ADDR, 
-				    sizeof(struct i2c_ans_cobboard_status), 
+		if ((err = i2c_recv(I2C_COBBOARD_ADDR,
+				    sizeof(struct i2c_ans_cobboard_status),
 				    I2C_CTRL_GENERIC)))
 			goto error;
 		break;
@@ -183,8 +191,8 @@ void i2c_poll_slaves(void *dummy)
 
 #define I2C_ANS_BALLBOARD 3
 	case I2C_ANS_BALLBOARD:
-		if ((err = i2c_recv(I2C_BALLBOARD_ADDR, 
-				    sizeof(struct i2c_ans_ballboard_status), 
+		if ((err = i2c_recv(I2C_BALLBOARD_ADDR,
+				    sizeof(struct i2c_ans_ballboard_status),
 				    I2C_CTRL_GENERIC)))
 			goto error;
 		break;
@@ -203,7 +211,7 @@ void i2c_poll_slaves(void *dummy)
 	IRQ_UNLOCK(flags);
 	i2c_errors++;
 	if (i2c_errors > I2C_MAX_ERRORS) {
-		I2C_ERROR("I2C send is_cmd=%d proto_state=%d " 
+		I2C_ERROR("I2C send is_cmd=%d proto_state=%d "
 		      "err=%d i2c_status=%x", !!command_size, i2c_state, err, i2c_status());
 		i2c_reset();
 		i2c_errors = 0;
@@ -229,7 +237,7 @@ void i2c_sendevent(int8_t size)
 			i2c_reset();
 			i2c_errors = 0;
 		}
-		
+
 		if (running_op == OP_POLL) {
 			/* skip associated answer */
 			i2cproto_next_state(2);
@@ -246,7 +254,7 @@ void i2c_recvevent(uint8_t * buf, int8_t size)
 
 	/* recv is only trigged after a poll */
 	running_op = OP_READY;
-	
+
 	if (size < 0) {
 		goto error;
 	}
@@ -254,9 +262,9 @@ void i2c_recvevent(uint8_t * buf, int8_t size)
 	switch (buf[0]) {
 
 	case I2C_ANS_COBBOARD_STATUS: {
-		struct i2c_ans_cobboard_status * ans = 
+		struct i2c_ans_cobboard_status * ans =
 			(struct i2c_ans_cobboard_status *)buf;
-		
+
 		if (size != sizeof (*ans))
 			goto error;
 
@@ -272,7 +280,7 @@ void i2c_recvevent(uint8_t * buf, int8_t size)
 	}
 
 	case I2C_ANS_BALLBOARD_STATUS: {
-		struct i2c_ans_ballboard_status * ans = 
+		struct i2c_ans_ballboard_status * ans =
 			(struct i2c_ans_ballboard_status *)buf;
 
 		if (size != sizeof (*ans))
@@ -290,7 +298,7 @@ void i2c_recvevent(uint8_t * buf, int8_t size)
 	return;
  error:
 	i2c_errors++;
-	NOTICE(E_USER_I2C_PROTO, "recv error state=%d op=%d", 
+	NOTICE(E_USER_I2C_PROTO, "recv error state=%d op=%d",
 	       i2c_state, running_op);
 	if (i2c_errors > I2C_MAX_ERRORS) {
 		I2C_ERROR("I2C error, slave not ready");
@@ -302,6 +310,7 @@ void i2c_recvevent(uint8_t * buf, int8_t size)
 void i2c_recvbyteevent(uint8_t hwstatus, uint8_t i, uint8_t c)
 {
 }
+#endif /* !HOST_VERSION */
 
 /* ******** ******** ******** ******** */
 /* commands */
@@ -309,8 +318,11 @@ void i2c_recvbyteevent(uint8_t hwstatus, uint8_t i, uint8_t c)
 
 
 static int8_t
-i2c_send_command(uint8_t addr, uint8_t * buf, uint8_t size) 
+i2c_send_command(uint8_t addr, uint8_t * buf, uint8_t size)
 {
+#ifdef HOST_VERSION
+	return 0;
+#else
 	uint8_t flags;
         microseconds us = time_get_us2();
 
@@ -329,8 +341,10 @@ i2c_send_command(uint8_t addr, uint8_t * buf, uint8_t size)
 	 * interrupt context, but it's forbidden */
 	I2C_ERROR("I2C command send failed");
 	return -EBUSY;
+#endif
 }
 
+#ifndef HOST_VERSION
 static int8_t i2c_req_cobboard_status(void)
 {
 	struct i2c_req_cobboard_status buf;
@@ -346,11 +360,12 @@ static int8_t i2c_req_cobboard_status(void)
 static int8_t i2c_req_ballboard_status(void)
 {
 	struct i2c_req_ballboard_status buf;
-	
+
 	buf.hdr.cmd = I2C_REQ_BALLBOARD_STATUS;
 	return i2c_send(I2C_BALLBOARD_ADDR, (uint8_t*)&buf,
 			sizeof(buf), I2C_CTRL_GENERIC);
 }
+#endif /* !HOST_VERSION */
 
 int8_t i2c_set_color(uint8_t addr, uint8_t color)
 {

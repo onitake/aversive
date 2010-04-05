@@ -1,7 +1,7 @@
-/*  
+/*
  *  Copyright Droids Corporation (2009)
  *  Olivier MATZ <zer0@droids-corp.org>
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -48,6 +48,8 @@
 #include "main.h"
 #include "sensor.h"
 
+#ifndef HOST_VERSION
+
 /************ ADC */
 
 struct adc_infos {
@@ -82,7 +84,7 @@ int16_t rii_strong(struct adc_infos *adc, int16_t val)
 #define ADC_CONF(x) ( ADC_REF_AVCC | ADC_MODE_INT | MUX_ADC##x )
 
 /* define which ADC to poll, see in sensor.h */
-static struct adc_infos adc_infos[ADC_MAX] = { 
+static struct adc_infos adc_infos[ADC_MAX] = {
 	[ADC_CSENSE1] = { .config = ADC_CONF(0), .filter = rii_medium },
 	[ADC_CSENSE2] = { .config = ADC_CONF(1), .filter = rii_medium },
 	[ADC_CSENSE3] = { .config = ADC_CONF(2), .filter = rii_medium },
@@ -100,7 +102,7 @@ static struct adc_infos adc_infos[ADC_MAX] = {
 static void adc_event(int16_t result);
 
 /* called every 10 ms, see init below */
-static void do_adc(void *dummy) 
+static void do_adc(void *dummy)
 {
 	/* launch first conversion */
 	adc_launch(adc_infos[0].config);
@@ -123,9 +125,13 @@ static void adc_event(int16_t result)
 	else
 		adc_launch(adc_infos[i].config);
 }
+#endif /* !HOST_VERSION */
 
 int16_t sensor_get_adc(uint8_t i)
 {
+#ifdef HOST_VERSION
+	return 0;
+#else
 	int16_t tmp;
 	uint8_t flags;
 
@@ -133,11 +139,12 @@ int16_t sensor_get_adc(uint8_t i)
 	tmp = adc_infos[i].value;
 	IRQ_UNLOCK(flags);
 	return tmp;
+#endif
 }
 
 /************ boolean sensors */
 
-
+#ifndef HOST_VERSION
 struct sensor_filter {
 	uint8_t filter;
 	uint8_t prev;
@@ -168,11 +175,12 @@ static struct sensor_filter sensor_filter[SENSOR_MAX] = {
 	[S_RESERVED7] = { 1, 0, 0, 1, 0, 0 }, /* 14 */
 	[S_RESERVED8] = { 1, 0, 0, 1, 0, 0 }, /* 15 */
 };
+#endif /* !HOST_VERSION */
 
 /* value of filtered sensors */
 static uint16_t sensor_filtered = 0;
 
-/* sensor mapping : 
+/* sensor mapping :
  * 0-3:  PORTK 2->5 (cap1 -> cap4) (adc10 -> adc13)
  * 4-5:  PORTL 0->1 (cap5 -> cap6)
  * 6-7:  PORTE 3->4 (cap7 -> cap8)
@@ -191,10 +199,15 @@ uint16_t sensor_get_all(void)
 
 uint8_t sensor_get(uint8_t i)
 {
+#ifdef HOST_VERSION
+	return 0;
+#else
 	uint16_t tmp = sensor_get_all();
 	return (tmp & _BV(i));
+#endif
 }
 
+#ifndef HOST_VERSION
 /* get the physical value of pins */
 static uint16_t sensor_read(void)
 {
@@ -227,7 +240,7 @@ static void do_boolean_sensors(void *dummy)
 			if (sensor_filter[i].cpt <= sensor_filter[i].thres_off)
 				sensor_filter[i].prev = 0;
 		}
-		
+
 		if (sensor_filter[i].prev) {
 			tmp |= (1UL << i);
 		}
@@ -236,11 +249,12 @@ static void do_boolean_sensors(void *dummy)
 	sensor_filtered = tmp;
 	IRQ_UNLOCK(flags);
 }
+#endif /* !HOST_VERSION */
 
 /* virtual obstacle */
 
 #define DISABLE_CPT_MAX 200
-static uint8_t disable = 0; /* used to disable obstacle detection 
+static uint8_t disable = 0; /* used to disable obstacle detection
 			   * during some time */
 
 /* called every 10 ms */
@@ -273,6 +287,7 @@ uint8_t sensor_obstacle_is_disabled(void)
 
 /************ global sensor init */
 
+#ifndef HOST_VERSION
 /* called every 10 ms, see init below */
 static void do_sensors(void *dummy)
 {
@@ -280,14 +295,19 @@ static void do_sensors(void *dummy)
 	do_boolean_sensors(NULL);
 	sensor_obstacle_update();
 }
+#endif
 
 void sensor_init(void)
 {
+#ifdef HOST_VERSION
+	return;
+#else
 	adc_init();
 	adc_register_event(adc_event);
 	/* CS EVENT */
-	scheduler_add_periodical_event_priority(do_sensors, NULL, 
-						10000L / SCHEDULER_UNIT, 
+	scheduler_add_periodical_event_priority(do_sensors, NULL,
+						10000L / SCHEDULER_UNIT,
 						ADC_PRIO);
+#endif
 }
 

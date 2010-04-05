@@ -1,6 +1,6 @@
-/*  
+/*
  *  Copyright Droids Corporation (2007)
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -50,7 +50,7 @@ static void (*g_recv_event)(uint8_t *, int8_t) = NULL;
  *  params are : hwstatus, index of byte in frame, byte value */
 static void (*g_recv_byte_event)(uint8_t, uint8_t, uint8_t) = NULL;
 
-/** send event, called when transmit is complete 
+/** send event, called when transmit is complete
  * param is error code : 0 if success */
 static void (*g_send_event)(int8_t) = NULL;
 
@@ -81,17 +81,17 @@ static volatile uint8_t g_command = 0;
 /**
  * mode is I2C_MODE_UNINIT, I2C_MODE_MASTER, I2C_MODE_MULTIMASTER or
  * I2C_MODE_SLAVE. Parameter add is the address in slave mode, it is
- * composed from: 
+ * composed from:
  *   b7  : true if the uC can be addressed with GENCALL
  *   b0-6: slave address
  */
-void 
+void
 i2c_init(i2c_mode_t mode, uint8_t add)
 {
 	uint8_t flags;
 
 	IRQ_LOCK(flags);
-  
+
 	if (mode == I2C_MODE_UNINIT) {
 		/* disable all */
 		TWCR = 0;
@@ -110,20 +110,20 @@ i2c_init(i2c_mode_t mode, uint8_t add)
 	}
 
 	TWBR = I2C_BITRATE;
-  
+
 	/* prescaler */
 	if (I2C_PRESCALER & 1)
 		sbi(TWSR, TWPS0);
 	if (I2C_PRESCALER & 2)
 		sbi(TWSR, TWPS1);
-	
+
 	/* change for TWAR format */
 	TWAR = add << 1 ;
-	
+
 	/* general call */
 	if (add & 0x80)
 		sbi(TWAR, TWGCE);
-	
+
 	/* init vars */
 	g_mode = mode;
 	g_status = I2C_STATUS_READY;
@@ -138,18 +138,18 @@ i2c_init(i2c_mode_t mode, uint8_t add)
 }
 
 
-/** 
+/**
  * Register a function that is called when a buffer is received. The
  * user application is always notified when data frame is received.
  * Arguments of the callback are:
- *   - (recv_buf, n>0) if transmission succedded. The first parameter 
+ *   - (recv_buf, n>0) if transmission succedded. The first parameter
  *                     contains the address of the reception buffer and
  *                     the second contains the number of received bytes.
  *   - (NULL, err<0)   if the transmission failed (slave not answering
- *                     or arbiteration lost). The first parameter is 
+ *                     or arbiteration lost). The first parameter is
  *                     NULL and the second contains the error code.
  */
-void 
+void
 i2c_register_recv_event(void (*event)(uint8_t *, int8_t))
 {
 	uint8_t flags;
@@ -158,14 +158,14 @@ i2c_register_recv_event(void (*event)(uint8_t *, int8_t))
 	IRQ_UNLOCK(flags);
 }
 
-/** 
+/**
  * Register a function that is called when a byte is received.
  * Arguments of the callback are: (hwstatus, numbyte, byte).  The user
  * app can modify the g_recv_size value, which is the number of bytes
  * to be received in the frame: this can be done by calling
  * i2c_set_recv_size().
  */
-void 
+void
 i2c_register_recv_byte_event(void (*event)(uint8_t, uint8_t, uint8_t))
 {
 	uint8_t flags;
@@ -183,7 +183,7 @@ i2c_register_recv_byte_event(void (*event)(uint8_t, uint8_t, uint8_t))
  *   -  Else, the number of transmitted bytes is given, including the
  *      one that was not acked.
  */
-void 
+void
 i2c_register_send_event(void (*event)(int8_t))
 {
 	uint8_t flags;
@@ -195,30 +195,30 @@ i2c_register_send_event(void (*event)(int8_t))
 /**
  * Send a buffer. Return 0 if xmit starts correctly.
  * On error, return < 0.
- * - If mode is slave, dest_add should be I2C_ADD_MASTER, and transmission 
- *   starts when the master transmits a clk. 
- * - If mode is master and if dest_add != I2C_ADD_MASTER, it will transmit 
- *   a START condition if bus is available (the uc will act as a 
+ * - If mode is slave, dest_add should be I2C_ADD_MASTER, and transmission
+ *   starts when the master transmits a clk.
+ * - If mode is master and if dest_add != I2C_ADD_MASTER, it will transmit
+ *   a START condition if bus is available (the uc will act as a
  *   master)
  * - If mode is master and if dest_add == I2C_ADD_MASTER, the uC will
  *   act as a slave, and data will be sent when the uC will be
  *   addressed.
  * The transmission will be processed with these params until a
- * i2c_flush() is called. 
- * The 'ctrl' parameter is composed by the flags I2C_CTRL_SYNC and 
+ * i2c_flush() is called.
+ * The 'ctrl' parameter is composed by the flags I2C_CTRL_SYNC and
  * I2C_CTRL_DONT_RELEASE_BUS
  */
-int8_t 
-i2c_send(uint8_t dest_add, uint8_t *buf, uint8_t size, uint8_t ctrl) 
+int8_t
+i2c_send(uint8_t dest_add, uint8_t *buf, uint8_t size, uint8_t ctrl)
 {
 	uint8_t flags;
-	
+
 	IRQ_LOCK(flags);
 	if (g_mode == I2C_MODE_UNINIT) {
 		IRQ_UNLOCK(flags);
 		return -ENXIO;
 	}
-	
+
 	if (g_status & (I2C_STATUS_MASTER_XMIT |
 			I2C_STATUS_MASTER_RECV |
 			I2C_STATUS_SLAVE_XMIT_WAIT |
@@ -288,7 +288,7 @@ i2c_send(uint8_t dest_add, uint8_t *buf, uint8_t size, uint8_t ctrl)
 			return 0;
 		return g_sync_res;
 	}
-	
+
 	return -ESUCCESS;
 }
 
@@ -298,8 +298,8 @@ i2c_send(uint8_t dest_add, uint8_t *buf, uint8_t size, uint8_t ctrl)
  * the same parameters as the last call. It safe to call it from the
  * send_event, but else the send buffer may have been overwritten.
  */
-int8_t 
-i2c_resend(void) 
+int8_t
+i2c_resend(void)
 {
 	return i2c_send(g_dest, g_send_buf, g_send_size, g_ctrl);
 }
@@ -307,8 +307,8 @@ i2c_resend(void)
 /**
  * same but for recv
  */
-int8_t 
-i2c_rerecv(void) 
+int8_t
+i2c_rerecv(void)
 {
 	return i2c_recv(g_dest, g_recv_size, g_ctrl);
 }
@@ -334,11 +334,11 @@ i2c_reset(void)
 	TWCR = 0;
 	g_status = I2C_STATUS_READY;
 #ifdef CONFIG_MODULE_I2C_MASTER
-	if (g_mode == I2C_MODE_MASTER) 
+	if (g_mode == I2C_MODE_MASTER)
 		TWCR = (1<<TWINT) | (1<<TWEN) | (1<<TWIE);
 	else
 #endif
-		TWCR = (1<<TWINT) | (1<<TWEN) | (1<<TWIE) | 
+		TWCR = (1<<TWINT) | (1<<TWEN) | (1<<TWIE) |
 			(1<<TWSTO) | (1<<TWEA);
 	IRQ_UNLOCK(flags);
 }
@@ -361,7 +361,7 @@ int8_t i2c_recv(uint8_t dest_add, uint8_t size, uint8_t ctrl)
 		IRQ_UNLOCK(flags);
 		return -ENXIO;
 	}
-	
+
 	if (g_status != I2C_STATUS_READY) {
 		IRQ_UNLOCK(flags);
 		return -EBUSY;
@@ -380,7 +380,7 @@ int8_t i2c_recv(uint8_t dest_add, uint8_t size, uint8_t ctrl)
 	g_ctrl = ctrl;
 	g_recv_size = size;
 	g_status |= I2C_STATUS_MASTER_RECV;
-	g_dest = dest_add ; 
+	g_dest = dest_add ;
 	TWCR = (1<<TWINT) | (1<<TWEN) | (1<<TWIE) | (1<<TWSTA);
 
 	IRQ_UNLOCK(flags);
@@ -405,7 +405,7 @@ int8_t i2c_recv(uint8_t dest_add, uint8_t size, uint8_t ctrl)
 			return 0;
 		return g_sync_res;
 	}
-	
+
 	return -ESUCCESS;
 #endif
 }
@@ -413,9 +413,9 @@ int8_t i2c_recv(uint8_t dest_add, uint8_t size, uint8_t ctrl)
 
 /**
  * Try to flush the current operation, before it is started. The
- * i2c module is then tagged as ready. If it returns 0, the flush was 
- * a success, and i2c_send() can be called. Else, it means that 
- * a transmission was running. 
+ * i2c module is then tagged as ready. If it returns 0, the flush was
+ * a success, and i2c_send() can be called. Else, it means that
+ * a transmission was running.
  */
 int8_t i2c_flush(void)
 {
@@ -428,7 +428,7 @@ int8_t i2c_flush(void)
 
 	g_status &= ~(I2C_STATUS_SLAVE_XMIT_WAIT);
 	IRQ_UNLOCK(flags);
-	
+
 	return -ESUCCESS;
 }
 
@@ -464,7 +464,7 @@ uint8_t i2c_set_recv_size(uint8_t size)
 		IRQ_UNLOCK(flags);
 		return -EINVAL;
 	}
-	
+
 	g_recv_size = size;
 
 	IRQ_UNLOCK(flags);
@@ -504,7 +504,7 @@ uint8_t i2c_get_recv_buffer(uint8_t *buf, uint8_t size)
 		return -EBUSY;
 	}
 
-	if (size > g_recv_nbytes) 
+	if (size > g_recv_nbytes)
 		size = g_recv_nbytes;
 	memcpy(buf, g_recv_buf, size);
 
@@ -549,10 +549,10 @@ SIGNAL(SIG_2WIRE_SERIAL)
 	switch(hard_status) {
 
 #ifdef CONFIG_MODULE_I2C_MASTER
-	case TW_START:      
+	case TW_START:
 	case TW_REP_START:
 		/* a start has been transmitted, transmit SLA+W which is :
-		 * b7-1: slave address 
+		 * b7-1: slave address
 		 * b0  : 0 (write operation) or 1 (read) */
 		if (g_status & I2C_STATUS_MASTER_RECV) {
 			TWDR = (g_dest << 1) | (0x01);
@@ -590,12 +590,12 @@ SIGNAL(SIG_2WIRE_SERIAL)
 		break;
 
 	case TW_MT_DATA_NACK:
-		/* we transmitted data but slave sent us a NACK. 
+		/* we transmitted data but slave sent us a NACK.
 		 * Notify the number of bytes sent, including the one
 		 * that were not acked, and send a stop condition */
 		g_status |= (I2C_STATUS_OP_FINISHED | I2C_STATUS_NEED_XMIT_EVT);
 		break;
-      
+
 
 		/* MASTER RECEIVER */
 
@@ -606,7 +606,7 @@ SIGNAL(SIG_2WIRE_SERIAL)
 		if (g_recv_size > 1)
 			command |= (1<<TWEA);
 		break;
-		
+
 	case TW_MR_SLA_NACK:
 		/* the slave does not answer, send a stop condition */
 		g_recv_nbytes = -ENOENT;
@@ -653,14 +653,14 @@ SIGNAL(SIG_2WIRE_SERIAL)
 		}
 		else if (g_status & I2C_STATUS_MASTER_RECV) {
 			g_send_nbytes = -EAGAIN;
-			g_status |= I2C_STATUS_NEED_XMIT_EVT;		
+			g_status |= I2C_STATUS_NEED_XMIT_EVT;
 		}
 		/* g_status |= I2C_STATUS_OP_FINISHED; */ /* ?? or not ? */
 		break;
 
-#endif      
+#endif
 
-	
+
 		/* SLAVE RECEIVER */
 
 	case TW_SR_ARB_LOST_SLA_ACK:
@@ -693,7 +693,7 @@ SIGNAL(SIG_2WIRE_SERIAL)
 		break;
 
 	case TW_SR_GCALL_DATA_NACK:
-	case TW_SR_DATA_NACK:    
+	case TW_SR_DATA_NACK:
 		/* receive last data byte (our buffer is full) */
 		if (g_recv_nbytes < g_recv_size) {
 			g_recv_buf[g_recv_nbytes] = TWDR;
@@ -703,17 +703,17 @@ SIGNAL(SIG_2WIRE_SERIAL)
 			g_recv_nbytes++;
 		}
 		break;
-    
+
 	case TW_SR_STOP:
 		/* the master sent a stop condition, notify app */
 		g_status |= (I2C_STATUS_OP_FINISHED | I2C_STATUS_NEED_RECV_EVT);
 		break;
 
-      
+
 		/* SLAVE TRANSMITTER */
 
 	case TW_ST_ARB_LOST_SLA_ACK:
-	case TW_ST_SLA_ACK: 
+	case TW_ST_SLA_ACK:
 		/* slave is addressed. If it is not ready, send a 0 as
 		 * last byte. */
 		g_send_nbytes = 0;
@@ -721,9 +721,9 @@ SIGNAL(SIG_2WIRE_SERIAL)
 			TWDR = 0;
 			g_send_size=0;
 		}
-		/* else: 
+		/* else:
 		 * if there is only 1 byte to transmit, we don't
-		 * need to send ack, else set TWEA. */	
+		 * need to send ack, else set TWEA. */
 		else {
 			if (g_send_size > 1) {
 				command |= (1<<TWEA);
@@ -733,7 +733,7 @@ SIGNAL(SIG_2WIRE_SERIAL)
 		g_status &= ~(I2C_STATUS_SLAVE_XMIT_WAIT);
 		g_status |= I2C_STATUS_SLAVE_XMIT;
 		break;
-      
+
 	case TW_ST_DATA_ACK:
 		/* transmitting data, if there is more than one byte
 		 * to send, send ack */
@@ -753,21 +753,21 @@ SIGNAL(SIG_2WIRE_SERIAL)
 		g_status |= (I2C_STATUS_OP_FINISHED | I2C_STATUS_NEED_XMIT_EVT);
 		break;
 
-            
+
 		/* COMMON */
 
 	case TW_BUS_ERROR:
 		command |= (1<<TWSTO);
 		g_status |= I2C_STATUS_OP_FINISHED;
 		break;
-    
+
 	default :
 		/* default ... what can we do ? */
 		g_status |= I2C_STATUS_OP_FINISHED;
 		break;
 
 	}
-	
+
 #if I2C_DEBUG == 1
 	g_prev_status = g_status;
 #endif
@@ -797,7 +797,7 @@ SIGNAL(SIG_2WIRE_SERIAL)
 				      I2C_STATUS_OP_FINISHED);
 		}
 	}
-		
+
 	/* Callback events if necessary (if not sync) */
 	if ( ! (g_ctrl & I2C_CTRL_SYNC) ) {
 		if ( (g_status & I2C_STATUS_NEED_XMIT_EVT) && g_send_event) {
@@ -810,11 +810,11 @@ SIGNAL(SIG_2WIRE_SERIAL)
 	else {
 		if ( g_status & (I2C_STATUS_MASTER_XMIT | I2C_STATUS_SLAVE_XMIT) )
 			g_sync_res = g_send_nbytes;
-		else 
+		else
 			g_sync_res = g_recv_nbytes;
 	}
 	g_status &= ~(I2C_STATUS_NEED_XMIT_EVT | I2C_STATUS_NEED_RECV_EVT);
-	
+
 #if I2C_DEBUG == 1
 	g_command = command;
 #endif
@@ -823,5 +823,5 @@ SIGNAL(SIG_2WIRE_SERIAL)
 	 * (by calling i2c_send() or i2c_recv(), we don't need to
 	 * send it (we are back in MASTER_SEND or MASTER_RECV mode) */
 	if (TWCR & (1<<TWINT))
-		TWCR = command; 
+		TWCR = command;
 }

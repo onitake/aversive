@@ -27,6 +27,7 @@
 #include <aversive/wait.h>
 #include <aversive/error.h>
 
+#include <hostsim.h>
 #include <ax12.h>
 #include <uart.h>
 #include <pwm_ng.h>
@@ -193,7 +194,7 @@ static void cmd_speed_parsed(void *parsed_result, void *show)
 	if (!show) 
 		ramp_set_vars(&csb->ramp, res->s, res->s); /* set speed */
 
-	printf_P(PSTR("%s %lu\r\n"), 
+	printf_P(PSTR("%s %"PRIu32"\r\n"), 
 		 res->cs.csname,
 		 ext.r_b.var_pos);
 #else
@@ -380,7 +381,7 @@ static void cmd_maximum_parsed(void *parsed_result, void *show)
 	if (!show)
 		pid_set_maximums(&csb->pid, res->in, res->i, res->out);
 
-	printf_P(PSTR("maximum %s %lu %lu %lu\r\n"), 
+	printf_P(PSTR("maximum %s %"PRIu32" %"PRIu32" %"PRIu32"\r\n"), 
 		 res->cs.csname,
 		 pid_get_max_in(&csb->pid),
 		 pid_get_max_I(&csb->pid),
@@ -461,7 +462,7 @@ static void cmd_quadramp_parsed(void *parsed_result, void *show)
 		quadramp_set_2nd_order_vars(&csb->qr, res->ap, res->an);
 	}
 
-	printf_P(PSTR("quadramp %s %ld %ld %ld %ld\r\n"), 
+	printf_P(PSTR("quadramp %s %"PRIi32" %"PRIi32" %"PRIi32" %"PRIi32"\r\n"), 
 		 res->cs.csname,
 		 csb->qr.var_2nd_ord_pos,
 		 csb->qr.var_2nd_ord_neg,
@@ -623,7 +624,7 @@ static void cmd_blocking_i_parsed(void *parsed_result, void *show)
 		bd_set_current_thresholds(&csb->bd, res->k1, res->k2,
 					  res->i, res->cpt);
 
-	printf_P(PSTR("%s %s %ld %ld %ld %d\r\n"), 
+	printf_P(PSTR("%s %s %"PRIi32" %"PRIi32" %"PRIi32" %d\r\n"), 
 		 res->cs.cmdname,
 		 res->cs.csname,
 		 csb->bd.k1,

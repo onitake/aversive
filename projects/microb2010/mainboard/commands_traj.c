@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <hostsim.h>
 #include <aversive/pgmspace.h>
 #include <aversive/wait.h>
 #include <aversive/error.h>
@@ -144,7 +145,7 @@ static void cmd_circle_coef_parsed(void *parsed_result, void *data)
 		trajectory_set_circle_coef(&mainboard.traj, res->circle_coef);
 	}
 
-	printf_P(PSTR("circle_coef %2.2f\r\n"), mainboard.traj.circle_coef);
+	printf_P(PSTR("circle_coef set %2.2f\r\n"), mainboard.traj.circle_coef);
 }
 
 prog_char str_circle_coef_arg0[] = "circle_coef";
@@ -264,6 +265,9 @@ struct cmd_rs_gains_result {
 /* function called when cmd_rs_gains is parsed successfully */
 static void cmd_rs_gains_parsed(void * parsed_result, void * data)
 {
+#ifdef HOST_VERSION
+	printf("not implemented\n");
+#else
 	struct cmd_rs_gains_result * res = parsed_result;
 
 	if (!strcmp_P(res->arg1, PSTR("set"))) {
@@ -274,6 +278,7 @@ static void cmd_rs_gains_parsed(void * parsed_result, void * data)
 	}
 	printf_P(PSTR("rs_gains set %2.2f %2.2f\r\n"),
 		 mainboard.rs.left_ext_gain, mainboard.rs.right_ext_gain);
+#endif
 }
 
 prog_char str_rs_gains_arg0[] = "rs_gains";
@@ -395,13 +400,12 @@ static void cmd_pt_list_parsed(void * parsed_result, void * data)
 	struct cmd_pt_list_result * res = parsed_result;
 	uint8_t i, why=0;
 	
-	if (!strcmp_P(res->arg1, PSTR("avoid_start"))) {
-		printf_P(PSTR("not implemented\r\n"));
-		return;
-	}
-
 	if (!strcmp_P(res->arg1, PSTR("append"))) {
 		res->arg2 = pt_list_len;
+	}
+	if (!strcmp_P(res->arg1, PSTR("avoid_start"))) {
+		printf_P(PSTR("removed\r\n"));
+		return;
 	}
 
 	if (!strcmp_P(res->arg1, PSTR("insert")) ||
@@ -442,9 +446,14 @@ static void cmd_pt_list_parsed(void * parsed_result, void * data)
 		printf_P(PSTR("List empty\r\n"));
 		return;
 	}
+ restart:
 	for (i=0 ; i<pt_list_len ; i++) {
 		printf_P(PSTR("%d: x=%d y=%d\r\n"), i, pt_list[i].x, pt_list[i].y);
 		if (!strcmp_P(res->arg1, PSTR("start"))) {
+			trajectory_goto_xy_abs(&mainboard.traj, pt_list[i].x, pt_list[i].y);
+			why = wait_traj_end(0xFF); /* all */
+		}
+		else if (!strcmp_P(res->arg1, PSTR("loop_start"))) {
 			trajectory_goto_xy_abs(&mainboard.traj, pt_list[i].x, pt_list[i].y);
 			why = wait_traj_end(0xFF); /* all */
 		}
@@ -460,7 +469,13 @@ static void cmd_pt_list_parsed(void * parsed_result, void * data)
 #endif
 		if (why & (~(END_TRAJ | END_NEAR)))
 			trajectory_stop(&mainboard.traj);
+		if (why & END_INTR)
+			break;
 	}
+	if (why & END_INTR)
+		return;
+	if (!strcmp_P(res->arg1, PSTR("loop_start")))
+		goto restart;
 }
 
 prog_char str_pt_list_arg0[] = "pt_list";
@@ -524,7 +539,7 @@ parse_pgm_inst_t cmd_pt_list_del = {
 };
 /* show */
 
-prog_char str_pt_list_show_arg[] = "show#reset#start#avoid_start";
+prog_char str_pt_list_show_arg[] = "show#reset#start#avoid_start#loop_start";
 parse_pgm_token_string_t cmd_pt_list_show_arg = TOKEN_STRING_INITIALIZER(struct cmd_pt_list_result, arg1, str_pt_list_show_arg);
 
 prog_char help_pt_list_show[] = "Show, start or reset pt_list";
@@ -745,14 +760,18 @@ static void cmd_position_parsed(void * parsed_result, void * data)
 	}
 	else if (!strcmp_P(res->arg1, PSTR("autoset_blue"))) {
 		mainboard.our_color = I2C_COLOR_BLUE;
+#ifndef HOST_VERSION
 		i2c_set_color(I2C_COBBOARD_ADDR, I2C_COLOR_BLUE);
 		i2c_set_color(I2C_BALLBOARD_ADDR, I2C_COLOR_BLUE);
+#endif
 		auto_position();
 	}
 	else if (!strcmp_P(res->arg1, PSTR("autoset_red"))) {
 		mainboard.our_color = I2C_COLOR_YELLOW;
+#ifndef HOST_VERSION
 		i2c_set_color(I2C_COBBOARD_ADDR, I2C_COLOR_YELLOW);
 		i2c_set_color(I2C_BALLBOARD_ADDR, I2C_COLOR_YELLOW);
+#endif
 		auto_position();
 	}
 

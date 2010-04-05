@@ -33,7 +33,7 @@ static void (*adc_event)(int16_t) = NULL;
 
 /**
  * Initialisation of ADC internal registers
- * Can be called for a wake up after a shutdown command 
+ * Can be called for a wake up after a shutdown command
  */
 void adc_init(void)
 {
@@ -90,7 +90,7 @@ SIGNAL(SIG_ADC)
 		return;
 
 	result = ADC;
-	
+
 	/* sign extension to fill the 16 bits when negative
 	 * (for the 16 bits output format, the output is
 	 * already right.) */
@@ -98,7 +98,7 @@ SIGNAL(SIG_ADC)
 	     && !(g_adc_previous_config & ADC_MODE_16_BITS)
 	     && (result & 0x0200) )
 		result |= 0xFE00;
-	
+
 	adc_event(result);
 }
 

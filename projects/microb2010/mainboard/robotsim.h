@@ -1,6 +1,5 @@
 /*  
- *  Copyright Droids Corporation
- *  Olivier Matz <zer0@droids-corp.org>
+ *  Copyright Droids Corporation, Microb Technology, Eirbot (2005)
  * 
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,33 +15,12 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- *  Revision : $Id: cmdline.h,v 1.4 2009-11-08 17:24:33 zer0 Exp $
+ *  Revision : $Id: main.c,v 1.9.4.5 2007-06-01 09:37:22 zer0 Exp $
  *
  */
 
-#ifdef HOST_VERSION
-#define CMDLINE_UART 0
-#else
-#define CMDLINE_UART 1
-#endif
-
-/* uart rx callback for reset() */
-void emergency(char c);
-
-/* log function */
-void mylog(struct error * e, ...);
-
-/* launch cmdline */
-int cmdline_interact(void);
-
-static inline uint8_t cmdline_keypressed(void) {
-	return (uart_recv_nowait(CMDLINE_UART) != -1);
-}
-
-static inline int16_t cmdline_getchar(void) {
-	return uart_recv_nowait(CMDLINE_UART);
-}
-
-static inline uint8_t cmdline_getchar_wait(void) {
-	return uart_recv(CMDLINE_UART);
-}
+void robotsim_update(void);
+void robotsim_pwm(void *arg, int32_t val);
+int32_t robotsim_encoder_get(void *arg);
+int robotsim_init(void);
+void robotsim_dump(void);

@@ -1,7 +1,7 @@
-/*  
+/*
  *  Copyright Droids Corporation
  *  Olivier Matz <zer0@droids-corp.org>
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -22,6 +22,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdint.h>
 
 #include <aversive.h>
 #include <aversive/error.h>
@@ -51,9 +52,11 @@
 #include <rdline.h>
 
 #include "main.h"
+#include "robotsim.h"
 #include "strat.h"
 #include "actuator.h"
 
+#ifndef HOST_VERSION
 int32_t encoders_left_cobroller_speed(void *number)
 {
 	static volatile int32_t roller_pos;
@@ -73,21 +76,23 @@ int32_t encoders_right_cobroller_speed(void *number)
 	roller_pos = tmp;
 	return speed;
 }
+#endif
 
 /* called every 5 ms */
-static void do_cs(void *dummy) 
+static void do_cs(void *dummy)
 {
 	static uint16_t cpt = 0;
 	static int32_t old_a = 0, old_d = 0;
 
+#ifdef HOST_VERSION
+	robotsim_update();
+#else
 	/* read encoders */
 	if (mainboard.flags & DO_ENCODERS) {
 		encoders_spi_manage(NULL);
 	}
+#endif
 
-	/* XXX there is an issue which is probably related to avr-libc
-	 * 1.6.2 (debian): this code using fixed_point lib does not
-	 * work with it */
 	/* robot system, conversion to angle,distance */
 	if (mainboard.flags & DO_RS) {
 		int16_t a,d;
@@ -107,10 +112,12 @@ static void do_cs(void *dummy)
 			cs_manage(&mainboard.angle.cs);
 		if (mainboard.distance.on)
 			cs_manage(&mainboard.distance.cs);
+#ifndef HOST_VERSION
 		if (mainboard.left_cobroller.on)
 			cs_manage(&mainboard.left_cobroller.cs);
 		if (mainboard.right_cobroller.on)
 			cs_manage(&mainboard.right_cobroller.cs);
+#endif
 	}
 	if ((cpt & 1) && (mainboard.flags & DO_POS)) {
 		/* about 1.5ms (worst case without centrifugal force
@@ -120,9 +127,12 @@ static void do_cs(void *dummy)
 	if (mainboard.flags & DO_BD) {
 		bd_manage_from_cs(&mainboard.angle.bd, &mainboard.angle.cs);
 		bd_manage_from_cs(&mainboard.distance.bd, &mainboard.distance.cs);
+#ifndef HOST_VERSION
 		bd_manage_from_cs(&mainboard.left_cobroller.bd, &mainboard.left_cobroller.cs);
 		bd_manage_from_cs(&mainboard.right_cobroller.bd, &mainboard.right_cobroller.cs);
+#endif
 	}
+#ifndef HOST_VERSION
 	if (mainboard.flags & DO_TIMER) {
 		uint8_t second;
 		/* the robot should stop correctly in the strat, but
@@ -136,18 +146,24 @@ static void do_cs(void *dummy)
 			while(1);
 		}
 	}
+#endif
 	/* brakes */
 	if (mainboard.flags & DO_POWER)
 		BRAKE_OFF();
 	else
 		BRAKE_ON();
 	cpt++;
+
+#ifdef HOST_VERSION
+	if ((cpt & 7) == 0)
+		robotsim_dump();
+#endif
 }
 
 void dump_cs_debug(const char *name, struct cs *cs)
 {
-	DEBUG(E_USER_CS, "%s cons=% .5ld fcons=% .5ld err=% .5ld "
-	      "in=% .5ld out=% .5ld", 
+	DEBUG(E_USER_CS, "%s cons=% .5"PRIi32" fcons=% .5"PRIi32" err=% .5"PRIi32" "
+	      "in=% .5"PRIi32" out=% .5"PRIi32"",
 	      name, cs_get_consign(cs), cs_get_filtered_consign(cs),
 	      cs_get_error(cs), cs_get_filtered_feedback(cs),
 	      cs_get_out(cs));
@@ -155,8 +171,8 @@ void dump_cs_debug(const char *name, struct cs *cs)
 
 void dump_cs(const char *name, struct cs *cs)
 {
-	printf_P(PSTR("%s cons=% .5ld fcons=% .5ld err=% .5ld "
-		      "in=% .5ld out=% .5ld\r\n"), 
+	printf_P(PSTR("%s cons=% .5"PRIi32" fcons=% .5"PRIi32" err=% .5"PRIi32" "
+		      "in=% .5"PRIi32" out=% .5"PRIi32"\r\n"),
 		 name, cs_get_consign(cs), cs_get_filtered_consign(cs),
 		 cs_get_error(cs), cs_get_filtered_feedback(cs),
 		 cs_get_out(cs));
@@ -164,7 +180,7 @@ void dump_cs(const char *name, struct cs *cs)
 
 void dump_pid(const char *name, struct pid_filter *pid)
 {
-	printf_P(PSTR("%s P=% .8ld I=% .8ld D=% .8ld out=% .8ld\r\n"),
+	printf_P(PSTR("%s P=% .8"PRIi32" I=% .8"PRIi32" D=% .8"PRIi32" out=% .8"PRIi32"\r\n"),
 		 name,
 		 pid_get_value_in(pid) * pid_get_gain_P(pid),
 		 pid_get_value_I(pid) * pid_get_gain_I(pid),
@@ -179,10 +195,17 @@ void microb_cs_init(void)
 	rs_set_left_pwm(&mainboard.rs, pwm_set_and_save, LEFT_PWM);
 	rs_set_right_pwm(&mainboard.rs,  pwm_set_and_save, RIGHT_PWM);
 	/* increase gain to decrease dist, increase left and it will turn more left */
-	rs_set_left_ext_encoder(&mainboard.rs, encoders_spi_get_value, 
+#ifdef HOST_VERSION
+	rs_set_left_ext_encoder(&mainboard.rs, robotsim_encoder_get,
+				LEFT_ENCODER, IMP_COEF);
+	rs_set_right_ext_encoder(&mainboard.rs, robotsim_encoder_get,
+				 RIGHT_ENCODER, IMP_COEF);
+#else
+	rs_set_left_ext_encoder(&mainboard.rs, encoders_spi_get_value,
 				LEFT_ENCODER, IMP_COEF * -1.00);
-	rs_set_right_ext_encoder(&mainboard.rs, encoders_spi_get_value, 
+	rs_set_right_ext_encoder(&mainboard.rs, encoders_spi_get_value,
 				 RIGHT_ENCODER, IMP_COEF * 1.00);
+#endif
 	/* rs will use external encoders */
 	rs_set_flags(&mainboard.rs, RS_USE_EXT);
 
@@ -254,6 +277,7 @@ void microb_cs_init(void)
 	bd_set_speed_threshold(&mainboard.distance.bd, 60);
 	bd_set_current_thresholds(&mainboard.distance.bd, 500, 8000, 1000000, 50);
 
+#ifndef HOST_VERSION
 	/* ---- CS left_cobroller */
 	/* PID */
 	pid_init(&mainboard.left_cobroller.pid);
@@ -293,6 +317,7 @@ void microb_cs_init(void)
 	bd_init(&mainboard.right_cobroller.bd);
 	bd_set_speed_threshold(&mainboard.right_cobroller.bd, 60);
 	bd_set_current_thresholds(&mainboard.right_cobroller.bd, 500, 8000, 1000000, 50);
+#endif /* !HOST_VERSION */
 
 	/* set them on !! */
 	mainboard.angle.on = 0;

@@ -48,6 +48,7 @@
 #include <rdline.h>
 
 #include "main.h"
+#include "robotsim.h"
 
 void pwm_set_and_save(void *pwm, int32_t val)
 {
@@ -62,19 +63,27 @@ void pwm_set_and_save(void *pwm, int32_t val)
 		mainboard.pwm_l = val;
 	else if (pwm == RIGHT_PWM)
 		mainboard.pwm_r = val;
+#ifdef HOST_VERSION
+	robotsim_pwm(pwm, val);
+#else
 	pwm_ng_set(pwm, val);
+#endif
 }
 
 void support_balls_deploy(void)
 {
+#ifndef HOST_VERSION
 	pwm_ng_set(SUPPORT_BALLS_R_SERVO, 510);
 	pwm_ng_set(SUPPORT_BALLS_L_SERVO, 205);
+#endif
 }
 
 void support_balls_pack(void)
 {
+#ifndef HOST_VERSION
 	pwm_ng_set(SUPPORT_BALLS_R_SERVO, 250);
 	pwm_ng_set(SUPPORT_BALLS_L_SERVO, 480);
+#endif
 }
 
 void actuator_init(void)

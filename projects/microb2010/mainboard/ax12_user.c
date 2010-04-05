@@ -86,6 +86,8 @@
  * DDR to manage the port directions.
  */
 
+#ifndef HOST_VERSION
+
 static volatile uint8_t ax12_state = AX12_STATE_READ;
 extern volatile struct cirbuf g_tx_fifo[]; /* uart fifo */
 static volatile uint8_t ax12_nsent = 0;
@@ -163,14 +165,18 @@ static void ax12_switch_uart(uint8_t state)
 		IRQ_UNLOCK(flags);
 	}
 }
-
+#endif
 
 void ax12_user_init(void)
 {
+#ifdef HOST_VERSION
+	return;
+#else
 	/* AX12 */
 	AX12_init(&gen.ax12);
 	AX12_set_hardware_send(&gen.ax12, ax12_send_char);
 	AX12_set_hardware_recv(&gen.ax12, ax12_recv_char);
 	AX12_set_hardware_switch(&gen.ax12, ax12_switch_uart);
 	uart_register_tx_event(UART_AX12_NUM, ax12_send_callback);
+#endif
 }

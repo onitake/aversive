@@ -19,16 +19,22 @@
  *
  */
 
+#include <aversive.h>
 #include <stdio.h>
 #include <string.h>
 
 #include <scheduler_config.h>
 #include <scheduler_private.h>
+#include <scheduler_stats.h>
 
 /* this file is compiled for host version only */
 
 /** declared in scheduler.c in case of AVR version */
 struct event_t g_tab_event[SCHEDULER_NB_MAX_EVENT];
+
+#ifdef CONFIG_MODULE_SCHEDULER_STATS
+struct scheduler_stats sched_stats;
+#endif
 
 /** init all global data */
 void scheduler_init(void)

@@ -27,9 +27,13 @@
 /** maximum number of allocated events */
 #define SCHEDULER_NB_MAX_EVENT 10
 
-
+#ifdef HOST_VERSION
+#define SCHEDULER_UNIT_FLOAT 1000.0
+#define SCHEDULER_UNIT 1000UL
+#else
 #define SCHEDULER_UNIT_FLOAT 512.0
 #define SCHEDULER_UNIT 512L
+#endif
 
 /** number of allowed imbricated scheduler interrupts. The maximum
  * should be SCHEDULER_NB_MAX_EVENT since we never need to imbricate

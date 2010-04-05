@@ -182,6 +182,9 @@ struct cmd_baudrate_result {
 /* function called when cmd_baudrate is parsed successfully */
 static void cmd_baudrate_parsed(void * parsed_result, void * data)
 {
+#ifdef HOST_VERSION
+	printf("not implemented\n");
+#else
 	struct cmd_baudrate_result *res = parsed_result;
 	struct uart_config c;
 
@@ -190,6 +193,7 @@ static void cmd_baudrate_parsed(void * parsed_result, void * data)
 	c.baudrate = res->arg1;
 	uart_setconf(1, &c);
 	printf_P(PSTR("%d %d\r\n"), UBRR1H, UBRR1L);
+#endif
 }
 
 prog_char str_baudrate_arg0[] = "baudrate";

@@ -26,6 +26,29 @@
 			port |= _BV(bit);	\
 	} while(0)
 
+#ifdef HOST_VERSION
+#define LED1_ON()
+#define LED1_OFF()
+#define LED1_TOGGLE()
+
+#define LED2_ON()
+#define LED2_OFF()
+#define LED2_TOGGLE()
+
+#define LED3_ON()
+#define LED3_OFF()
+#define LED3_TOGGLE()
+
+#define LED4_ON()
+#define LED4_OFF()
+#define LED4_TOGGLE()
+
+#define BRAKE_DDR()
+#define BRAKE_ON()
+#define BRAKE_OFF()
+
+#else
+
 #define LED1_ON() 	sbi(PORTJ, 2)
 #define LED1_OFF() 	cbi(PORTJ, 2)
 #define LED1_TOGGLE() 	LED_TOGGLE(PORTJ, 2)
@@ -45,6 +68,7 @@
 #define BRAKE_DDR()     do { DDRJ |= 0xF0; } while(0)
 #define BRAKE_ON()      do { PORTJ |= 0xF0; } while(0)
 #define BRAKE_OFF()     do { PORTJ &= 0x0F; } while(0)
+#endif
 
 /* only 90 seconds, don't forget it :) */
 #define MATCH_TIME 89

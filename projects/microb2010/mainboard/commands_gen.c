@@ -27,6 +27,7 @@
 #include <aversive/wait.h>
 #include <aversive/error.h>
 
+#include <hostsim.h>
 #include <ax12.h>
 #include <uart.h>
 #include <pwm_ng.h>
@@ -70,6 +71,9 @@ struct cmd_reset_result {
 /* function called when cmd_reset is parsed successfully */
 static void cmd_reset_parsed(void * parsed_result, void * data)
 {
+#ifdef HOST_VERSION
+	hostsim_exit();
+#endif
 	reset();
 }
 
@@ -98,7 +102,11 @@ struct cmd_bootloader_result {
 /* function called when cmd_bootloader is parsed successfully */
 static void cmd_bootloader_parsed(void *parsed_result, void *data)
 {
+#ifndef HOST_VERSION
 	bootloader();
+#else
+	printf("not implemented\n");
+#endif
 }
 
 prog_char str_bootloader_arg0[] = "bootloader";
@@ -127,6 +135,9 @@ struct cmd_encoders_result {
 /* function called when cmd_encoders is parsed successfully */
 static void cmd_encoders_parsed(void *parsed_result, void *data)
 {
+#ifdef HOST_VERSION
+	printf("not implemented\n");
+#else
 	struct cmd_encoders_result *res = parsed_result;
 
 	if (!strcmp_P(res->arg1, PSTR("reset"))) {
@@ -146,6 +157,7 @@ static void cmd_encoders_parsed(void *parsed_result, void *data)
 			 encoders_spi_get_value((void *)3));
 		wait_ms(100);
 	}
+#endif
 }
 
 prog_char str_encoders_arg0[] = "encoders";
@@ -211,6 +223,9 @@ struct cmd_pwm_result {
 /* function called when cmd_pwm is parsed successfully */
 static void cmd_pwm_parsed(void * parsed_result, void * data)
 {
+#ifdef HOST_VERSION
+	printf("not implemented\n");
+#else
 	void * pwm_ptr = NULL;
 	struct cmd_pwm_result * res = parsed_result;
 	
@@ -236,6 +251,7 @@ static void cmd_pwm_parsed(void * parsed_result, void * data)
 		pwm_ng_set(pwm_ptr, res->arg2);
 
 	printf_P(PSTR("done\r\n"));
+#endif
 }
 
 prog_char str_pwm_arg0[] = "pwm";
@@ -269,6 +285,9 @@ struct cmd_adc_result {
 /* function called when cmd_adc is parsed successfully */
 static void cmd_adc_parsed(void *parsed_result, void *data)
 {
+#ifdef HOST_VERSION
+	printf("not implemented\n");
+#else
 	struct cmd_adc_result *res = parsed_result;
 	uint8_t i, loop = 0;
 
@@ -283,6 +302,7 @@ static void cmd_adc_parsed(void *parsed_result, void *data)
 		printf_P(PSTR("\r\n"));
 		wait_ms(100);
 	} while (loop && !cmdline_keypressed());
+#endif
 }
 
 prog_char str_adc_arg0[] = "adc";
@@ -315,6 +335,9 @@ struct cmd_sensor_result {
 /* function called when cmd_sensor is parsed successfully */
 static void cmd_sensor_parsed(void *parsed_result, void *data)
 {
+#ifdef HOST_VERSION
+	printf("not implemented\n");
+#else
 	struct cmd_sensor_result *res = parsed_result;
 	uint8_t i, loop = 0;
 
@@ -329,6 +352,7 @@ static void cmd_sensor_parsed(void *parsed_result, void *data)
 		printf_P(PSTR("\r\n"));
 		wait_ms(100);
 	} while (loop && !cmdline_keypressed());
+#endif
 }
 
 prog_char str_sensor_arg0[] = "sensor";
@@ -426,12 +450,16 @@ static void cmd_log_do_show(void)
 	for (i=0; i<NB_LOGS; i++) {
 		name = log_num2name(gen.logs[i]);
 		if (name) {
+#ifdef HOST_VERSION
+			printf_P(PSTR("log type %s is on\r\n"), name);
+#else
 			printf_P(PSTR("log type %S is on\r\n"), name);
+#endif
 			empty = 0;
 		}
 	}
 	if (empty)
-		printf_P(PSTR("no log configured\r\n"), gen.logs[i]);
+		printf_P(PSTR("no log configured\r\n"));
 }
 
 /* function called when cmd_log is parsed successfully */
@@ -451,7 +479,7 @@ prog_char str_log_arg0[] = "log";
 parse_pgm_token_string_t cmd_log_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_log_result, arg0, str_log_arg0);
 prog_char str_log_arg1[] = "level";
 parse_pgm_token_string_t cmd_log_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_log_result, arg1, str_log_arg1);
-parse_pgm_token_num_t cmd_log_arg2 = TOKEN_NUM_INITIALIZER(struct cmd_log_result, arg2, INT32);
+parse_pgm_token_num_t cmd_log_arg2 = TOKEN_NUM_INITIALIZER(struct cmd_log_result, arg2, INT8);
 
 prog_char help_log[] = "Set log options: level (0 -> 5)";
 parse_pgm_inst_t cmd_log = {
@@ -567,8 +595,11 @@ struct cmd_stack_space_result {
 /* function called when cmd_stack_space is parsed successfully */
 static void cmd_stack_space_parsed(void *parsed_result, void *data)
 {
+#ifdef HOST_VERSION
+	printf("not implemented\n");
+#else
 	printf("res stack: %d\r\n", min_stack_space_available());
-	
+#endif
 }
 
 prog_char str_stack_space_arg0[] = "stack_space";

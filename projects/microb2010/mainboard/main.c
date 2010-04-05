@@ -59,12 +59,14 @@
 #include "../common/i2c_commands.h"
 
 #include "main.h"
+#include "robotsim.h"
 #include "ax12_user.h"
 #include "strat.h"
 #include "cmdline.h"
 #include "sensor.h"
 #include "actuator.h"
 #include "cs.h"
+#include "strat_base.h"
 #include "i2c_protocol.h"
 
 /* 0 means "programmed"
@@ -84,6 +86,7 @@ struct mainboard mainboard;
 struct cobboard cobboard;
 struct ballboard ballboard;
 
+#ifndef HOST_VERSION
 /***********************/
 
 void bootloader(void)
@@ -143,11 +146,11 @@ static void main_timer_interrupt(void)
 	if ((cpt & 0x3) == 0)
 		scheduler_interrupt();
 }
+#endif
 
 int main(void)
 {
-	uint16_t seconds;
-
+#ifndef HOST_VERSION
 	/* brake */
 	BRAKE_DDR();
 	BRAKE_OFF();
@@ -163,6 +166,7 @@ int main(void)
 	LED2_OFF();
 	LED3_OFF();
 	LED4_OFF();
+#endif
 
 	memset(&gen, 0, sizeof(gen));
 	memset(&mainboard, 0, sizeof(mainboard));
@@ -171,17 +175,15 @@ int main(void)
 
 	/* UART */
 	uart_init();
+	uart_register_rx_event(CMDLINE_UART, emergency);
+#ifndef HOST_VERSION
 #if CMDLINE_UART == 3
  	fdevopen(uart3_dev_send, uart3_dev_recv);
-	uart_register_rx_event(3, emergency);
 #elif CMDLINE_UART == 1
  	fdevopen(uart1_dev_send, uart1_dev_recv);
-	uart_register_rx_event(1, emergency);
-#else
-#  error not supported
 #endif
 
-	eeprom_write_byte(EEPROM_MAGIC_ADDRESS, EEPROM_MAGIC_MAINBOARD);
+	//eeprom_write_byte(EEPROM_MAGIC_ADDRESS, EEPROM_MAGIC_MAINBOARD);
 	/* check eeprom to avoid to run the bad program */
 	if (eeprom_read_byte(EEPROM_MAGIC_ADDRESS) !=
 	    EEPROM_MAGIC_MAINBOARD) {
@@ -189,6 +191,7 @@ int main(void)
 		printf_P(PSTR("Bad eeprom value\r\n"));
 		while(1);
 	}
+#endif /* ! HOST_VERSION */
 
 	/* LOGS */
 	error_register_emerg(mylog);
@@ -197,6 +200,7 @@ int main(void)
 	error_register_notice(mylog);
 	error_register_debug(mylog);
 
+#ifndef HOST_VERSION
 	/* SPI + ENCODERS */
 	encoders_spi_init(); /* this will also init spi hardware */
 
@@ -240,16 +244,25 @@ int main(void)
 	PWM_NG_INIT16(&gen.servo4, 5, C, 10, PWM_NG_MODE_NORMAL,
 		      NULL, 0);
 	support_balls_deploy(); /* init pwm for servos */
+#endif /* !HOST_VERSION */
 
 	/* SCHEDULER */
 	scheduler_init();
+#ifdef HOST_VERSION
+	hostsim_init();
+	robotsim_init();
+#endif
 
+#ifndef HOST_VERSION
 	scheduler_add_periodical_event_priority(do_led_blink, NULL,
 						100000L / SCHEDULER_UNIT,
 						LED_PRIO);
+#endif /* !HOST_VERSION */
+
 	/* all cs management */
 	microb_cs_init();
 
+#ifndef HOST_VERSION
 	/* sensors, will also init hardware adc */
 	sensor_init();
 
@@ -259,6 +272,7 @@ int main(void)
 	/* start i2c slave polling */
 	scheduler_add_periodical_event_priority(i2c_poll_slaves, NULL,
 						8000L / SCHEDULER_UNIT, I2C_POLL_PRIO);
+#endif /* !HOST_VERSION */
 
 	/* strat */
  	gen.logs[0] = E_USER_STRAT;
@@ -270,17 +284,29 @@ int main(void)
 						25000L / SCHEDULER_UNIT,
 						STRAT_PRIO);
 
+#ifndef HOST_VERSION
 	/* eeprom time monitor */
 	scheduler_add_periodical_event_priority(do_time_monitor, NULL,
 						1000000L / SCHEDULER_UNIT,
 						EEPROM_TIME_PRIO);
+#endif /* !HOST_VERSION */
 
 	sei();
 
 	printf_P(PSTR("\r\n"));
 	printf_P(PSTR("Respect et robustesse.\r\n"));
-	seconds = eeprom_read_word(EEPROM_TIME_ADDRESS);
-	printf_P(PSTR("Running since %d mn %d\r\n"), seconds/60, seconds%60);
+#ifndef HOST_VERSION
+	{
+		uint16_t seconds;
+		seconds = eeprom_read_word(EEPROM_TIME_ADDRESS);
+		printf_P(PSTR("Running since %d mn %d\r\n"), seconds/60, seconds%60);
+	}
+#endif
+
+#ifdef HOST_VERSION
+	strat_reset_pos(1000, 1000, -90);
+#endif
+
 	cmdline_interact();
 
 	return 0;
