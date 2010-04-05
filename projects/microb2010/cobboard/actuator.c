@@ -48,19 +48,27 @@
 #define COBROLLER_SPEED 800
 //#define COBROLLER_SPEED 400
 
-#define SERVO_DOOR_OPEN 250
-#define SERVO_DOOR_CLOSED 470
+#define SERVO_DOOR_OPEN 260
+#define SERVO_DOOR_CLOSED 490
+
+#define SERVO_CARRY_L_OPEN 280
+#define SERVO_CARRY_L_CLOSED 510
+
+#define SERVO_CARRY_R_OPEN 470
+#define SERVO_CARRY_R_CLOSED 250
 
 void actuator_init(void);
 
 void servo_carry_open(void)
 {
-	/* TODO */
+	pwm_ng_set(SERVO_CARRY_L_PWM, SERVO_CARRY_L_OPEN);
+	pwm_ng_set(SERVO_CARRY_R_PWM, SERVO_CARRY_R_OPEN);
 }
 
 void servo_carry_close(void)
 {
-	/* TODO */
+	pwm_ng_set(SERVO_CARRY_L_PWM, SERVO_CARRY_L_CLOSED);
+	pwm_ng_set(SERVO_CARRY_R_PWM, SERVO_CARRY_R_CLOSED);
 }
 
 void servo_door_open(void)

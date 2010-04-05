@@ -114,6 +114,13 @@ static uint8_t state_cob_color(uint8_t side)
 		return 0;
 }
 
+/* return true if the cob is correctly inside */
+static uint8_t state_cob_inside(void)
+{
+	return sensor_get(S_COB_INSIDE_L) &&
+		sensor_get(S_COB_INSIDE_R);
+}
+
 /* set a new state, return 0 on success */
 int8_t state_set_mode(uint8_t mode)
 {
@@ -163,15 +170,20 @@ static void state_do_harvest(uint8_t side)
 
 	/* eat the cob */
 	spickle_pack(side);
-	state_debug_wait_key_pressed();
 	/* xxx */
 	time_wait_ms(250);
 	left_cobroller_on();
 	delay = spickle_get_pack_delay(side);
-	time_wait_ms(delay);
+
+	WAIT_COND_OR_TIMEOUT(state_cob_inside(), delay);
 
 	/* redeploy the spickle */
 	spickle_deploy(side);
+	state_debug_wait_key_pressed();
+
+	/* let the cob go */
+	servo_carry_open();
+	wait_ms(300); /* XXX */
 	state_debug_wait_key_pressed();
 
 	cob_count ++;
@@ -180,6 +192,12 @@ static void state_do_harvest(uint8_t side)
 	shovel_up();
 	wait_ms(200);
 	state_debug_wait_key_pressed();
+
+	/* close the carry servos */
+	servo_carry_close();
+	wait_ms(300); /* XXX */
+	state_debug_wait_key_pressed();
+
 	shovel_down();
 	left_cobroller_off();
 	state_debug_wait_key_pressed();
@@ -191,10 +209,12 @@ static void state_do_eject(void)
 {
 	cob_count = 0;
 	shovel_mid();
+	servo_carry_open();
 	servo_door_open();
 	time_wait_ms(2000);
 	shovel_down();
 	servo_door_close();
+	servo_carry_close();
 }
 
 /* main state machine */
@@ -246,6 +266,7 @@ void state_init(void)
 	vt100_init(&local_vt100);
 	shovel_down();
 	servo_door_close();
+	servo_carry_close();
 	spickle_pack(I2C_LEFT_SIDE);
 	spickle_pack(I2C_RIGHT_SIDE);
 	state_mode = 0;

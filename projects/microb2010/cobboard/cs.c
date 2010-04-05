@@ -47,13 +47,20 @@
 #include "actuator.h"
 #include "spickle.h"
 
+#define DEBUG_CPLD
+
 /* called every 5 ms */
-static void do_cs(__attribute__((unused)) void *dummy) 
+static void do_cs(__attribute__((unused)) void *dummy)
 {
 	/* read encoders */
 	if (cobboard.flags & DO_ENCODERS) {
 		encoders_spi_manage(NULL);
 	}
+#ifdef DEBUG_CPLD
+	cobboard.left_spickle.prev = cobboard.left_spickle.cs.filtered_feedback_value;
+	cobboard.right_spickle.prev = cobboard.right_spickle.cs.filtered_feedback_value;
+	cobboard.shovel.prev = cobboard.shovel.cs.filtered_feedback_value;
+#endif
 	/* control system */
 	if (cobboard.flags & DO_CS) {
 		if (cobboard.left_spickle.on)
@@ -63,6 +70,31 @@ static void do_cs(__attribute__((unused)) void *dummy)
 		if (cobboard.shovel.on)
 			cs_manage(&cobboard.shovel.cs);
 	}
+#ifdef DEBUG_CPLD
+	{
+		extern int16_t g_encoders_spi_previous[4];
+		int32_t ls, rs, sh;
+
+		ls = (cobboard.left_spickle.prev - cobboard.left_spickle.cs.filtered_feedback_value);
+		rs = (cobboard.right_spickle.prev - cobboard.right_spickle.cs.filtered_feedback_value);
+		sh = (cobboard.shovel.prev - cobboard.shovel.cs.filtered_feedback_value);
+		if (ls < -2000 || ls > 2000 ||
+		    rs < -2000 || rs > 2000 ||
+		    sh < -2000 || sh > 2000) {
+			printf_P(PSTR("left_spickle %ld "), ls);
+			printf_P(PSTR("right_spickle %ld "), rs);
+			printf_P(PSTR("shovel %ld "), sh);
+			printf_P(PSTR("/ %d %d %d %d\r\n"),
+				 g_encoders_spi_previous[0],
+				 g_encoders_spi_previous[1],
+				 g_encoders_spi_previous[2],
+				 g_encoders_spi_previous[3]);
+			BRAKE_ON();
+			while (1);
+		}
+	}
+#endif
+
 	if (cobboard.flags & DO_BD) {
 		bd_manage_from_cs(&cobboard.left_spickle.bd, &cobboard.left_spickle.cs);
 		bd_manage_from_cs(&cobboard.right_spickle.bd, &cobboard.right_spickle.cs);
@@ -77,7 +109,7 @@ static void do_cs(__attribute__((unused)) void *dummy)
 void dump_cs_debug(const char *name, struct cs *cs)
 {
 	DEBUG(E_USER_CS, "%s cons=% .5ld fcons=% .5ld err=% .5ld "
-	      "in=% .5ld out=% .5ld", 
+	      "in=% .5ld out=% .5ld",
 	      name, cs_get_consign(cs), cs_get_filtered_consign(cs),
 	      cs_get_error(cs), cs_get_filtered_feedback(cs),
 	      cs_get_out(cs));
@@ -86,7 +118,7 @@ void dump_cs_debug(const char *name, struct cs *cs)
 void dump_cs(const char *name, struct cs *cs)
 {
 	printf_P(PSTR("%s cons=% .5ld fcons=% .5ld err=% .5ld "
-		      "in=% .5ld out=% .5ld\r\n"), 
+		      "in=% .5ld out=% .5ld\r\n"),
 		 name, cs_get_consign(cs), cs_get_filtered_consign(cs),
 		 cs_get_error(cs), cs_get_filtered_feedback(cs),
 		 cs_get_out(cs));
@@ -147,14 +179,19 @@ void microb_cs_init(void)
 	/* ---- CS shovel */
 	/* PID */
 	pid_init(&cobboard.shovel.pid);
-	pid_set_gains(&cobboard.shovel.pid, 1000, 10, 200);
+	pid_set_gains(&cobboard.shovel.pid, 1000, 10, 1400);
 	pid_set_maximums(&cobboard.shovel.pid, 0, 10000, 3200); /* max is 18 V */
 	pid_set_out_shift(&cobboard.shovel.pid, 10);
 	pid_set_derivate_filter(&cobboard.shovel.pid, 4);
 
+	/* quadramp */
+	quadramp_init(&cobboard.shovel.qr);
+	quadramp_set_1st_order_vars(&cobboard.shovel.qr, 2000, 2000); /* set speed */
+	quadramp_set_2nd_order_vars(&cobboard.shovel.qr, 50, 20); /* set accel */
+
 	/* CS */
 	cs_init(&cobboard.shovel.cs);
-	//cs_set_consign_filter(&cobboard.shovel.cs, quadramp_do_filter, &cobboard.shovel.qr);
+	cs_set_consign_filter(&cobboard.shovel.cs, quadramp_do_filter, &cobboard.shovel.qr);
 	cs_set_correct_filter(&cobboard.shovel.cs, pid_do_filter, &cobboard.shovel.pid);
 	cs_set_process_in(&cobboard.shovel.cs, pwm_ng_set, SHOVEL_PWM);
 	cs_set_process_out(&cobboard.shovel.cs, encoders_spi_get_value, SHOVEL_ENCODER);
@@ -170,7 +207,7 @@ void microb_cs_init(void)
 	cobboard.right_spickle.on = 0;
 	cobboard.shovel.on = 0;
 
-	scheduler_add_periodical_event_priority(do_cs, NULL, 
-						CS_PERIOD / SCHEDULER_UNIT, 
+	scheduler_add_periodical_event_priority(do_cs, NULL,
+						CS_PERIOD / SCHEDULER_UNIT,
 						CS_PRIO);
 }

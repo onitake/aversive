@@ -1,6 +1,6 @@
-/*  
+/*
  *  Copyright Droids Corporation (2009)
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -51,6 +51,8 @@
 #define SHOVEL_ENCODER         ((void *)2)
 
 #define SERVO_DOOR_PWM         ((void *)&gen.servo2)
+#define SERVO_CARRY_L_PWM      ((void *)&gen.servo1)
+#define SERVO_CARRY_R_PWM      ((void *)&gen.servo3)
 
 #define LEFT_SPICKLE_PWM       ((void *)&gen.pwm1_4A)
 #define RIGHT_SPICKLE_PWM      ((void *)&gen.pwm2_4B)
@@ -92,7 +94,7 @@ struct genboard {
 	struct pwm_ng servo2;
 	struct pwm_ng servo3;
 	struct pwm_ng servo4;
-	
+
 	/* ax12 interface */
 	AX12 ax12;
 
@@ -104,6 +106,7 @@ struct genboard {
 
 struct cs_block {
 	uint8_t on;
+	int32_t prev;
         struct cs cs;
         struct pid_filter pid;
 	struct quadramp_filter qr;

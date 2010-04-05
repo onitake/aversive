@@ -29,8 +29,8 @@
 
 /* synchronize with sensor.c */
 #define S_CAP1          0
-#define S_FRONT         1
-#define S_CAP3          2
+#define S_COB_INSIDE_L  1
+#define S_COB_INSIDE_R  2
 #define S_CAP4          3
 #define S_LCOB          4
 #define S_LEFT          5

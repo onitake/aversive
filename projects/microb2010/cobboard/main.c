@@ -1,7 +1,7 @@
-/*  
+/*
  *  Copyright Droids Corporation
  *  Olivier Matz <zer0@droids-corp.org>
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -65,7 +65,7 @@
 /* 0 means "programmed"
  * ---- with 16 Mhz quartz
  * CKSEL 3-0 : 0111
- * SUT 1-0 : 10 
+ * SUT 1-0 : 10
  * CKDIV8 : 1
  * ---- bootloader
  * BOOTZ 1-0 : 01 (4K bootloader)
@@ -109,7 +109,7 @@ void bootloader(void)
 	__asm__ __volatile__ ("ldi r31,0xf8\n");
 	__asm__ __volatile__ ("ldi r30,0x00\n");
 	__asm__ __volatile__ ("eijmp\n");
-	
+
 	/* never returns */
 }
 
@@ -122,7 +122,7 @@ void do_led_blink(__attribute__((unused)) void *dummy)
 		LED1_ON();
 	else
 		LED1_OFF();
-	
+
 	a = !a;
 #endif
 }
@@ -183,6 +183,8 @@ int main(void)
 	error_register_notice(mylog);
 	error_register_debug(mylog);
 
+	wait_ms(3000);
+
 	/* SPI + ENCODERS */
 	encoders_spi_init(); /* this will also init spi hardware */
 
@@ -196,11 +198,11 @@ int main(void)
 	timer0_register_OV_intr(main_timer_interrupt);
 
 	/* PWM */
-	PWM_NG_TIMER_16BITS_INIT(1, TIMER_16_MODE_PWM_10, 
+	PWM_NG_TIMER_16BITS_INIT(1, TIMER_16_MODE_PWM_10,
 				 TIMER1_PRESCALER_DIV_1);
-	PWM_NG_TIMER_16BITS_INIT(4, TIMER_16_MODE_PWM_10, 
+	PWM_NG_TIMER_16BITS_INIT(4, TIMER_16_MODE_PWM_10,
 				 TIMER4_PRESCALER_DIV_1);
-	
+
 	PWM_NG_INIT16(&gen.pwm1_4A, 4, A, 10, PWM_NG_MODE_SIGNED |
 		      PWM_NG_MODE_SIGN_INVERTED, &PORTD, 4);
 	PWM_NG_INIT16(&gen.pwm2_4B, 4, B, 10, PWM_NG_MODE_SIGNED,
@@ -213,11 +215,11 @@ int main(void)
 
 
 	/* servos */
-	PWM_NG_TIMER_16BITS_INIT(3, TIMER_16_MODE_PWM_10, 
+	PWM_NG_TIMER_16BITS_INIT(3, TIMER_16_MODE_PWM_10,
 				 TIMER1_PRESCALER_DIV_256);
 	PWM_NG_INIT16(&gen.servo1, 3, C, 10, PWM_NG_MODE_NORMAL,
 		      NULL, 0);
-	PWM_NG_TIMER_16BITS_INIT(5, TIMER_16_MODE_PWM_10, 
+	PWM_NG_TIMER_16BITS_INIT(5, TIMER_16_MODE_PWM_10,
 				 TIMER1_PRESCALER_DIV_256);
 	PWM_NG_INIT16(&gen.servo2, 5, A, 10, PWM_NG_MODE_NORMAL,
 		      NULL, 0);
@@ -225,12 +227,12 @@ int main(void)
 		      NULL, 0);
 	PWM_NG_INIT16(&gen.servo4, 5, C, 10, PWM_NG_MODE_NORMAL,
 		      NULL, 0);
-	
+
 	/* SCHEDULER */
 	scheduler_init();
 
-	scheduler_add_periodical_event_priority(do_led_blink, NULL, 
-						100000L / SCHEDULER_UNIT, 
+	scheduler_add_periodical_event_priority(do_led_blink, NULL,
+						100000L / SCHEDULER_UNIT,
 						LED_PRIO);
 	/* all cs management */
 	microb_cs_init();
