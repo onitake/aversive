@@ -107,7 +107,7 @@ def prog_page(ser, addr, buf):
 def prog_metadata(ser, addr, buf):
     length = len(buf)
     crc = do_crc(buf)
-    page = struct.pack("<LL", length, crc)
+    page = struct.pack(">LL", length, crc)
     filename = os.path.join(MICROB_PATH, "binaries/%x_%x.bin"%(length, crc))
     print "saving in %s"%(filename)
     f = open(filename, "w")
@@ -116,13 +116,8 @@ def prog_metadata(ser, addr, buf):
     return prog_page(ser, addr, page)
 
 def get_same_bin_file(ser):
-    # hack because dump32 does not work
-    l1 = read32(ser, METADATA_ADDR) & 0xFFFF
-    l2 = read32(ser, METADATA_ADDR + 2) & 0xFFFF
-    c1 = read32(ser, METADATA_ADDR + 4) & 0xFFFF
-    c2 = read32(ser, METADATA_ADDR + 6) & 0xFFFF
-    l = l1 + l2 << 16
-    c = c1 + c2 << 16
+    l = read32(ser, METADATA_ADDR)
+    c = read32(ser, METADATA_ADDR + 4)
     filename = os.path.join(MICROB_PATH,
                             "binaries/%x_%x.bin"%(l, c))
     print filename
@@ -334,8 +329,8 @@ class Interp(cmd.Cmd):
 
         addr = 0
 
-        #old_buf = get_same_bin_file(self.ser)
-        old_buf = None
+        old_buf = get_same_bin_file(self.ser)
+        #old_buf = None
 
         while addr < len(buf):
             if addr > METADATA_ADDR and old_buf != None and \
