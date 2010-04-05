@@ -268,7 +268,7 @@ def build_area(ax):
 
 def graph(filename):
     fig = plt.figure()
-    ax = fig.add_subplot(111)
+    ax = fig.add_subplot(111, aspect='equal')
 
     build_area(ax)
 
