@@ -27,13 +27,14 @@
 #ifndef _AVERSIVE_ERRNO_H_
 #define _AVERSIVE_ERRNO_H_
 
+/** No error */
+#define ESUCCESS 0
+
 #ifndef HOST_VERSION
 
 /* from avr-libc, does not define a lots of errors */
 #include <errno.h>
 
-/** No error */
-#define ESUCCESS 0
 /** Operation not permitted */
 #define EPERM    1
 /** No such file or directory */

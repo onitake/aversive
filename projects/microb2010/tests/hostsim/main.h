@@ -32,11 +32,11 @@
 
 #define LED2_ON()
 #define LED2_OFF()
-#define LED2_TOGGLE() 
+#define LED2_TOGGLE()
 
-#define LED3_ON() 
-#define LED3_OFF() 
-#define LED3_TOGGLE() 
+#define LED3_ON()
+#define LED3_OFF()
+#define LED3_TOGGLE()
 
 #define LED4_ON()
 #define LED4_OFF()
