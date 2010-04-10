@@ -1,7 +1,6 @@
-
-/*  
+/*
  *  Copyright Droids Corporation, Microb Technology, Eirbot (2005)
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -45,8 +44,8 @@ void quadramp_reset(struct quadramp_filter * q)
 	q->previous_in = 0;
 }
 
-void quadramp_set_2nd_order_vars(struct quadramp_filter * q, 
-				 uint32_t var_2nd_ord_pos, 
+void quadramp_set_2nd_order_vars(struct quadramp_filter * q,
+				 uint32_t var_2nd_ord_pos,
 				 uint32_t var_2nd_ord_neg)
 {
 	uint8_t flags;
@@ -56,8 +55,8 @@ void quadramp_set_2nd_order_vars(struct quadramp_filter * q,
 	IRQ_UNLOCK(flags);
 }
 
-void quadramp_set_1st_order_vars(struct quadramp_filter * q, 
-				 uint32_t var_1st_ord_pos, 
+void quadramp_set_1st_order_vars(struct quadramp_filter * q,
+				 uint32_t var_1st_ord_pos,
 				 uint32_t var_1st_ord_neg)
 {
 	uint8_t flags;
@@ -76,10 +75,10 @@ uint8_t quadramp_is_finished(struct quadramp_filter *q)
 
 /**
  * Process the ramp
- * 
+ *
  * \param data should be a (struct quadramp_filter *) pointer
  * \param in is the input of the filter
- * 
+ *
  */
 int32_t quadramp_do_filter(void * data, int32_t in)
 {
@@ -93,13 +92,13 @@ int32_t quadramp_do_filter(void * data, int32_t in)
 	int32_t previous_var, previous_out ;
 
 	if ( q->var_1st_ord_pos )
-		var_1st_ord_pos = q->var_1st_ord_pos ;  
+		var_1st_ord_pos = q->var_1st_ord_pos ;
 
 	if ( q->var_1st_ord_neg )
 		var_1st_ord_neg = -q->var_1st_ord_neg ;
 
 	if ( q->var_2nd_ord_pos )
-		var_2nd_ord_pos = q->var_2nd_ord_pos ;  
+		var_2nd_ord_pos = q->var_2nd_ord_pos ;
 
 	if ( q->var_2nd_ord_neg )
 		var_2nd_ord_neg = -q->var_2nd_ord_neg ;
@@ -122,16 +121,16 @@ int32_t quadramp_do_filter(void * data, int32_t in)
 
 	else if (d < 0 && var_2nd_ord_pos) {
 		int32_t ramp_neg;
-    
+
 		/* var_2nd_ord_pos > 0 */
 		/* real EQ : sqrt( var_2nd_ord_pos^2/4 - 2.d.var_2nd_ord_pos ) - var_2nd_ord_pos/2 */
 		ramp_neg = -sqrt( (var_2nd_ord_pos*var_2nd_ord_pos)/4 - 2*d*var_2nd_ord_pos ) - var_2nd_ord_pos/2;
-	
+
 		/* ramp_neg < 0 */
 		if(ramp_neg > var_1st_ord_neg)
 			var_1st_ord_neg = ramp_neg ;
 	}
-    
+
 	/* try to set the speed : can we reach the speed with our acceleration ? */
 	/* si on va moins vite que la Vmax */
 	if ( previous_var < var_1st_ord_pos )  {
@@ -142,14 +141,14 @@ int32_t quadramp_do_filter(void * data, int32_t in)
 			var_1st_ord_pos = previous_var + var_2nd_ord_pos ;
 	}
 	/* si on va plus vite que Vmax */
-	else if ( previous_var > var_1st_ord_pos )  { 
+	else if ( previous_var > var_1st_ord_pos )  {
 		/* deceleration would be to high, we increase the speed */
 		/* si rampe deceleration active ET qu'on ne peut pas atteindre Vmax,
 		 * on sature Vmax a Vcourante + deceleration */
 		if (var_2nd_ord_neg && ( var_1st_ord_pos - previous_var < var_2nd_ord_neg) )
 			var_1st_ord_pos = previous_var + var_2nd_ord_neg;
 	}
-  
+
 	/* same for the neg */
 	/* si on va plus vite que la Vmin (en negatif : en vrai la vitesse absolue est inferieure) */
 	if ( previous_var > var_1st_ord_neg )  {

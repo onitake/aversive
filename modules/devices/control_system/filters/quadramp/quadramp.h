@@ -1,6 +1,6 @@
-/*  
+/*
  *  Copyright Droids Corporation, Microb Technology, Eirbot (2005)
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -26,27 +26,27 @@
 
 struct quadramp_filter
 {
-    uint32_t var_2nd_ord_pos;
-    uint32_t var_2nd_ord_neg;
-    uint32_t var_1st_ord_pos;
-    uint32_t var_1st_ord_neg;
+	uint32_t var_2nd_ord_pos;
+	uint32_t var_2nd_ord_neg;
+	uint32_t var_1st_ord_pos;
+	uint32_t var_1st_ord_neg;
 
-    int32_t previous_var;
-    int32_t previous_out;
-    int32_t previous_in;
+	int32_t previous_var;
+	int32_t previous_out;
+	int32_t previous_in;
 };
 
 /** Initialization of the filter */
 void quadramp_init(struct quadramp_filter *q);
 
-void quadramp_reset(struct quadramp_filter * q);
+void quadramp_reset(struct quadramp_filter *q);
 
-void quadramp_set_2nd_order_vars(struct quadramp_filter *q, 
-				 uint32_t var_2nd_ord_pos, 
+void quadramp_set_2nd_order_vars(struct quadramp_filter *q,
+				 uint32_t var_2nd_ord_pos,
 				 uint32_t var_2nd_ord_neg);
 
-void quadramp_set_1st_order_vars(struct quadramp_filter *q, 
-				 uint32_t var_1st_ord_pos, 
+void quadramp_set_1st_order_vars(struct quadramp_filter *q,
+				 uint32_t var_1st_ord_pos,
 				 uint32_t var_1st_ord_neg);
 
 /**
@@ -57,10 +57,10 @@ uint8_t quadramp_is_finished(struct quadramp_filter *q);
 
 /**
  * Process the ramp
- * 
+ *
  * \param data should be a (struct quadramp_filter *) pointer
  * \param in is the input of the filter
  */
-int32_t quadramp_do_filter(void * data, int32_t in);
+int32_t quadramp_do_filter(void *data, int32_t in);
 
 #endif
