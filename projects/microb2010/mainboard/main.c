@@ -304,7 +304,7 @@ int main(void)
 #endif
 
 #ifdef HOST_VERSION
-	strat_reset_pos(1000, 1000, -90);
+	strat_reset_pos(400, COLOR_Y(400), COLOR_A(-90));
 #endif
 
 	cmdline_interact();

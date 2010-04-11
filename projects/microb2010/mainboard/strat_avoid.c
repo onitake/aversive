@@ -1,6 +1,6 @@
-/*  
- *  Copyright Droids Corporation (2010)
- * 
+/*
+ *  Copyright Droids Corporation, Microb Technology (2009)
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -15,67 +15,41 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- *  Revision : $Id: actuator.c,v 1.4 2009-04-24 19:30:41 zer0 Exp $
+ *  Revision : $Id: strat_base.c,v 1.8 2009-11-08 17:24:33 zer0 Exp $
  *
  */
 
-#include <aversive.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+
 #include <aversive/pgmspace.h>
 #include <aversive/wait.h>
 #include <aversive/error.h>
 
 #include <ax12.h>
 #include <uart.h>
-#include <spi.h>
-#include <encoders_spi.h>
 #include <pwm_ng.h>
-#include <timer.h>
-#include <scheduler.h>
 #include <clock_time.h>
+#include <spi.h>
 
 #include <pid.h>
 #include <quadramp.h>
 #include <control_system_manager.h>
+#include <trajectory_manager.h>
+#include <vect_base.h>
+#include <lines.h>
+#include <polygon.h>
+#include <obstacle_avoidance.h>
 #include <blocking_detection_manager.h>
+#include <robot_system.h>
+#include <position_manager.h>
+
 #include <rdline.h>
+#include <parse.h>
+
+#include "../common/i2c_commands.h"
 
 #include "main.h"
-#include "shovel.h"
 
-/* init spickle position at beginning */
-static void shovel_autopos(void)
-{
-	printf_P(PSTR("shovel autopos..."));
-	pwm_ng_set(SHOVEL_PWM, -500);
-	wait_ms(1000);
-	pwm_ng_set(LEFT_SPICKLE_PWM, 0);
-	encoders_spi_set_value(SHOVEL_ENCODER, 0);
-	printf_P(PSTR("ok\r\n"));
-}
-
-static uint8_t shovel_is_at_pos(int32_t pos)
-{
-	int32_t diff;
-	diff = pos - encoders_spi_get_value(SHOVEL_ENCODER);
-	if (diff < 0)
-		diff = -diff;
-	if (diff < 500)
-		return 1;
-	return 0;
-}
-
-uint8_t shovel_is_up(void)
-{
-	return shovel_is_at_pos(SHOVEL_UP);
-}
-
-uint8_t shovel_is_down(void)
-{
-	return shovel_is_at_pos(SHOVEL_DOWN);
-}
-
-void shovel_init(void)
-{
-	shovel_autopos();
-	cobboard.shovel.on = 1;
-}

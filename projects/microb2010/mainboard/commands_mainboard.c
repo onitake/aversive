@@ -22,6 +22,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 #include <hostsim.h>
 #include <aversive/pgmspace.h>
@@ -40,6 +41,7 @@
 #include <quadramp.h>
 #include <control_system_manager.h>
 #include <trajectory_manager.h>
+#include <trajectory_manager_utils.h>
 #include <vect_base.h>
 #include <lines.h>
 #include <polygon.h>
@@ -1068,16 +1070,207 @@ parse_pgm_inst_t cmd_servo_balls = {
 };
 
 /**********************************************************/
-/* Test */
+/* Clitoid */
 
-/* this structure is filled when cmd_test is parsed successfully */
-struct cmd_test_result {
+/* this structure is filled when cmd_clitoid is parsed successfully */
+struct cmd_clitoid_result {
 	fixed_string_t arg0;
-	int32_t radius;
-	int32_t dist;
+	float alpha_deg;
+	float beta_deg;
+	float R_mm;
+	float Vd;
+	float Amax;
+	float d_inter_mm;
 };
 
+/**
+ * do a superb curve joining line1 to line2 which is composed of:
+ *   - a clothoid starting from line1
+ *   - a circle
+ *   - another clothoid up to line2
+ *
+ * the function assumes that the initial linear speed is Vd and
+ * angular speed is 0.
+ *
+ * - alpha: total angle
+ * - beta: circular part of angle (lower than alpha)
+ * - R: the radius of the circle (must be != 0)
+ * - Vd: linear speed to use (in imp per cs period)
+ * - Amax: maximum angular acceleration
+ * - d_inter: distance in mm until the intersection of the
+ *            2 lines
+ *
+ * return 0 on success: in this case these parameters are filled:
+ * - Aa_out: the angular acceleration to configure in quadramp
+ * - remain_d_mm_out: remaining distance before start to turn
+ */
+uint8_t clitoid(double alpha_deg, double beta_deg, double R_mm,
+		double Vd, double Amax, double d_inter_mm)
+{
+	double Vd_mm_s;
+	double Va, Va_rd_s;
+	double t, d_mm, alpha_rad, beta_rad;
+	double remain_d_mm;
+	double Aa, Aa_rd_s2;
+	line_t line1, line2;
+	double x, y, a_rad;
+	point_t robot, intersect, pt2, center, proj;
+	vect_t v;
+
+	/* param check */
+	if (fabs(alpha_deg) <= fabs(beta_deg)) {
+		DEBUG(E_USER_STRAT, "alpha is smaller than beta");
+		return END_ERROR;
+	}
+
+	/* get angular speed Va */
+	Vd_mm_s = Vd * (CS_HZ/DIST_IMP_MM);
+	DEBUG(E_USER_STRAT, "Vd_mm_s=%2.2f", Vd_mm_s);
+	Va_rd_s = Vd_mm_s / R_mm;
+	Va = Va_rd_s * (DIST_IMP_MM * EXT_TRACK_MM / (2 * CS_HZ));
+	DEBUG(E_USER_STRAT, "Va_rd_s=%2.2f Va=%2.2f", Va_rd_s, Va);
+
+	/* process 't', the time in seconds that we will take to do
+	 * the first clothoid */
+	alpha_rad = RAD(alpha_deg);
+	beta_rad = RAD(beta_deg);
+	t = fabs(((alpha_rad - beta_rad) * R_mm) / Vd_mm_s);
+	DEBUG(E_USER_STRAT, "R_mm=%2.2f alpha_rad=%2.2f beta_rad=%2.2f t=%2.2f",
+	      R_mm, alpha_rad, beta_rad, t);
+
+	/* process the angular acceleration */
+	Aa_rd_s2 = Va_rd_s / t;
+	Aa = Aa_rd_s2 * (DIST_IMP_MM * EXT_TRACK_MM /
+			 (2 * CS_HZ * CS_HZ));
+	DEBUG(E_USER_STRAT, "Aa_rd_s2=%2.2f Aa=%2.2f", Aa_rd_s2, Aa);
+
+	/* exit if the robot cannot physically do it */
+	if (Aa > Amax) {
+		DEBUG(E_USER_STRAT, "greater than max acceleration");
+		return END_ERROR;
+	}
+
+	/* the robot position */
+	x = position_get_x_double(&mainboard.pos);
+	y = position_get_y_double(&mainboard.pos);
+	a_rad = position_get_a_rad_double(&mainboard.pos);
+
+	/* define line1 and line2 */
+	robot.x = x;
+	robot.y = y;
+	intersect.x = x + cos(a_rad) * d_inter_mm;
+	intersect.y = y + sin(a_rad) * d_inter_mm;
+	pts2line(&robot, &intersect, &line1);
+	pt2.x = intersect.x + cos(a_rad + alpha_rad);
+	pt2.y = intersect.y + sin(a_rad + alpha_rad);
+	pts2line(&intersect, &pt2, &line2);
+	DEBUG(E_USER_STRAT, "intersect=(%2.2f, %2.2f)",
+	      intersect.x, intersect.y);
+
+	/* the center of the circle is at (d_mm, d_mm) when we have to
+	 * start the clothoid */
+	d_mm = R_mm * sqrt(fabs(alpha_rad - beta_rad)) *
+		sqrt(M_PI) / 2.;
+	DEBUG(E_USER_STRAT, "d_mm=%2.2f", d_mm);
+
+	/* translate line1 */
+	v.x = intersect.x - robot.x;
+	v.y = intersect.y - robot.y;
+	if (a_rad > 0)
+		vect_rot_trigo(&v);
+	else
+		vect_rot_retro(&v);
+	vect_resize(&v, d_mm);
+	line_translate(&line1, &v);
+
+	/* translate line2 */
+	v.x = intersect.x - pt2.x;
+	v.y = intersect.y - pt2.y;
+	if (a_rad > 0)
+		vect_rot_trigo(&v);
+	else
+		vect_rot_retro(&v);
+	vect_resize(&v, d_mm);
+	line_translate(&line2, &v);
+
+	/* find the center of the circle, at the intersection of the
+	 * new translated lines */
+	if (intersect_line(&line1, &line2, &center) != 1) {
+		DEBUG(E_USER_STRAT, "cannot find circle center");
+		return END_ERROR;
+	}
+	DEBUG(E_USER_STRAT, "center=(%2.2f,%2.2f)", center.x, center.y);
+
+	/* project center of circle on line1 */
+	proj_pt_line(&center, &line1, &proj);
+	DEBUG(E_USER_STRAT, "proj=(%2.2f,%2.2f)", proj.x, proj.y);
+
+	/* process remaining distance before start turning */
+	remain_d_mm = d_inter_mm - (pt_norm(&proj, &intersect) + d_mm);
+	DEBUG(E_USER_STRAT, "remain_d=%2.2f", remain_d_mm);
+	if (remain_d_mm < 0) {
+		DEBUG(E_USER_STRAT, "too late, cannot turn");
+		return END_ERROR;
+	}
+
+	return END_TRAJ;
+}
+
 /* function called when cmd_test is parsed successfully */
+static void cmd_clitoid_parsed(void *parsed_result, void *data)
+{
+	struct cmd_clitoid_result *res = parsed_result;
+	clitoid(res->alpha_deg, res->beta_deg, res->R_mm,
+		res->Vd, res->Amax, res->d_inter_mm);
+}
+
+prog_char str_clitoid_arg0[] = "clitoid";
+parse_pgm_token_string_t cmd_clitoid_arg0 =
+	TOKEN_STRING_INITIALIZER(struct cmd_clitoid_result,
+				 arg0, str_clitoid_arg0);
+parse_pgm_token_num_t cmd_clitoid_alpha_deg =
+	TOKEN_NUM_INITIALIZER(struct cmd_clitoid_result,
+			      alpha_deg, FLOAT);
+parse_pgm_token_num_t cmd_clitoid_beta_deg =
+	TOKEN_NUM_INITIALIZER(struct cmd_clitoid_result,
+			      beta_deg, FLOAT);
+parse_pgm_token_num_t cmd_clitoid_R_mm =
+	TOKEN_NUM_INITIALIZER(struct cmd_clitoid_result,
+			      R_mm, FLOAT);
+parse_pgm_token_num_t cmd_clitoid_Vd =
+	TOKEN_NUM_INITIALIZER(struct cmd_clitoid_result,
+			      Vd, FLOAT);
+parse_pgm_token_num_t cmd_clitoid_Amax =
+	TOKEN_NUM_INITIALIZER(struct cmd_clitoid_result,
+			      Amax, FLOAT);
+parse_pgm_token_num_t cmd_clitoid_d_inter_mm =
+	TOKEN_NUM_INITIALIZER(struct cmd_clitoid_result,
+			      d_inter_mm, FLOAT);
+
+prog_char help_clitoid[] = "do a clitoid (alpha, beta, R, Vd, Amax, d_inter)";
+parse_pgm_inst_t cmd_clitoid = {
+	.f = cmd_clitoid_parsed,  /* function to call */
+	.data = NULL,      /* 2nd arg of func */
+	.help_str = help_clitoid,
+	.tokens = {        /* token list, NULL terminated */
+		(prog_void *)&cmd_clitoid_arg0,
+		(prog_void *)&cmd_clitoid_alpha_deg,
+		(prog_void *)&cmd_clitoid_beta_deg,
+		(prog_void *)&cmd_clitoid_R_mm,
+		(prog_void *)&cmd_clitoid_Vd,
+		(prog_void *)&cmd_clitoid_Amax,
+		(prog_void *)&cmd_clitoid_d_inter_mm,
+		NULL,
+	},
+};
+
+//////////////////////
+
+// 500 -- 5
+// 400 -- 3
+#define TEST_SPEED 400
+#define TEST_ACC 3
+
 static void line2line(double line1x1, double line1y1,
 		      double line1x2, double line1y2,
 		      double line2x1, double line2y1,
@@ -1085,14 +1278,16 @@ static void line2line(double line1x1, double line1y1,
 		      double radius, double dist)
 {
 	uint8_t err;
-	int32_t dist_imp_target;
 	double speed_d, speed_a;
 	double distance, angle;
 	double line1_angle = atan2(line1y2-line1y1, line1x2-line1x1);
 	double line2_angle = atan2(line2y2-line2y1, line2x2-line2x1);
 
-	printf("%s()\n", __FUNCTION__);
-	strat_set_speed(500, 500);
+	printf_P(PSTR("%s()\r\n"), __FUNCTION__);
+
+	strat_set_speed(TEST_SPEED, TEST_SPEED);
+	quadramp_set_2nd_order_vars(&mainboard.angle.qr, TEST_ACC, TEST_ACC);
+
 	circle_get_da_speed_from_radius(&mainboard.traj, radius,
 					&speed_d, &speed_a);
 	trajectory_line_abs(&mainboard.traj,
@@ -1106,20 +1301,99 @@ static void line2line(double line1x1, double line1y1,
 	distance = angle * radius;
 	if (distance < 0)
 		distance = -distance;
-	dist_imp_target = rs_get_distance(&mainboard.rs) +
-		distance * mainboard.pos.phys.distance_imp_per_mm;
+	angle = simple_modulo_2pi(angle);
 	angle = DEG(angle);
-	distance += 100; /* take some margin to avoid deceleration */
-	trajectory_d_a_rel(&mainboard.traj, distance, angle);
+	printf_P(PSTR("(%d,%d,%d) "),
+		 position_get_x_s16(&mainboard.pos),
+		 position_get_y_s16(&mainboard.pos),
+		 position_get_a_deg_s16(&mainboard.pos));
+	printf_P(PSTR("circle distance=%2.2f angle=%2.2f\r\n"),
+		 distance, angle);
 
-	err = WAIT_COND_OR_TRAJ_END(rs_get_distance(&mainboard.rs) > dist_imp_target,
+	/* take some margin on dist to avoid deceleration */
+	trajectory_d_a_rel(&mainboard.traj, distance + 250, angle);
+
+	/* circle exit condition */
+	err = WAIT_COND_OR_TRAJ_END(trajectory_angle_finished(&mainboard.traj),
 				    TRAJ_FLAGS_NO_NEAR);
 
 	strat_set_speed(500, 500);
+	printf_P(PSTR("(%d,%d,%d) "),
+		 position_get_x_s16(&mainboard.pos),
+		 position_get_y_s16(&mainboard.pos),
+		 position_get_a_deg_s16(&mainboard.pos));
+	printf_P(PSTR("line\r\n"));
 	trajectory_line_abs(&mainboard.traj,
 			    line2x1, line2y1,
 			    line2x2, line2y2, 150.);
 }
+
+static void halfturn(double line1x1, double line1y1,
+		     double line1x2, double line1y2,
+		     double line2x1, double line2y1,
+		     double line2x2, double line2y2,
+		     double radius, double dist, double dir)
+{
+	uint8_t err;
+	double speed_d, speed_a;
+	double distance, angle;
+
+	printf_P(PSTR("%s()\r\n"), __FUNCTION__);
+
+	strat_set_speed(TEST_SPEED, TEST_SPEED);
+	quadramp_set_2nd_order_vars(&mainboard.angle.qr, TEST_ACC, TEST_ACC);
+
+	circle_get_da_speed_from_radius(&mainboard.traj, radius,
+					&speed_d, &speed_a);
+	trajectory_line_abs(&mainboard.traj,
+			    line1x1, line1y1,
+			    line1x2, line1y2, 150.);
+	err = WAIT_COND_OR_TRAJ_END(distance_from_robot(line1x2, line1y2) <
+				    dist, TRAJ_FLAGS_NO_NEAR);
+	/* circle */
+	strat_set_speed(speed_d, speed_a);
+	angle = dir * M_PI/2.;
+	distance = angle * radius;
+	if (distance < 0)
+		distance = -distance;
+	angle = simple_modulo_2pi(angle);
+	angle = DEG(angle);
+
+	/* take some margin on dist to avoid deceleration */
+	DEBUG(E_USER_STRAT, "circle1 distance=%2.2f angle=%2.2f",
+	      distance, angle);
+	trajectory_d_a_rel(&mainboard.traj, distance + 500, angle);
+
+	/* circle exit condition */
+	err = WAIT_COND_OR_TRAJ_END(trajectory_angle_finished(&mainboard.traj),
+				    TRAJ_FLAGS_NO_NEAR);
+
+	DEBUG(E_USER_STRAT, "miniline");
+	err = WAIT_COND_OR_TRAJ_END(distance_from_robot(line2x1, line2y1) <
+				    dist, TRAJ_FLAGS_NO_NEAR);
+	DEBUG(E_USER_STRAT, "circle2");
+	/* take some margin on dist to avoid deceleration */
+	trajectory_d_a_rel(&mainboard.traj, distance + 500, angle);
+
+	err = WAIT_COND_OR_TRAJ_END(trajectory_angle_finished(&mainboard.traj),
+				    TRAJ_FLAGS_NO_NEAR);
+
+	strat_set_speed(500, 500);
+	DEBUG(E_USER_STRAT, "line");
+	trajectory_line_abs(&mainboard.traj,
+			    line2x1, line2y1,
+			    line2x2, line2y2, 150.);
+}
+
+/**********************************************************/
+/* Test */
+
+/* this structure is filled when cmd_test is parsed successfully */
+struct cmd_test_result {
+	fixed_string_t arg0;
+	int32_t radius;
+	int32_t dist;
+};
 
 /* function called when cmd_test is parsed successfully */
 static void cmd_test_parsed(void *parsed_result, void *data)
@@ -1130,30 +1404,91 @@ static void cmd_test_parsed(void *parsed_result, void *data)
 	mainboard.angle.on = 1;
 	mainboard.distance.on = 1;
 #endif
-	line2line(375, 347, 375, 1847,
-		  375, 1847, 1050, 1472,
-		  100, 200);
-	line2line(825, 1596, 1050, 1472,
-		  1050, 1472, 1500, 1722,
-		  180, 120);
-	line2line(1050, 1472, 1500, 1722,
-		  1500, 1722, 2175, 1347,
-		  180, 120);
-	line2line(1500, 1722, 2175, 1347,
-		  2175, 1347, 2175, 847,
-		  150, 120);
-	line2line(2175, 1347, 2175, 847,
-		  2175, 847, 2400, 722,
-		  150, 120);
-	line2line(2175, 847, 2400, 722,
-		  2400, 722, 2625, 847,
-		  150, 100);
-	line2line(2400, 722, 2625, 847,
-		  2625, 847, 2625, 1847,
-		  150, 100);
-	line2line(2625, 847, 2625, 1847,
-		  2625, 1847, 375, 597,
-		  100, 200);
+	printf_P(PSTR("%s()\r\n"), __FUNCTION__);
+	while (!cmdline_keypressed()) {
+		/****** PASS1 */
+
+#define DIST_HARD_TURN   260
+#define RADIUS_HARD_TURN 100
+#define DIST_EASY_TURN   190
+#define RADIUS_EASY_TURN 190
+#define DIST_HALF_TURN   225
+#define RADIUS_HALF_TURN 130
+
+		/* hard turn */
+		line2line(375, 597, 375, 1847,
+			  375, 1847, 1050, 1472,
+			  RADIUS_HARD_TURN, DIST_HARD_TURN);
+
+		/* easy left and easy right !*/
+		line2line(825, 1596, 1050, 1472,
+			  1050, 1472, 1500, 1722,
+			  RADIUS_EASY_TURN, DIST_EASY_TURN);
+		line2line(1050, 1472, 1500, 1722,
+			  1500, 1722, 2175, 1347,
+			  RADIUS_EASY_TURN, DIST_EASY_TURN);
+		line2line(1500, 1722, 2175, 1347,
+			  2175, 1347, 2175, 847,
+			  RADIUS_EASY_TURN, DIST_EASY_TURN);
+
+		/* half turns */
+		halfturn(2175, 1347, 2175, 722,
+			 2625, 722, 2625, 1597,
+			 RADIUS_HALF_TURN, DIST_HALF_TURN, 1.);
+		halfturn(2625, 847, 2625, 1722,
+			  2175, 1722, 2175, 1097,
+			  RADIUS_HALF_TURN, DIST_HALF_TURN, 1.);
+
+		/* easy turns */
+		line2line(2175, 1597, 2175, 1097,
+			  2175, 1097, 1500, 722,
+			  RADIUS_EASY_TURN, DIST_EASY_TURN);
+		line2line(2175, 1097, 1500, 722,
+			  1500, 722, 1050, 972,
+			  RADIUS_EASY_TURN, DIST_EASY_TURN);
+		line2line(1500, 722, 1050, 972,
+			  1050, 972, 375, 597,
+			  RADIUS_EASY_TURN, DIST_EASY_TURN);
+
+		/* hard turn */
+		line2line(1050, 972, 375, 597,
+			  375, 597, 375, 1097,
+			  RADIUS_HARD_TURN, DIST_HARD_TURN);
+
+		/****** PASS2 */
+
+		/* easy turn */
+		line2line(375, 597, 375, 1097,
+			  375, 1097, 1050, 1472,
+			  RADIUS_EASY_TURN, DIST_EASY_TURN);
+
+		/* hard turn */
+		line2line(375, 1097, 1050, 1472,
+			  1050, 1472, 375, 1847,
+			  RADIUS_HARD_TURN, DIST_HARD_TURN);
+
+		/* hard turn */
+		line2line(1050, 1472, 375, 1847,
+			  375, 1847, 375, 1347,
+			  RADIUS_HARD_TURN, DIST_HARD_TURN);
+
+		/* easy turn */
+		line2line(375, 1847, 375, 1347,
+			  375, 1347, 1050, 972,
+			  RADIUS_EASY_TURN, DIST_EASY_TURN);
+
+		/* hard turn */
+		line2line(375, 1347, 1050, 972,
+			  1050, 972, 375, 597,
+			  RADIUS_HARD_TURN, DIST_HARD_TURN);
+
+		/* hard turn */
+		line2line(1050, 972, 375, 597,
+			  375, 597, 375, 1847,
+			  RADIUS_HARD_TURN, DIST_HARD_TURN);
+
+	}
+	trajectory_hardstop(&mainboard.traj);
 }
 
 prog_char str_test_arg0[] = "test";

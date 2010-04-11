@@ -4,6 +4,9 @@ from visual import *
 AREA_X = 3000.
 AREA_Y = 2100.
 
+ROBOT_HEIGHT=5 # 350
+CORN_HEIGHT=5  # 150
+
 area = [ (0.0, 0.0, -0.2), (3000.0, 2100.0, 0.2) ]
 areasize = reduce(lambda x,y:tuple([abs(x[i])+abs(y[i]) for i in range(len(x))]) , area)
 area_box = box(size=areasize, color=(0.0, 1.0, 0.0))
@@ -13,8 +16,8 @@ scene.autoscale=0
 # all positions of robot every 5ms
 save_pos = []
 
-robot = box(pos = (0, 0, 150),
-            size = (250,320,350),
+robot = box(pos = (0, 0, ROBOT_HEIGHT/2),
+            size = (250,320,ROBOT_HEIGHT),
             color = (0.3, 0.3, 0.3) )
 
 last_pos = robot.pos.x, robot.pos.y, robot.pos.z
@@ -191,14 +194,14 @@ def toggle_obj_disp():
             while y < 2100:
                 print x,y
                 if waypoints[i][j] == TYPE_WHITE_CORN:
-                    c = cylinder(axis=(0,0,1), length=150,
+                    c = cylinder(axis=(0,0,1), length=CORN_HEIGHT,
                                  radius=25, color=(0.8,0.8,0.8),
-                                 pos=(x-AREA_X/2,y-AREA_Y/2,75))
+                                 pos=(x-AREA_X/2,y-AREA_Y/2,CORN_HEIGHT/2))
                     area_objects.append(c)
                 elif waypoints[i][j] == TYPE_BLACK_CORN:
-                    c = cylinder(axis=(0,0,1), length=150,
+                    c = cylinder(axis=(0,0,1), length=CORN_HEIGHT,
                                  radius=25, color=(0.2,0.2,0.2),
-                                 pos=(x-AREA_X/2,y-AREA_Y/2,75))
+                                 pos=(x-AREA_X/2,y-AREA_Y/2,CORN_HEIGHT/2))
                     area_objects.append(c)
                 elif waypoints[i][j] == TYPE_BALL:
                     c = sphere(radius=50, color=(1., 0.,0.),
@@ -224,11 +227,11 @@ def set_robot(x, y, a):
     global robot, last_pos, robot_trail, robot_trail_list
     global save_pos
 
-    robot.pos = (x - AREA_X/2, y - AREA_Y/2, 150)
+    robot.pos = (x - AREA_X/2, y - AREA_Y/2, ROBOT_HEIGHT/2)
     robot.axis = (math.cos(a*math.pi/180),
                   math.sin(a*math.pi/180),
                   0)
-    robot.size = (250, 320, 350)
+    robot.size = (250, 320, ROBOT_HEIGHT)
 
     # save position
     save_pos.append((robot.pos.x, robot.pos, a))

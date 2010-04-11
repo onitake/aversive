@@ -39,6 +39,7 @@
 #include <quadramp.h>
 #include <control_system_manager.h>
 #include <trajectory_manager.h>
+#include <trajectory_manager_utils.h>
 #include <vect_base.h>
 #include <lines.h>
 #include <polygon.h>
@@ -701,43 +702,46 @@ static void auto_position(void)
 	strat_get_speed(&old_spdd, &old_spda);
 	strat_set_speed(AUTOPOS_SPEED_FAST, AUTOPOS_SPEED_FAST);
 
-	trajectory_d_rel(&mainboard.traj, -300);
+	trajectory_d_rel(&mainboard.traj, 300);
 	err = wait_traj_end(END_INTR|END_TRAJ|END_BLOCKING);
 	if (err == END_INTR)
 		goto intr;
 	wait_ms(100);
-	strat_reset_pos(ROBOT_LENGTH/2, 0, 0);
+	strat_reset_pos(ROBOT_WIDTH/2,
+			COLOR_Y(ROBOT_HALF_LENGTH_FRONT),
+			COLOR_A(-90));
 
-	trajectory_d_rel(&mainboard.traj, 120);
+	trajectory_d_rel(&mainboard.traj, -180);
 	err = wait_traj_end(END_INTR|END_TRAJ);
 	if (err == END_INTR)
 		goto intr;
 
-	trajectory_a_rel(&mainboard.traj, COLOR_A(90));
+	trajectory_a_rel(&mainboard.traj, COLOR_A(-90));
 	err = wait_traj_end(END_INTR|END_TRAJ);
 	if (err == END_INTR)
 		goto intr;
 
-	trajectory_d_rel(&mainboard.traj, -300);
+	trajectory_d_rel(&mainboard.traj, 300);
 	err = wait_traj_end(END_INTR|END_TRAJ|END_BLOCKING);
 	if (err == END_INTR)
 		goto intr;
 	wait_ms(100);
-	strat_reset_pos(DO_NOT_SET_POS, COLOR_Y(ROBOT_LENGTH/2),
-			COLOR_A(90));
+	strat_reset_pos(ROBOT_HALF_LENGTH_FRONT,
+			DO_NOT_SET_POS,
+			180);
 
-	trajectory_d_rel(&mainboard.traj, 120);
+	trajectory_d_rel(&mainboard.traj, -170);
 	err = wait_traj_end(END_INTR|END_TRAJ);
 	if (err == END_INTR)
 		goto intr;
 	wait_ms(100);
-	
-	trajectory_a_rel(&mainboard.traj, COLOR_A(-40));
+
+	trajectory_a_rel(&mainboard.traj, COLOR_A(-110));
 	err = wait_traj_end(END_INTR|END_TRAJ);
 	if (err == END_INTR)
 		goto intr;
 	wait_ms(100);
-	
+
 	strat_set_speed(old_spdd, old_spda);
 	return;
 
@@ -750,7 +754,7 @@ intr:
 static void cmd_position_parsed(void * parsed_result, void * data)
 {
 	struct cmd_position_result * res = parsed_result;
-	
+
 	/* display raw position values */
 	if (!strcmp_P(res->arg1, PSTR("reset"))) {
 		position_set(&mainboard.pos, 0, 0, 0);
@@ -766,7 +770,7 @@ static void cmd_position_parsed(void * parsed_result, void * data)
 #endif
 		auto_position();
 	}
-	else if (!strcmp_P(res->arg1, PSTR("autoset_red"))) {
+	else if (!strcmp_P(res->arg1, PSTR("autoset_yellow"))) {
 		mainboard.our_color = I2C_COLOR_YELLOW;
 #ifndef HOST_VERSION
 		i2c_set_color(I2C_COBBOARD_ADDR, I2C_COLOR_YELLOW);
@@ -784,7 +788,7 @@ static void cmd_position_parsed(void * parsed_result, void * data)
 
 prog_char str_position_arg0[] = "position";
 parse_pgm_token_string_t cmd_position_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_position_result, arg0, str_position_arg0);
-prog_char str_position_arg1[] = "show#reset#autoset_blue#autoset_red";
+prog_char str_position_arg1[] = "show#reset#autoset_blue#autoset_yellow";
 parse_pgm_token_string_t cmd_position_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_position_result, arg1, str_position_arg1);
 
 prog_char help_position[] = "Show/reset (x,y,a) position";

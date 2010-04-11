@@ -52,6 +52,10 @@ enum trajectory_state {
 
 	/* line */
 	RUNNING_LINE,
+
+	/* clitoid */
+	RUNNING_CLITOID_LINE,
+	RUNNING_CLITOID_CURVE,
 };
 
 struct circle_target {
@@ -64,10 +68,18 @@ struct circle_target {
 	uint8_t flags;   /**< flags for this trajectory */
 };
 
+/* for line and clitoid */
 struct line_target {
 	line_t line;
 	double angle;
 	double advance;
+
+	/* only for clitoid */
+	point_t turn_pt;
+	double Aa;
+	double Va;
+	double alpha;
+	double R;
 };
 
 struct trajectory {
@@ -86,19 +98,24 @@ struct trajectory {
 			    *    when a_target < a_start */
 	double circle_coef;/**<< corrective circle coef */
 
-	uint16_t d_speed;  /**<< distance speed consign */
-	uint16_t a_speed;  /**<< angle speed consign */
+	double d_speed;  /**<< distance speed consign */
+	double a_speed;  /**<< angle speed consign */
+
+	double d_acc;    /**<< distance acceleration consign */
+	double a_acc;    /**<< angle acceleration consign */
 
 	struct robot_position *position; /**<< associated robot_position */
 	struct robot_system *robot;      /**<< associated robot_system */
 	struct cs *csm_angle;     /**<< associated control system (angle) */
 	struct cs *csm_distance;  /**<< associated control system (distance) */
 
+	double cs_hz;
+
 	int8_t scheduler_task;    /**<< id of current task (-1 if no running task) */
 };
 
 /** structure initialization */
-void trajectory_init(struct trajectory *traj);
+void trajectory_init(struct trajectory *traj, double cs_hz);
 
 /** structure initialization */
 void trajectory_set_cs(struct trajectory *traj, struct cs *cs_d,
@@ -110,7 +127,10 @@ void trajectory_set_robot_params(struct trajectory *traj,
 				 struct robot_position *pos) ;
 
 /** set speed consign */
-void trajectory_set_speed(struct trajectory *traj, int16_t d_speed, int16_t a_speed);
+void trajectory_set_speed(struct trajectory *traj, double d_speed, double a_speed);
+
+/** set speed consign */
+void trajectory_set_speed(struct trajectory *traj, double d_acc, double a_acc);
 
 /**
  * set windows for trajectory.
@@ -133,6 +153,8 @@ void trajectory_set_circle_coef(struct trajectory *traj, double coef);
  * position consign (after quadramp filter), for angle and
  * distance. */
 uint8_t trajectory_finished(struct trajectory *traj);
+uint8_t trajectory_angle_finished(struct trajectory *traj);
+uint8_t trajectory_distance_finished(struct trajectory *traj);
 
 /** return true if traj is nearly finished depending on specified
  *  parameters */

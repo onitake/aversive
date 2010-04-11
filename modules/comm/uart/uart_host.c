@@ -24,6 +24,8 @@
 #include <uart.h>
 #include <uart_private.h>
 
+#include <fcntl.h>
+
 /* this file os a stub for host */
 
 void uart_init(void)
@@ -61,12 +63,13 @@ void uart_getconf(uint8_t num, struct uart_config *u)
 
 int uart_recv(uint8_t num)
 {
+	fcntl(0, F_SETFL, 0);
 	return getchar();
 }
 
-/* XXX should not wait */
 int uart_recv_nowait(uint8_t num)
 {
+	fcntl(0, F_SETFL, O_NONBLOCK);
 	return getchar();
 }
 

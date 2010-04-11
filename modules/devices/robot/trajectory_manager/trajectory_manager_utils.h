@@ -30,13 +30,16 @@
 #define TRAJ_EVT_PERIOD (25000UL/SCHEDULER_UNIT)
 
 /** set speed consign in quadramp filter */
-void set_quadramp_speed(struct trajectory *traj, int16_t d_speed, int16_t a_speed);
+void set_quadramp_speed(struct trajectory *traj, double d_speed, double a_speed);
+
+/** set acc consign in quadramp filter */
+void set_quadramp_acc(struct trajectory *traj, double d_acc, double a_acc);
 
 /** get angle speed consign in quadramp filter */
-uint32_t get_quadramp_angle_speed(struct trajectory *traj);
+double get_quadramp_angle_speed(struct trajectory *traj);
 
 /** get distance speed consign in quadramp filter */
-uint32_t get_quadramp_distance_speed(struct trajectory *traj);
+double get_quadramp_distance_speed(struct trajectory *traj);
 
 /** remove event if any */
 void delete_event(struct trajectory *traj);
@@ -60,3 +63,16 @@ uint8_t is_robot_in_xy_window(struct trajectory *traj, double d_win);
  *  traj->target.pol.angle is set (i.e. an angle command, not an xy
  *  command) */
 uint8_t is_robot_in_angle_window(struct trajectory *traj, double a_win_rad);
+
+double pos_mm2imp(struct trajectory *traj, double pos);
+double pos_imp2mm(struct trajectory *traj, double pos);
+double speed_mm2imp(struct trajectory *traj, double speed);
+double speed_imp2mm(struct trajectory *traj, double speed);
+double acc_mm2imp(struct trajectory *traj, double acc);
+double acc_imp2mm(struct trajectory *traj, double acc);
+double pos_rd2imp(struct trajectory *traj, double pos);
+double pos_imp2rd(struct trajectory *traj, double pos);
+double speed_rd2imp(struct trajectory *traj, double speed);
+double speed_imp2rd(struct trajectory *traj, double speed);
+double acc_rd2imp(struct trajectory *traj, double acc);
+double acc_imp2rd(struct trajectory *traj, double acc);

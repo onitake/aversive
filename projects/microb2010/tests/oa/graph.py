@@ -197,6 +197,11 @@ def build_area(ax):
     x,y = build_path([(600,1972), (600+bcoef, 1972-acoef)])
     ax.plot(x, y, 'r-')
 
+    p = PatchCollection([Circle((2400,972), 225)],
+                        cmap=matplotlib.cm.jet,
+                        alpha=0.5, facecolor=(1.,0.,0.))
+    ax.add_collection(p)
+
    # limit
     #x,y = build_poly([(250,250), (2750,250), (2750,1850), (250,1850)])
     #ax.plot(x, y, 'g--')
@@ -275,6 +280,8 @@ def graph(filename):
     ax.grid(color = (0.3, 0.3, 0.3))
     ax.set_xlim(-100, 3100)
     ax.set_ylim(-100, 2200)
+    #ax.set_xlim(0, 825)
+    #ax.set_ylim(1472, 1972)
     #ax.set_title('spline paths')
     #plt.show()
     fig.savefig(filename)

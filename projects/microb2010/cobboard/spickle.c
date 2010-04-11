@@ -54,9 +54,8 @@ struct spickle_params {
 	struct cs_block * const csb[2];
 
 	/* params */
-	int16_t delay_deployed[2];
-	int16_t delay_packed[2];
 	int32_t pos_deployed[2];
+	int32_t pos_mid[2];
 	int32_t pos_packed[2];
 };
 
@@ -67,17 +66,13 @@ static struct spickle_params spickle = {
 		&cobboard.left_spickle,
 		&cobboard.right_spickle,
 	},
-	.delay_deployed = {
-		500, /* left */
-		500, /* right */
-	},
-	.delay_packed = {
-		500, /* left */
-		500, /* right */
-	},
 	.pos_deployed = {
-		35000, /* left */
-		35000, /* right */
+		40000, /* left */
+		-40000, /* right */
+	},
+	.pos_mid = {
+		20000, /* left */
+		-20000, /* right */
 	},
 	.pos_packed = {
 		0, /* left */
@@ -88,13 +83,15 @@ static struct spickle_params spickle = {
 /* init spickle position at beginning */
 static void spickle_autopos(void)
 {
+	printf_P(PSTR("spickle autopos..."));
 	pwm_ng_set(LEFT_SPICKLE_PWM, -500);
-	//pwm_ng_set(RIGHT_SPICKLE_PWM, -500);
+	pwm_ng_set(RIGHT_SPICKLE_PWM, 500);
 	wait_ms(1000);
 	pwm_ng_set(LEFT_SPICKLE_PWM, 0);
 	pwm_ng_set(RIGHT_SPICKLE_PWM, 0);
 	encoders_spi_set_value(LEFT_SPICKLE_ENCODER, 0);
 	encoders_spi_set_value(RIGHT_SPICKLE_ENCODER, 0);
+	printf_P(PSTR("ok\r\n"));
 }
 
 /* Set CS command for spickle. Called by CS manager. */
@@ -140,33 +137,26 @@ void spickle_set_coefs(uint32_t k1, uint32_t k2)
 	spickle.k2 = k2;
 }
 
-void spickle_set_pos(uint8_t side, uint32_t pos_deployed, uint32_t pos_packed)
+
+void spickle_set_pos(uint8_t side, int32_t pos_packed,
+		     int32_t pos_mid, int32_t pos_deployed)
 {
 	spickle.pos_deployed[side] = pos_deployed;
+	spickle.pos_mid[side] = pos_mid;
 	spickle.pos_packed[side] = pos_packed;
-}
-
-void spickle_set_delay(uint8_t side, uint32_t delay_deployed, uint32_t delay_packed)
-{
-	spickle.delay_deployed[side] = delay_deployed;
-	spickle.delay_packed[side] = delay_packed;
 }
 
 void spickle_dump_params(void)
 {
 	printf_P(PSTR("coef %ld %ld\r\n"), spickle.k1, spickle.k2);
 	printf_P(PSTR("left pos %ld %ld\r\n"),
-		 spickle.pos_deployed[I2C_LEFT_SIDE],
-		 spickle.pos_packed[I2C_LEFT_SIDE]);
-	printf_P(PSTR("left delay %ld %ld\r\n"),
-		 spickle.delay_deployed[I2C_LEFT_SIDE],
-		 spickle.delay_packed[I2C_LEFT_SIDE]);
+		 spickle.pos_packed[I2C_LEFT_SIDE],
+		 spickle.pos_mid[I2C_LEFT_SIDE],
+		 spickle.pos_deployed[I2C_LEFT_SIDE]);
 	printf_P(PSTR("right pos %ld %ld\r\n"),
-		 spickle.pos_deployed[I2C_RIGHT_SIDE],
-		 spickle.pos_packed[I2C_RIGHT_SIDE]);
-	printf_P(PSTR("right delay %ld %ld\r\n"),
-		 spickle.delay_deployed[I2C_RIGHT_SIDE],
-		 spickle.delay_packed[I2C_RIGHT_SIDE]);
+		 spickle.pos_packed[I2C_RIGHT_SIDE],
+		 spickle.pos_mid[I2C_RIGHT_SIDE],
+		 spickle.pos_deployed[I2C_RIGHT_SIDE]);
 }
 
 void spickle_deploy(uint8_t side)
@@ -174,24 +164,19 @@ void spickle_deploy(uint8_t side)
 	cs_set_consign(&spickle.csb[side]->cs, spickle.pos_deployed[side]);
 }
 
+void spickle_mid(uint8_t side)
+{
+	cs_set_consign(&spickle.csb[side]->cs, spickle.pos_mid[side]);
+}
+
 void spickle_pack(uint8_t side)
 {
 	cs_set_consign(&spickle.csb[side]->cs, spickle.pos_packed[side]);
-}
-
-uint16_t spickle_get_deploy_delay(uint8_t side)
-{
-	return spickle.delay_deployed[side];
-}
-
-uint16_t spickle_get_pack_delay(uint8_t side)
-{
-	return spickle.delay_packed[side];
 }
 
 void spickle_init(void)
 {
 	spickle_autopos();
 	cobboard.left_spickle.on = 1;
-	//cobboard.right_spickle.on = 1;
+	cobboard.right_spickle.on = 1;
 }

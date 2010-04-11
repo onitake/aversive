@@ -26,13 +26,13 @@ void actuator_init(void);
 
 void servo_carry_open(void);
 void servo_carry_close(void);
+
 void servo_door_open(void);
 void servo_door_close(void);
+void servo_door_block(void);
 
-void left_cobroller_on(void);
-void right_cobroller_on(void);
-void left_cobroller_off(void);
-void right_cobroller_off(void);
+void cobroller_on(uint8_t side);
+void cobroller_off(uint8_t side);
 
 #endif
 

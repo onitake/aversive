@@ -142,14 +142,14 @@ struct sensor_filter {
  * CAP 1,5,6,7,8
  */
 static struct sensor_filter sensor_filter[SENSOR_MAX] = {
-	[S_CAP1] =      { 10, 0, 3, 7, 0, 0 }, /* 0 */
-	[S_COB_INSIDE_L] = { 5, 0, 4, 1, 0, 0 }, /* 1 */
+	[S_COB_INSIDE_L] = { 5, 0, 4, 1, 0, 1 }, /* 0 */
+	[S_CAP2] =      { 10, 0, 3, 7, 0, 0 }, /* 1 */
 	[S_COB_INSIDE_R] = { 5, 0, 4, 1, 0, 0 }, /* 2 */
 	[S_CAP4] =      { 1, 0, 0, 1, 0, 0 }, /* 3 */
 	[S_LCOB] =      { 1, 0, 0, 1, 0, 0 }, /* 4 */
 	[S_LEFT] =      { 5, 0, 4, 1, 0, 0 }, /* 5 */
 	[S_RIGHT] =     { 5, 0, 4, 1, 0, 1 }, /* 6 */
-	[S_COL_RIGHT] = { 5, 0, 4, 1, 0, 1 }, /* 7 */
+	[S_RCOB] =      { 1, 0, 0, 1, 0, 0 }, /* 7 */
 	[S_RESERVED1] = { 10, 0, 3, 7, 0, 0 }, /* 8 */
 	[S_RESERVED2] = { 10, 0, 3, 7, 0, 0 }, /* 9 */
 	[S_RESERVED3] = { 1, 0, 0, 1, 0, 0 }, /* 10 */

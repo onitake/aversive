@@ -402,11 +402,13 @@ static void cmd_servo_door_parsed(void *parsed_result,
 		servo_door_open();
 	else if (!strcmp_P(res->arg1, PSTR("closed")))
 		servo_door_close();
+	else if (!strcmp_P(res->arg1, PSTR("block")))
+		servo_door_close();
 }
 
 prog_char str_servo_door_arg0[] = "door";
 parse_pgm_token_string_t cmd_servo_door_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_servo_door_result, arg0, str_servo_door_arg0);
-prog_char str_servo_door_arg1[] = "open#closed";
+prog_char str_servo_door_arg1[] = "open#closed#block";
 parse_pgm_token_string_t cmd_servo_door_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_servo_door_result, arg1, str_servo_door_arg1);
 
 prog_char help_servo_door[] = "Servo door function";
@@ -436,19 +438,17 @@ static void cmd_cobroller_parsed(void *parsed_result,
 				    __attribute__((unused)) void *data)
 {
 	struct cmd_cobroller_result *res = parsed_result;
+	uint8_t side;
 
-	if (!strcmp_P(res->arg1, PSTR("left"))) {
-		if (!strcmp_P(res->arg2, PSTR("on")))
-			left_cobroller_on();
-		else if (!strcmp_P(res->arg2, PSTR("off")))
-			left_cobroller_off();
-	}
-	else if (!strcmp_P(res->arg1, PSTR("right"))) {
-		if (!strcmp_P(res->arg2, PSTR("on")))
-			right_cobroller_on();
-		else if (!strcmp_P(res->arg2, PSTR("off")))
-			right_cobroller_off();
-	}
+	if (!strcmp_P(res->arg1, PSTR("left")))
+		side = I2C_LEFT_SIDE;
+	else
+		side = I2C_RIGHT_SIDE;
+
+	if (!strcmp_P(res->arg2, PSTR("on")))
+		cobroller_on(side);
+	else if (!strcmp_P(res->arg2, PSTR("off")))
+		cobroller_off(side);
 }
 
 prog_char str_cobroller_arg0[] = "cobroller";
@@ -575,6 +575,9 @@ static void cmd_spickle_parsed(void * parsed_result,
 	else if (!strcmp_P(res->arg2, PSTR("pack"))) {
 		spickle_pack(side);
 	}
+	else if (!strcmp_P(res->arg2, PSTR("mid"))) {
+		spickle_mid(side);
+	}
 	printf_P(PSTR("done\r\n"));
 }
 
@@ -584,7 +587,7 @@ parse_pgm_token_string_t cmd_spickle_arg0 =
 prog_char str_spickle_arg1[] = "left#right";
 parse_pgm_token_string_t cmd_spickle_arg1 =
 	TOKEN_STRING_INITIALIZER(struct cmd_spickle_result, arg1, str_spickle_arg1);
-prog_char str_spickle_arg2[] = "deploy#pack";
+prog_char str_spickle_arg2[] = "deploy#pack#mid";
 parse_pgm_token_string_t cmd_spickle_arg2 =
 	TOKEN_STRING_INITIALIZER(struct cmd_spickle_result, arg2, str_spickle_arg2);
 
@@ -611,6 +614,7 @@ struct cmd_spickle_params_result {
 	fixed_string_t arg2;
 	int32_t arg3;
 	int32_t arg4;
+	int32_t arg5;
 };
 
 /* function called when cmd_spickle_params is parsed successfully */
@@ -631,9 +635,7 @@ static void cmd_spickle_params_parsed(void *parsed_result,
 		side = I2C_RIGHT_SIDE;
 
 	if (!strcmp_P(res->arg2, PSTR("pos")))
-		spickle_set_pos(side, res->arg3, res->arg4);
-	else if (!strcmp_P(res->arg2, PSTR("delay")))
-		spickle_set_delay(side, res->arg3, res->arg4);
+		spickle_set_pos(side, res->arg3, res->arg4, res->arg5);
 }
 
 prog_char str_spickle_params_arg0[] = "spickle_params";
@@ -642,25 +644,28 @@ parse_pgm_token_string_t cmd_spickle_params_arg0 =
 prog_char str_spickle_params_arg1[] = "left#right";
 parse_pgm_token_string_t cmd_spickle_params_arg1 =
 	TOKEN_STRING_INITIALIZER(struct cmd_spickle_params_result, arg1, str_spickle_params_arg1);
-prog_char str_spickle_params_arg2[] = "pos#delay";
+prog_char str_spickle_params_arg2[] = "pos";
 parse_pgm_token_string_t cmd_spickle_params_arg2 =
 	TOKEN_STRING_INITIALIZER(struct cmd_spickle_params_result, arg2, str_spickle_params_arg2);
 parse_pgm_token_num_t cmd_spickle_params_arg3 =
 	TOKEN_NUM_INITIALIZER(struct cmd_spickle_params_result, arg3, INT32);
 parse_pgm_token_num_t cmd_spickle_params_arg4 =
 	TOKEN_NUM_INITIALIZER(struct cmd_spickle_params_result, arg4, INT32);
+parse_pgm_token_num_t cmd_spickle_params_arg5 =
+	TOKEN_NUM_INITIALIZER(struct cmd_spickle_params_result, arg5, INT32);
 
-prog_char help_spickle_params[] = "Set spickle pos values";
+prog_char help_spickle_params[] = "Set spickle pos values: left|right pos INTPACK INTMID INTDEPL";
 parse_pgm_inst_t cmd_spickle_params = {
 	.f = cmd_spickle_params_parsed,  /* function to call */
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_spickle_params,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_spickle_params_arg0, 
-		(prog_void *)&cmd_spickle_params_arg1, 
-		(prog_void *)&cmd_spickle_params_arg2, 
-		(prog_void *)&cmd_spickle_params_arg3, 
-		(prog_void *)&cmd_spickle_params_arg4, 
+		(prog_void *)&cmd_spickle_params_arg0,
+		(prog_void *)&cmd_spickle_params_arg1,
+		(prog_void *)&cmd_spickle_params_arg2,
+		(prog_void *)&cmd_spickle_params_arg3,
+		(prog_void *)&cmd_spickle_params_arg4,
+		(prog_void *)&cmd_spickle_params_arg5,
 		NULL,
 	},
 };

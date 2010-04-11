@@ -56,6 +56,8 @@
 #include "strat.h"
 #include "actuator.h"
 
+void dump_cs(const char *name, struct cs *cs);
+
 #ifndef HOST_VERSION
 int32_t encoders_left_cobroller_speed(void *number)
 {
@@ -155,8 +157,10 @@ static void do_cs(void *dummy)
 	cpt++;
 
 #ifdef HOST_VERSION
-	if ((cpt & 7) == 0)
+	if ((cpt & 7) == 0) {
+		//		dump_cs("dist", &mainboard.distance.cs);
 		robotsim_dump();
+	}
 #endif
 }
 
@@ -197,14 +201,14 @@ void microb_cs_init(void)
 	/* increase gain to decrease dist, increase left and it will turn more left */
 #ifdef HOST_VERSION
 	rs_set_left_ext_encoder(&mainboard.rs, robotsim_encoder_get,
-				LEFT_ENCODER, IMP_COEF);
+				LEFT_ENCODER, IMP_COEF * 1.);
 	rs_set_right_ext_encoder(&mainboard.rs, robotsim_encoder_get,
-				 RIGHT_ENCODER, IMP_COEF);
+				 RIGHT_ENCODER, IMP_COEF * 1.);
 #else
 	rs_set_left_ext_encoder(&mainboard.rs, encoders_spi_get_value,
-				LEFT_ENCODER, IMP_COEF * -1.00);
+				LEFT_ENCODER, IMP_COEF * -1.036);
 	rs_set_right_ext_encoder(&mainboard.rs, encoders_spi_get_value,
-				 RIGHT_ENCODER, IMP_COEF * 1.00);
+				 RIGHT_ENCODER, IMP_COEF * 1.037);
 #endif
 	/* rs will use external encoders */
 	rs_set_flags(&mainboard.rs, RS_USE_EXT);
@@ -217,11 +221,12 @@ void microb_cs_init(void)
 	position_use_ext(&mainboard.pos);
 
 	/* TRAJECTORY MANAGER */
-	trajectory_init(&mainboard.traj);
+	trajectory_init(&mainboard.traj, CS_HZ);
 	trajectory_set_cs(&mainboard.traj, &mainboard.distance.cs,
 			  &mainboard.angle.cs);
 	trajectory_set_robot_params(&mainboard.traj, &mainboard.rs, &mainboard.pos);
 	trajectory_set_speed(&mainboard.traj, SPEED_DIST_FAST, SPEED_ANGLE_FAST); /* d, a */
+	trajectory_set_speed(&mainboard.traj, ACC_DIST, ACC_ANGLE); /* d, a */
 	/* distance window, angle window, angle start */
 	trajectory_set_windows(&mainboard.traj, 200., 5.0, 30.);
 
@@ -235,8 +240,8 @@ void microb_cs_init(void)
 
 	/* QUADRAMP */
 	quadramp_init(&mainboard.angle.qr);
-	quadramp_set_1st_order_vars(&mainboard.angle.qr, 2000, 2000); /* set speed */
-	quadramp_set_2nd_order_vars(&mainboard.angle.qr, 13, 13); /* set accel */
+	quadramp_set_1st_order_vars(&mainboard.angle.qr, 500, 500); /* set speed */
+	quadramp_set_2nd_order_vars(&mainboard.angle.qr, 5, 5); /* set accel */
 
 	/* CS */
 	cs_init(&mainboard.angle.cs);
@@ -254,15 +259,15 @@ void microb_cs_init(void)
 	/* ---- CS distance */
 	/* PID */
 	pid_init(&mainboard.distance.pid);
-	pid_set_gains(&mainboard.distance.pid, 500, 100, 7000);
+	pid_set_gains(&mainboard.distance.pid, 500, 10, 7000);
 	pid_set_maximums(&mainboard.distance.pid, 0, 2000, 4095);
 	pid_set_out_shift(&mainboard.distance.pid, 10);
 	pid_set_derivate_filter(&mainboard.distance.pid, 6);
 
 	/* QUADRAMP */
 	quadramp_init(&mainboard.distance.qr);
-	quadramp_set_1st_order_vars(&mainboard.distance.qr, 2000, 2000); /* set speed */
-	quadramp_set_2nd_order_vars(&mainboard.distance.qr, 17, 17); /* set accel */
+	quadramp_set_1st_order_vars(&mainboard.distance.qr, 500, 500); /* set speed */
+	quadramp_set_2nd_order_vars(&mainboard.distance.qr, 5., 5.); /* set accel */
 
 	/* CS */
 	cs_init(&mainboard.distance.cs);
@@ -310,7 +315,7 @@ void microb_cs_init(void)
 	cs_init(&mainboard.right_cobroller.cs);
 	cs_set_correct_filter(&mainboard.right_cobroller.cs, pid_do_filter, &mainboard.right_cobroller.pid);
 	cs_set_process_in(&mainboard.right_cobroller.cs, pwm_ng_set, RIGHT_COBROLLER_PWM);
-	cs_set_process_out(&mainboard.right_cobroller.cs, encoders_left_cobroller_speed, RIGHT_COBROLLER_ENCODER);
+	cs_set_process_out(&mainboard.right_cobroller.cs, encoders_right_cobroller_speed, RIGHT_COBROLLER_ENCODER);
 	cs_set_consign(&mainboard.right_cobroller.cs, 0);
 
 	/* Blocking detection */
@@ -323,7 +328,7 @@ void microb_cs_init(void)
 	mainboard.angle.on = 0;
 	mainboard.distance.on = 0;
 	mainboard.left_cobroller.on = 1;
-	mainboard.right_cobroller.on = 0;
+	mainboard.right_cobroller.on = 1;
 
 
 	scheduler_add_periodical_event_priority(do_cs, NULL,

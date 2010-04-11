@@ -118,8 +118,8 @@ void robotsim_update(void)
 		((local_r_pwm * 1000 * FILTER2)/1000);
 
 	/* basic collision detection */
-	a2 = atan2(ROBOT_WIDTH/2, ROBOT_LENGTH/2);
-	d = norm(ROBOT_WIDTH/2, ROBOT_LENGTH/2);
+	a2 = atan2(ROBOT_WIDTH/2, ROBOT_HALF_LENGTH_REAR);
+	d = norm(ROBOT_WIDTH/2, ROBOT_HALF_LENGTH_REAR);
 
 	xfl = x + cos(a+a2) * d;
 	yfl = y + sin(a+a2) * d;
@@ -156,9 +156,9 @@ void robotsim_pwm(void *arg, int32_t val)
 {
 	//	printf("%p, %d\n", arg, val);
 	if (arg == LEFT_PWM)
-		l_pwm = val;
+		l_pwm = (val / 1.55);
 	else if (arg == RIGHT_PWM)
-		r_pwm = val;
+		r_pwm = (val / 1.55);
 }
 
 int32_t robotsim_encoder_get(void *arg)

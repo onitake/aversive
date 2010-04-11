@@ -108,7 +108,7 @@ void microb_cs_init(void)
 	/* PID */
 	pid_init(&ballboard.roller.pid);
 	pid_set_gains(&ballboard.roller.pid, 80, 80, 250);
-	pid_set_maximums(&ballboard.roller.pid, 0, 10000, 2000);
+	pid_set_maximums(&ballboard.roller.pid, 0, 10000, 4095);
 	pid_set_out_shift(&ballboard.roller.pid, 6);
 	pid_set_derivate_filter(&ballboard.roller.pid, 6);
 

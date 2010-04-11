@@ -26,12 +26,12 @@
 
 struct quadramp_filter
 {
-	uint32_t var_2nd_ord_pos;
-	uint32_t var_2nd_ord_neg;
-	uint32_t var_1st_ord_pos;
-	uint32_t var_1st_ord_neg;
+	double var_2nd_ord_pos;
+	double var_2nd_ord_neg;
+	double var_1st_ord_pos;
+	double var_1st_ord_neg;
 
-	int32_t previous_var;
+	double previous_var;
 	int32_t previous_out;
 	int32_t previous_in;
 };
@@ -42,12 +42,12 @@ void quadramp_init(struct quadramp_filter *q);
 void quadramp_reset(struct quadramp_filter *q);
 
 void quadramp_set_2nd_order_vars(struct quadramp_filter *q,
-				 uint32_t var_2nd_ord_pos,
-				 uint32_t var_2nd_ord_neg);
+				 double var_2nd_ord_pos,
+				 double var_2nd_ord_neg);
 
 void quadramp_set_1st_order_vars(struct quadramp_filter *q,
-				 uint32_t var_1st_ord_pos,
-				 uint32_t var_1st_ord_neg);
+				 double var_1st_ord_pos,
+				 double var_1st_ord_neg);
 
 /**
  * Return 1 when (filter_input == filter_output && 1st_ord variation

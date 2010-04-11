@@ -1,6 +1,6 @@
-/*  
+/*
  *  Copyright Droids Corporation (2009)
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -49,13 +49,14 @@
 //#define COBROLLER_SPEED 400
 
 #define SERVO_DOOR_OPEN 260
-#define SERVO_DOOR_CLOSED 490
+#define SERVO_DOOR_CLOSED 510
+#define SERVO_DOOR_BLOCK 510
 
-#define SERVO_CARRY_L_OPEN 280
-#define SERVO_CARRY_L_CLOSED 510
+#define SERVO_CARRY_L_OPEN 295
+#define SERVO_CARRY_L_CLOSED 400 // 510
 
-#define SERVO_CARRY_R_OPEN 470
-#define SERVO_CARRY_R_CLOSED 250
+#define SERVO_CARRY_R_OPEN 455
+#define SERVO_CARRY_R_CLOSED 350 // 250
 
 void actuator_init(void);
 
@@ -81,24 +82,25 @@ void servo_door_close(void)
 	pwm_ng_set(SERVO_DOOR_PWM, SERVO_DOOR_CLOSED);
 }
 
-void left_cobroller_on(void)
+void servo_door_block(void)
 {
-	cobboard.left_cobroller_speed = COBROLLER_SPEED;
+	pwm_ng_set(SERVO_DOOR_PWM, SERVO_DOOR_BLOCK);
 }
 
-void right_cobroller_on(void)
+void cobroller_on(uint8_t side)
 {
-	cobboard.right_cobroller_speed = COBROLLER_SPEED;
+	if (side == I2C_LEFT_SIDE)
+		cobboard.left_cobroller_speed = COBROLLER_SPEED;
+	else
+		cobboard.right_cobroller_speed = -COBROLLER_SPEED;
 }
 
-void left_cobroller_off(void)
+void cobroller_off(uint8_t side)
 {
-	cobboard.left_cobroller_speed = 0;
-}
-
-void right_cobroller_off(void)
-{
-	cobboard.right_cobroller_speed = 0;
+	if (side == I2C_LEFT_SIDE)
+		cobboard.left_cobroller_speed = 0;
+	else
+		cobboard.right_cobroller_speed = 0;
 }
 
 void actuator_init(void)

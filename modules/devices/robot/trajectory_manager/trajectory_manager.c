@@ -41,12 +41,13 @@
 /************ INIT FUNCS */
 
 /** structure initialization */
-void trajectory_init(struct trajectory *traj)
+void trajectory_init(struct trajectory *traj, double cs_hz)
 {
 	uint8_t flags;
 
 	IRQ_LOCK(flags);
 	memset(traj, 0, sizeof(struct trajectory));
+	traj->cs_hz = cs_hz;
 	traj->state = READY;
 	traj->scheduler_task = -1;
 	IRQ_UNLOCK(flags);
@@ -77,12 +78,22 @@ void trajectory_set_robot_params(struct trajectory *traj,
 }
 
 /** set speed consign */
-void trajectory_set_speed(struct trajectory *traj, int16_t d_speed, int16_t a_speed)
+void trajectory_set_speed(struct trajectory *traj, double d_speed, double a_speed)
 {
 	uint8_t flags;
 	IRQ_LOCK(flags);
 	traj->d_speed = d_speed;
 	traj->a_speed = a_speed;
+	IRQ_UNLOCK(flags);
+}
+
+/** set acc consign */
+void trajectory_set_acc(struct trajectory *traj, double d_acc, double a_acc)
+{
+	uint8_t flags;
+	IRQ_LOCK(flags);
+	traj->d_acc = d_acc;
+	traj->a_acc = a_acc;
 	IRQ_UNLOCK(flags);
 }
 

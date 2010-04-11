@@ -74,18 +74,19 @@
 #define MATCH_TIME 89
 
 /* decrease track to decrease angle */
-#define EXT_TRACK_MM 302.0188
+#define EXT_TRACK_MM 304.61875
 #define VIRTUAL_TRACK_MM EXT_TRACK_MM
 
-#define ROBOT_LENGTH 320
+#define ROBOT_HALF_LENGTH_FRONT 130
+#define ROBOT_HALF_LENGTH_REAR 120
 #define ROBOT_WIDTH 320
 
-/* it is a 2048 imps -> 8192 because we see 1/4 period
- * and diameter: 55mm -> perimeter 173mm 
- * 8192/173 -> 473 */
+/* it is a 1024 imps -> 4096 because we see 1/4 period
+ * and diameter: 55mm -> perimeter 134mm
+ * dist_imp_mm = 4096/134 x 10 -> 304 */
 /* increase it to go further */
-#define IMP_ENCODERS 2048
-#define WHEEL_DIAMETER_MM 55.0
+#define IMP_ENCODERS 1024
+#define WHEEL_DIAMETER_MM 42.9
 #define WHEEL_PERIM_MM (WHEEL_DIAMETER_MM * M_PI)
 #define IMP_COEF 10.
 #define DIST_IMP_MM (((IMP_ENCODERS*4) / WHEEL_PERIM_MM) * IMP_COEF)
@@ -118,7 +119,8 @@
 #define I2C_POLL_PRIO       20
 #define EEPROM_TIME_PRIO    10
 
-#define CS_PERIOD 5000L
+#define CS_PERIOD 5000L /* in microsecond */ 
+#define CS_HZ (1000000. / CS_PERIOD)
 
 #define NB_LOGS 4
 

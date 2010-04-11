@@ -52,4 +52,7 @@ intersect_segment(const point_t *s1, const point_t *s2,
 		  const point_t *t1, const point_t *t2,
 		  point_t *p);
 
+/* translate the line */
+void
+line_translate(line_t *l, vect_t *v);
 #endif /* _LINES_H_ */

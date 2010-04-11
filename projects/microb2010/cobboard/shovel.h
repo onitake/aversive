@@ -23,7 +23,7 @@
 #define _SHOVEL_H_
 
 #define SHOVEL_DOWN 100
-#define SHOVEL_MID  6000
+#define SHOVEL_MID  4900
 #define SHOVEL_UP   10000
 
 void shovel_init(void);
@@ -42,5 +42,8 @@ static inline void shovel_up(void)
 {
 	cs_set_consign(&cobboard.shovel.cs, SHOVEL_UP);
 }
+
+uint8_t shovel_is_up(void);
+uint8_t shovel_is_down(void);
 
 #endif /* _SHOVEL_H_ */

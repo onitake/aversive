@@ -428,10 +428,10 @@ parse_pgm_inst_t cmd_maximum_show = {
 /* this structure is filled when cmd_quadramp is parsed successfully */
 struct cmd_quadramp_result {
 	struct cmd_cs_result cs;
-	uint32_t ap;
-	uint32_t an;
-	uint32_t sp;
-	uint32_t sn;
+	double ap;
+	double an;
+	double sp;
+	double sn;
 };
 
 /* function called when cmd_quadramp is parsed successfully */
@@ -452,7 +452,7 @@ static void cmd_quadramp_parsed(void *parsed_result, void *show)
 		quadramp_set_2nd_order_vars(&csb->qr, res->ap, res->an);
 	}
 
-	printf_P(PSTR("quadramp %s %ld %ld %ld %ld\r\n"), 
+	printf_P(PSTR("quadramp %s %2.2f %2.2f %2.2f %2.2f\r\n"),
 		 res->cs.csname,
 		 csb->qr.var_2nd_ord_pos,
 		 csb->qr.var_2nd_ord_neg,
@@ -462,10 +462,10 @@ static void cmd_quadramp_parsed(void *parsed_result, void *show)
 
 prog_char str_quadramp_arg0[] = "quadramp";
 parse_pgm_token_string_t cmd_quadramp_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_quadramp_result, cs.cmdname, str_quadramp_arg0);
-parse_pgm_token_num_t cmd_quadramp_ap = TOKEN_NUM_INITIALIZER(struct cmd_quadramp_result, ap, UINT32);
-parse_pgm_token_num_t cmd_quadramp_an = TOKEN_NUM_INITIALIZER(struct cmd_quadramp_result, an, UINT32);
-parse_pgm_token_num_t cmd_quadramp_sp = TOKEN_NUM_INITIALIZER(struct cmd_quadramp_result, sp, UINT32);
-parse_pgm_token_num_t cmd_quadramp_sn = TOKEN_NUM_INITIALIZER(struct cmd_quadramp_result, sn, UINT32);
+parse_pgm_token_num_t cmd_quadramp_ap = TOKEN_NUM_INITIALIZER(struct cmd_quadramp_result, ap, FLOAT);
+parse_pgm_token_num_t cmd_quadramp_an = TOKEN_NUM_INITIALIZER(struct cmd_quadramp_result, an, FLOAT);
+parse_pgm_token_num_t cmd_quadramp_sp = TOKEN_NUM_INITIALIZER(struct cmd_quadramp_result, sp, FLOAT);
+parse_pgm_token_num_t cmd_quadramp_sn = TOKEN_NUM_INITIALIZER(struct cmd_quadramp_result, sn, FLOAT);
 
 prog_char help_quadramp[] = "Set quadramp values (acc+, acc-, speed+, speed-)";
 parse_pgm_inst_t cmd_quadramp = {

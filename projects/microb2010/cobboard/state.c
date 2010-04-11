@@ -1,6 +1,6 @@
-/*  
+/*
  *  Copyright Droids Corporation (2009)
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -98,20 +98,17 @@ static uint8_t state_cob_present(uint8_t side)
 	if (side == I2C_LEFT_SIDE)
 		return sensor_get(S_LCOB);
 	else
-		/* XXX */
-		//		return sensor_get(S_LCOB);
-		return 0;
+		return sensor_get(S_RCOB);
 }
 
 /* return the detected color of the cob (only valid if present) */
 static uint8_t state_cob_color(uint8_t side)
 {
+	/* XXX no color sensor for now */
 	if (side == I2C_LEFT_SIDE)
 		return I2C_COB_WHITE;
 	else
-		/* XXX */
-		//		return sensor_get(S_LCOB);
-		return 0;
+		return I2C_COB_WHITE;
 }
 
 /* return true if the cob is correctly inside */
@@ -119,6 +116,13 @@ static uint8_t state_cob_inside(void)
 {
 	return sensor_get(S_COB_INSIDE_L) &&
 		sensor_get(S_COB_INSIDE_R);
+}
+
+/* return true if there is no cob correctly inside */
+static uint8_t state_no_cob_inside(void)
+{
+	return !sensor_get(S_COB_INSIDE_L) &&
+		!sensor_get(S_COB_INSIDE_R);
 }
 
 /* set a new state, return 0 on success */
@@ -158,8 +162,6 @@ uint8_t state_get_mode(void)
 /* harvest cobs from area */
 static void state_do_harvest(uint8_t side)
 {
-	uint16_t delay;
-
 	/* if there is no cob, return */
 	if (state_cob_present(side))
 		return;
@@ -168,40 +170,67 @@ static void state_do_harvest(uint8_t side)
 	if (state_cob_color(side) == I2C_COB_BLACK)
 		return;
 
+	STMCH_DEBUG("start");
+
 	/* eat the cob */
 	spickle_pack(side);
-	/* xxx */
-	time_wait_ms(250);
-	left_cobroller_on();
-	delay = spickle_get_pack_delay(side);
 
-	WAIT_COND_OR_TIMEOUT(state_cob_inside(), delay);
+	time_wait_ms(250);
+	cobroller_on(side);
+
+	if (WAIT_COND_OR_TIMEOUT(state_cob_inside(), 750) == 0) {
+		if (state_no_cob_inside()) {
+			printf_P(PSTR("NO COB\r\n"));
+			return;
+		}
+		printf_P(PSTR("BAD COB - press a key\r\n"));
+		while(!cmdline_keypressed());
+	}
+
+	/* cob is inside, switch off roller */
+	cobroller_off(side);
+	cob_count ++;
+
+	/* last cob, nothing to do */
+	if (cob_count == 5)
+		return;
 
 	/* redeploy the spickle */
 	spickle_deploy(side);
 	state_debug_wait_key_pressed();
 
-	/* let the cob go */
+	/* let the loaded cobs go */
+	servo_door_block();
 	servo_carry_open();
-	wait_ms(300); /* XXX */
+	time_wait_ms(100);
 	state_debug_wait_key_pressed();
-
-	cob_count ++;
 
 	/* store it */
 	shovel_up();
-	wait_ms(200);
+
+	if (WAIT_COND_OR_TIMEOUT(shovel_is_up(), 400) == 0) {
+		BRAKE_ON();
+		printf_P(PSTR("BLOCKED\r\n"));
+		while(!cmdline_keypressed());
+	}
+
 	state_debug_wait_key_pressed();
 
 	/* close the carry servos */
 	servo_carry_close();
-	wait_ms(300); /* XXX */
+	servo_door_close();
+	time_wait_ms(200);
 	state_debug_wait_key_pressed();
 
 	shovel_down();
-	left_cobroller_off();
-	state_debug_wait_key_pressed();
-	time_wait_ms(500);
+
+	if (WAIT_COND_OR_TIMEOUT(shovel_is_down(), 400) == 0) {
+		BRAKE_ON();
+		printf_P(PSTR("BLOCKED\r\n"));
+		while(!cmdline_keypressed());
+	}
+
+	STMCH_DEBUG("end");
 }
 
 /* eject cobs */
@@ -228,30 +257,35 @@ void state_machine(void)
 			state_init();
 		}
 
+		cobroller_off(I2C_LEFT_SIDE);
+		cobroller_off(I2C_RIGHT_SIDE);
+
 		/* pack/deply spickles, enable/disable roller */
-		if (L_DEPLOY(state_mode)) {
-			spickle_deploy(I2C_LEFT_SIDE);
-			//left_cobroller_on();
-			left_cobroller_off();
-		}
-		else {
+		if (cob_count >= 5)
 			spickle_pack(I2C_LEFT_SIDE);
-			left_cobroller_off();
-		}
-		if (R_DEPLOY(state_mode)) {
-			spickle_deploy(I2C_RIGHT_SIDE);
-			right_cobroller_on();
-		}
-		else {
+		else if (L_DEPLOY(state_mode) && !L_HARVEST(state_mode))
+			spickle_mid(I2C_LEFT_SIDE);
+		else if (L_DEPLOY(state_mode) && L_HARVEST(state_mode))
+			spickle_deploy(I2C_LEFT_SIDE);
+		else
+			spickle_pack(I2C_LEFT_SIDE);
+
+		if (cob_count >= 5)
 			spickle_pack(I2C_RIGHT_SIDE);
-			right_cobroller_off();
-		}
+		else if (R_DEPLOY(state_mode) && !R_HARVEST(state_mode))
+			spickle_mid(I2C_RIGHT_SIDE);
+		else if (R_DEPLOY(state_mode) && R_HARVEST(state_mode))
+			spickle_deploy(I2C_RIGHT_SIDE);
+		else
+			spickle_pack(I2C_RIGHT_SIDE);
 
 		/* harvest */
-		if (L_DEPLOY(state_mode) && L_HARVEST(state_mode))
-			state_do_harvest(I2C_LEFT_SIDE);
-		if (R_DEPLOY(state_mode) && R_HARVEST(state_mode))
-			state_do_harvest(I2C_RIGHT_SIDE);
+		if (cob_count < 5) {
+			if (L_DEPLOY(state_mode) && L_HARVEST(state_mode))
+				state_do_harvest(I2C_LEFT_SIDE);
+			if (R_DEPLOY(state_mode) && R_HARVEST(state_mode))
+				state_do_harvest(I2C_RIGHT_SIDE);
+		}
 
 		/* eject */
 		if (EJECT(state_mode)) {

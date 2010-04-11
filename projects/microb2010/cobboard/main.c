@@ -183,8 +183,6 @@ int main(void)
 	error_register_notice(mylog);
 	error_register_debug(mylog);
 
-	wait_ms(3000);
-
 	/* SPI + ENCODERS */
 	encoders_spi_init(); /* this will also init spi hardware */
 
@@ -205,8 +203,8 @@ int main(void)
 
 	PWM_NG_INIT16(&gen.pwm1_4A, 4, A, 10, PWM_NG_MODE_SIGNED |
 		      PWM_NG_MODE_SIGN_INVERTED, &PORTD, 4);
-	PWM_NG_INIT16(&gen.pwm2_4B, 4, B, 10, PWM_NG_MODE_SIGNED,
-		      &PORTD, 5);
+	PWM_NG_INIT16(&gen.pwm2_4B, 4, B, 10, PWM_NG_MODE_SIGNED |
+		      PWM_NG_MODE_SIGN_INVERTED, &PORTD, 5);
 	PWM_NG_INIT16(&gen.pwm3_1A, 1, A, 10, PWM_NG_MODE_SIGNED,
 		      &PORTD, 6);
 	PWM_NG_INIT16(&gen.pwm4_1B, 1, B, 10, PWM_NG_MODE_SIGNED |
@@ -248,12 +246,14 @@ int main(void)
 
 	sei();
 
-	/* actuators */
-	actuator_init();
+	printf_P(PSTR("cobboard start\r\n"));
 
 	/* spickle, shovel */
 	spickle_init();
 	shovel_init();
+
+	/* actuators */
+	actuator_init();
 
 	state_init();
 
