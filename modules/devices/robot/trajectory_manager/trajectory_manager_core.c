@@ -882,8 +882,8 @@ static int8_t calc_clitoid(struct trajectory *traj,
 	alpha_rad = RAD(alpha_deg);
 	beta_rad = RAD(beta_deg);
 	t = fabs(((alpha_rad - beta_rad) * R_mm) / Vd_mm_s);
-	DEBUG(E_TRAJECTORY, "R_mm=%2.2f alpha_rad=%2.2f beta_rad=%2.2f t=%2.2f",
-	      R_mm, alpha_rad, beta_rad, t);
+	DEBUG(E_TRAJECTORY, "R_mm=%2.2f a_rad=%2.2f alpha_rad=%2.2f beta_rad=%2.2f t=%2.2f",
+	      R_mm, a_rad, alpha_rad, beta_rad, t);
 
 	/* process the angular acceleration */
 	Aa_rd_s2 = Va_rd_s / t;
@@ -966,8 +966,14 @@ static int8_t calc_clitoid(struct trajectory *traj,
 	DEBUG(E_TRAJECTORY, "center=(%2.2f,%2.2f)", center.x, center.y);
 
 	/* M is the same point than xm, ym but in absolute coords */
-	M.x = center.x + cos(a_rad - M_PI/2 + tau) * R_mm;
-	M.y = center.y + sin(a_rad - M_PI/2 + tau) * R_mm;
+	if (alpha_rad < 0) {
+		M.x = center.x + cos(a_rad + M_PI/2 + tau) * R_mm;
+		M.y = center.y + sin(a_rad + M_PI/2 + tau) * R_mm;
+	}
+	else {
+		M.x = center.x + cos(a_rad - M_PI/2 + tau) * R_mm;
+		M.y = center.y + sin(a_rad - M_PI/2 + tau) * R_mm;
+	}
 	DEBUG(E_TRAJECTORY, "absolute M = (%2.2f, %2.2f)", M.x, M.y);
 
 	/* project M on line 1 */
@@ -1020,7 +1026,7 @@ static void start_clitoid(struct trajectory *traj)
  * the function assumes that the initial linear speed is Vd and
  * angular speed is 0.
  *
- * - x,y,a: starting position
+ * - x,y,a_deg: starting position
  * - advance: parameter for line following
  * - alpha: total angle
  * - beta: circular part of angle (lower than alpha)
@@ -1034,22 +1040,23 @@ static void start_clitoid(struct trajectory *traj)
  * background.
  */
 int8_t trajectory_clitoid(struct trajectory *traj,
-			  double x, double y, double a, double advance,
+			  double x, double y, double a_deg, double advance,
 			  double alpha_deg, double beta_deg, double R_mm,
 			  double d_inter_mm)
 {
 	double remain = 0, Aa = 0, Va = 0, Vd;
 	double turnx, turny;
+	double a_rad = RAD(a_deg);
 
 	Vd = traj->d_speed;
-	if (calc_clitoid(traj, x, y, a, alpha_deg, beta_deg, R_mm,
+	if (calc_clitoid(traj, x, y, a_rad, alpha_deg, beta_deg, R_mm,
 			 Vd, traj->a_acc, d_inter_mm,
 			 &Aa, &Va, &remain) < 0)
 		return -1;
 
 	delete_event(traj);
-	turnx = x + cos(a) * remain;
-	turny = y + sin(a) * remain;
+	turnx = x + cos(a_rad) * remain;
+	turny = y + sin(a_rad) * remain;
 	traj->target.line.Aa = Aa;
 	traj->target.line.Va = Va;
 	traj->target.line.alpha = RAD(alpha_deg);

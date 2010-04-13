@@ -258,14 +258,14 @@ def set_robot():
     robot.axis = axis
     robot.size = (250, 320, ROBOT_HEIGHT)
 
-    lspickle.pos = (robot_x - AREA_X/2 + (robot_lspickle*70) * math.cos((robot_a-90)*math.pi/180),
-                    robot_y - AREA_Y/2 + (robot_lspickle*70) * math.sin((robot_a-90)*math.pi/180),
+    lspickle.pos = (robot_x - AREA_X/2 + (robot_lspickle*60) * math.cos((robot_a-90)*math.pi/180),
+                    robot_y - AREA_Y/2 + (robot_lspickle*60) * math.sin((robot_a-90)*math.pi/180),
                     ROBOT_HEIGHT/2)
     lspickle.axis = axis
     lspickle.size = (20, 320, 5)
 
-    rspickle.pos = (robot_x - AREA_X/2 + (robot_rspickle*70) * math.cos((robot_a+90)*math.pi/180),
-                    robot_y - AREA_Y/2 + (robot_rspickle*70) * math.sin((robot_a+90)*math.pi/180),
+    rspickle.pos = (robot_x - AREA_X/2 + (robot_rspickle*60) * math.cos((robot_a+90)*math.pi/180),
+                    robot_y - AREA_Y/2 + (robot_rspickle*60) * math.sin((robot_a+90)*math.pi/180),
                     ROBOT_HEIGHT/2)
     rspickle.axis = axis
     rspickle.size = (20, 320, 5)
@@ -308,31 +308,41 @@ while True:
         fr = open("/tmp/.robot_sim2dis", "r")
         fw = open("/tmp/.robot_dis2sim", "w", 0)
         while True:
+            m = None
             l = fr.readline()
-            m = re.match("pos=%s,%s,%s"%(INT,INT,INT), l)
-            if m:
-                robot_x = int(m.groups()[0])
-                robot_y = int(m.groups()[1])
-                robot_a = int(m.groups()[2])
-                set_robot()
-            m = re.match("ballboard=%s"%(INT), l)
-            if m:
-                print int(m.groups()[0])
-            m = re.match("cobboard=%s"%(INT), l)
-            if m:
-                mode = int(m.groups()[0])
-                if (mode & 0x01) == 0:
-                    robot_lspickle = 0
-                elif (mode & 0x02) == 0:
-                    robot_lspickle = 1
-                else:
-                    robot_lspickle = 2
-                if (mode & 0x04) == 0:
-                    robot_rspickle = 0
-                elif (mode & 0x08) == 0:
-                    robot_rspickle = 1
-                else:
-                    robot_rspickle = 2
+
+            # parse position
+            if not m:
+                m = re.match("pos=%s,%s,%s"%(INT,INT,INT), l)
+                if m:
+                    robot_x = int(m.groups()[0])
+                    robot_y = int(m.groups()[1])
+                    robot_a = int(m.groups()[2])
+                    set_robot()
+
+            # parse ballboard
+            if not m:
+                m = re.match("ballboard=%s"%(INT), l)
+                if m:
+                    print int(m.groups()[0])
+
+            # parse cobboard
+            if not m:
+                m = re.match("cobboard=%s"%(INT), l)
+                if m:
+                    mode = int(m.groups()[0])
+                    if (mode & 0x01) == 0:
+                        robot_lspickle = 0
+                    elif (mode & 0x02) == 0:
+                        robot_lspickle = 1
+                    else:
+                        robot_lspickle = 2
+                    if (mode & 0x04) == 0:
+                        robot_rspickle = 0
+                    elif (mode & 0x08) == 0:
+                        robot_rspickle = 1
+                    else:
+                        robot_rspickle = 2
 
             if scene.kb.keys == 0:
                 continue

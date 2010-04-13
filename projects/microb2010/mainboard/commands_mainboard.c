@@ -1063,139 +1063,6 @@ struct cmd_clitoid_result {
 	float d_inter_mm;
 };
 
-/**
- * do a superb curve joining line1 to line2 which is composed of:
- *   - a clothoid starting from line1
- *   - a circle
- *   - another clothoid up to line2
- *
- * the function assumes that the initial linear speed is Vd and
- * angular speed is 0.
- *
- * - alpha: total angle
- * - beta: circular part of angle (lower than alpha)
- * - R: the radius of the circle (must be != 0)
- * - Vd: linear speed to use (in imp per cs period)
- * - Amax: maximum angular acceleration
- * - d_inter: distance in mm until the intersection of the
- *            2 lines
- *
- * return 0 on success: in this case these parameters are filled:
- * - Aa_out: the angular acceleration to configure in quadramp
- * - remain_d_mm_out: remaining distance before start to turn
- */
-uint8_t clitoid(double alpha_deg, double beta_deg, double R_mm,
-		double Vd, double Amax, double d_inter_mm)
-{
-	double Vd_mm_s;
-	double Va, Va_rd_s;
-	double t, d_mm, alpha_rad, beta_rad;
-	double remain_d_mm;
-	double Aa, Aa_rd_s2;
-	line_t line1, line2;
-	double x, y, a_rad;
-	point_t robot, intersect, pt2, center, proj;
-	vect_t v;
-
-	/* param check */
-	if (fabs(alpha_deg) <= fabs(beta_deg)) {
-		DEBUG(E_USER_STRAT, "alpha is smaller than beta");
-		return END_ERROR;
-	}
-
-	/* get angular speed Va */
-	Vd_mm_s = Vd * (CS_HZ/DIST_IMP_MM);
-	DEBUG(E_USER_STRAT, "Vd_mm_s=%2.2f", Vd_mm_s);
-	Va_rd_s = Vd_mm_s / R_mm;
-	Va = Va_rd_s * (DIST_IMP_MM * EXT_TRACK_MM / (2 * CS_HZ));
-	DEBUG(E_USER_STRAT, "Va_rd_s=%2.2f Va=%2.2f", Va_rd_s, Va);
-
-	/* process 't', the time in seconds that we will take to do
-	 * the first clothoid */
-	alpha_rad = RAD(alpha_deg);
-	beta_rad = RAD(beta_deg);
-	t = fabs(((alpha_rad - beta_rad) * R_mm) / Vd_mm_s);
-	DEBUG(E_USER_STRAT, "R_mm=%2.2f alpha_rad=%2.2f beta_rad=%2.2f t=%2.2f",
-	      R_mm, alpha_rad, beta_rad, t);
-
-	/* process the angular acceleration */
-	Aa_rd_s2 = Va_rd_s / t;
-	Aa = Aa_rd_s2 * (DIST_IMP_MM * EXT_TRACK_MM /
-			 (2 * CS_HZ * CS_HZ));
-	DEBUG(E_USER_STRAT, "Aa_rd_s2=%2.2f Aa=%2.2f", Aa_rd_s2, Aa);
-
-	/* exit if the robot cannot physically do it */
-	if (Aa > Amax) {
-		DEBUG(E_USER_STRAT, "greater than max acceleration");
-		return END_ERROR;
-	}
-
-	/* the robot position */
-	x = position_get_x_double(&mainboard.pos);
-	y = position_get_y_double(&mainboard.pos);
-	a_rad = position_get_a_rad_double(&mainboard.pos);
-
-	/* define line1 and line2 */
-	robot.x = x;
-	robot.y = y;
-	intersect.x = x + cos(a_rad) * d_inter_mm;
-	intersect.y = y + sin(a_rad) * d_inter_mm;
-	pts2line(&robot, &intersect, &line1);
-	pt2.x = intersect.x + cos(a_rad + alpha_rad);
-	pt2.y = intersect.y + sin(a_rad + alpha_rad);
-	pts2line(&intersect, &pt2, &line2);
-	DEBUG(E_USER_STRAT, "intersect=(%2.2f, %2.2f)",
-	      intersect.x, intersect.y);
-
-	/* the center of the circle is at (d_mm, d_mm) when we have to
-	 * start the clothoid */
-	d_mm = R_mm * sqrt(fabs(alpha_rad - beta_rad)) *
-		sqrt(M_PI) / 2.;
-	DEBUG(E_USER_STRAT, "d_mm=%2.2f", d_mm);
-
-	/* translate line1 */
-	v.x = intersect.x - robot.x;
-	v.y = intersect.y - robot.y;
-	if (a_rad > 0)
-		vect_rot_trigo(&v);
-	else
-		vect_rot_retro(&v);
-	vect_resize(&v, d_mm);
-	line_translate(&line1, &v);
-
-	/* translate line2 */
-	v.x = intersect.x - pt2.x;
-	v.y = intersect.y - pt2.y;
-	if (a_rad > 0)
-		vect_rot_trigo(&v);
-	else
-		vect_rot_retro(&v);
-	vect_resize(&v, d_mm);
-	line_translate(&line2, &v);
-
-	/* find the center of the circle, at the intersection of the
-	 * new translated lines */
-	if (intersect_line(&line1, &line2, &center) != 1) {
-		DEBUG(E_USER_STRAT, "cannot find circle center");
-		return END_ERROR;
-	}
-	DEBUG(E_USER_STRAT, "center=(%2.2f,%2.2f)", center.x, center.y);
-
-	/* project center of circle on line1 */
-	proj_pt_line(&center, &line1, &proj);
-	DEBUG(E_USER_STRAT, "proj=(%2.2f,%2.2f)", proj.x, proj.y);
-
-	/* process remaining distance before start turning */
-	remain_d_mm = d_inter_mm - (pt_norm(&proj, &intersect) + d_mm);
-	DEBUG(E_USER_STRAT, "remain_d=%2.2f", remain_d_mm);
-	if (remain_d_mm < 0) {
-		DEBUG(E_USER_STRAT, "too late, cannot turn");
-		return END_ERROR;
-	}
-
-	return END_TRAJ;
-}
-
 /* function called when cmd_test is parsed successfully */
 static void cmd_clitoid_parsed(void *parsed_result, void *data)
 {
@@ -1262,9 +1129,152 @@ struct cmd_test_result {
 	int32_t dist;
 };
 
+#define LINE_UP     0
+#define LINE_DOWN   1
+#define LINE_R_UP   2
+#define LINE_L_DOWN 3
+#define LINE_L_UP   4
+#define LINE_R_DOWN 5
+
+struct line_2pts {
+	point_t p1;
+	point_t p2;
+};
+
+static void num2line(struct line_2pts *l, uint8_t dir, uint8_t num)
+{
+	float n = num;
+
+	switch (dir) {
+
+	case LINE_UP:
+		l->p1.x = n * 450 + 375;
+		l->p1.y = COLOR_Y(0);
+		l->p2.x = n * 450 + 375;
+		l->p2.y = COLOR_Y(2100);
+		break;
+	case LINE_DOWN:
+		l->p1.x = n * 450 + 375;
+		l->p1.y = COLOR_Y(2100);
+		l->p2.x = n * 450 + 375;
+		l->p2.y = COLOR_Y(0);
+		break;
+	case LINE_R_UP:
+		l->p1.x = 150;
+		l->p1.y = COLOR_Y(-n * 500 + 1472);
+		l->p2.x = 2850;
+		l->p2.y = COLOR_Y((-n + 4) * 500 + 972);
+		break;
+	case LINE_L_DOWN:
+		l->p1.x = 2850;
+		l->p1.y = COLOR_Y((-n + 4) * 500 + 972);
+		l->p2.x = 150;
+		l->p2.y = COLOR_Y(-n * 500 + 1472);
+		break;
+	case LINE_L_UP:
+		l->p1.x = 2850;
+		l->p1.y = COLOR_Y(-n * 500 + 1472);
+		l->p2.x = 150;
+		l->p2.y = COLOR_Y((-n + 4) * 500 + 972);
+		break;
+	case LINE_R_DOWN:
+		l->p1.x = 150;
+		l->p1.y = COLOR_Y((-n + 4) * 500 + 972);
+		l->p2.x = 2850;
+		l->p2.y = COLOR_Y(-n * 500 + 1472);
+		break;
+	default:
+		break;
+	}
+}
+
+#if 0
+static void reverse_line(struct line_2pts *l)
+{
+	point_t tmp;
+
+	tmp.x = l->p1.x;
+	tmp.y = l->p1.y;
+	l->p1.x = l->p2.x;
+	l->p1.y = l->p2.y;
+	l->p2.x = tmp.x;
+	l->p2.y = tmp.y;
+}
+#endif
+
+static void line2line(uint8_t dir1, uint8_t num1,
+		      uint8_t dir2, uint8_t num2)
+{
+	double line1_a_rad, line1_a_deg, line2_a_rad;
+	double diff_a_deg, diff_a_deg_abs, beta_deg;
+	double radius;
+	struct line_2pts l1, l2;
+	line_t ll1, ll2;
+	point_t p;
+
+	/* convert to 2 points */
+	num2line(&l1, dir1, num1);
+	num2line(&l2, dir2, num2);
+
+	printf_P(PSTR("A2 (%2.2f, %2.2f) -> (%2.2f, %2.2f)\r\n"),
+		 l1.p1.x, l1.p1.y, l1.p2.x, l1.p2.y);
+	printf_P(PSTR("B2 (%2.2f, %2.2f) -> (%2.2f, %2.2f)\r\n"),
+		 l2.p1.x, l2.p1.y, l2.p2.x, l2.p2.y);
+
+	/* convert to line eq and find intersection */
+	pts2line(&l1.p1, &l1.p2, &ll1);
+	pts2line(&l2.p1, &l2.p2, &ll2);
+	intersect_line(&ll1, &ll2, &p);
+
+	line1_a_rad = atan2(l1.p2.y - l1.p1.y,
+			    l1.p2.x - l1.p1.x);
+	line1_a_deg = DEG(line1_a_rad);
+	line2_a_rad = atan2(l2.p2.y - l2.p1.y,
+			    l2.p2.x - l2.p1.x);
+	diff_a_deg = DEG(line2_a_rad - line1_a_rad);
+	diff_a_deg_abs = fabs(diff_a_deg);
+
+	if (diff_a_deg_abs < 70.) {
+		radius = 200;
+		if (diff_a_deg > 0)
+			beta_deg = 40;
+		else
+			beta_deg = -40;
+	}
+	else if (diff_a_deg_abs < 100.) {
+		radius = 100;
+		if (diff_a_deg > 0)
+			beta_deg = 40;
+		else
+			beta_deg = -40;
+	}
+	else {
+		radius = 120;
+		if (diff_a_deg > 0)
+			beta_deg = 60;
+		else
+			beta_deg = -60;
+	}
+	trajectory_clitoid(&mainboard.traj, l1.p1.x, l1.p1.y,
+			   line1_a_deg, 150., diff_a_deg, beta_deg,
+			   radius, xy_norm(l1.p1.x, l1.p1.y,
+					   p.x, p.y));
+	wait_traj_end(0xFF);
+}
+
 /* function called when cmd_test is parsed successfully */
 static void cmd_test_parsed(void *parsed_result, void *data)
 {
+#ifdef HOST_VERSION
+	strat_reset_pos(298.48, 309.21, 70.02);
+	mainboard.angle.on = 1;
+	mainboard.distance.on = 1;
+#endif
+	time_wait_ms(100);
+
+	line2line(LINE_UP, 0, LINE_R_DOWN, 2);
+	line2line(LINE_R_DOWN, 2, LINE_R_UP, 1);
+
 	trajectory_hardstop(&mainboard.traj);
 }
 
