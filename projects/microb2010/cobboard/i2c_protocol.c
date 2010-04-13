@@ -93,7 +93,7 @@ static void i2c_send_status(void)
 
 	/* status */
 	ans.mode = state_get_mode();
-	ans.status = 0x55; /* TODO */
+	ans.status = state_get_status();
 
 	ans.left_cobroller_speed = cobboard.left_cobroller_speed;
 	ans.right_cobroller_speed = cobboard.right_cobroller_speed;

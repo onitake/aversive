@@ -1,6 +1,6 @@
 /*
  *  Copyright Droids Corporation (2009)
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -17,7 +17,7 @@
  *
  *  Revision : $Id: commands_cobboard.c,v 1.6 2009-11-08 17:25:00 zer0 Exp $
  *
- *  Olivier MATZ <zer0@droids-corp.org> 
+ *  Olivier MATZ <zer0@droids-corp.org>
  */
 
 #include <stdio.h>
@@ -68,20 +68,22 @@ static void cmd_event_parsed(void *parsed_result, __attribute__((unused)) void *
 	struct cmd_event_result * res = parsed_result;
 
 	if (!strcmp_P(res->arg1, PSTR("all"))) {
-		bit = DO_ENCODERS | DO_CS | DO_BD | DO_POWER;
+		bit = 0xFF;
 		if (!strcmp_P(res->arg2, PSTR("on")))
 			cobboard.flags |= bit;
 		else if (!strcmp_P(res->arg2, PSTR("off")))
 			cobboard.flags &= bit;
 		else { /* show */
-			printf_P(PSTR("encoders is %s\r\n"), 
+			printf_P(PSTR("encoders is %s\r\n"),
 				 (DO_ENCODERS & cobboard.flags) ? "on":"off");
-			printf_P(PSTR("cs is %s\r\n"), 
+			printf_P(PSTR("cs is %s\r\n"),
 				 (DO_CS & cobboard.flags) ? "on":"off");
-			printf_P(PSTR("bd is %s\r\n"), 
+			printf_P(PSTR("bd is %s\r\n"),
 				 (DO_BD & cobboard.flags) ? "on":"off");
-			printf_P(PSTR("power is %s\r\n"), 
+			printf_P(PSTR("power is %s\r\n"),
 				 (DO_POWER & cobboard.flags) ? "on":"off");
+			printf_P(PSTR("errblock is %s\r\n"),
+				 (DO_ERRBLOCKING & cobboard.flags) ? "on":"off");
 		}
 		return;
 	}
@@ -95,6 +97,8 @@ static void cmd_event_parsed(void *parsed_result, __attribute__((unused)) void *
 		bit = DO_BD;
 	else if (!strcmp_P(res->arg1, PSTR("power")))
 		bit = DO_POWER;
+	else if (!strcmp_P(res->arg1, PSTR("errblock")))
+		bit = DO_ERRBLOCKING;
 
 
 	if (!strcmp_P(res->arg2, PSTR("on")))
@@ -107,13 +111,13 @@ static void cmd_event_parsed(void *parsed_result, __attribute__((unused)) void *
 		}
 		cobboard.flags &= (~bit);
 	}
-	printf_P(PSTR("%s is %s\r\n"), res->arg1, 
+	printf_P(PSTR("%s is %s\r\n"), res->arg1,
 		      (bit & cobboard.flags) ? "on":"off");
 }
 
 prog_char str_event_arg0[] = "event";
 parse_pgm_token_string_t cmd_event_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_event_result, arg0, str_event_arg0);
-prog_char str_event_arg1[] = "all#encoders#cs#bd#power";
+prog_char str_event_arg1[] = "all#encoders#cs#bd#power#errblock";
 parse_pgm_token_string_t cmd_event_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_event_result, arg1, str_event_arg1);
 prog_char str_event_arg2[] = "on#off#show";
 parse_pgm_token_string_t cmd_event_arg2 = TOKEN_STRING_INITIALIZER(struct cmd_event_result, arg2, str_event_arg2);
@@ -124,9 +128,9 @@ parse_pgm_inst_t cmd_event = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_event,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_event_arg0, 
-		(prog_void *)&cmd_event_arg1, 
-		(prog_void *)&cmd_event_arg2, 
+		(prog_void *)&cmd_event_arg0,
+		(prog_void *)&cmd_event_arg1,
+		(prog_void *)&cmd_event_arg2,
 		NULL,
 	},
 };
@@ -164,8 +168,8 @@ parse_pgm_inst_t cmd_color = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_color,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_color_arg0, 
-		(prog_void *)&cmd_color_color, 
+		(prog_void *)&cmd_color_arg0,
+		(prog_void *)&cmd_color_color,
 		NULL,
 	},
 };
@@ -204,8 +208,8 @@ parse_pgm_inst_t cmd_state1 = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_state1,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_state1_arg0, 
-		(prog_void *)&cmd_state1_arg1, 
+		(prog_void *)&cmd_state1_arg0,
+		(prog_void *)&cmd_state1_arg1,
 		NULL,
 	},
 };
@@ -272,9 +276,9 @@ parse_pgm_inst_t cmd_state2 = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_state2,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_state2_arg0, 
-		(prog_void *)&cmd_state2_arg1, 
-		(prog_void *)&cmd_state2_arg2, 
+		(prog_void *)&cmd_state2_arg0,
+		(prog_void *)&cmd_state2_arg1,
+		(prog_void *)&cmd_state2_arg2,
 		NULL,
 	},
 };
@@ -290,7 +294,7 @@ struct cmd_state3_result {
 };
 
 /* function called when cmd_state3 is parsed successfully */
-static void cmd_state3_parsed(void *parsed_result, 
+static void cmd_state3_parsed(void *parsed_result,
 			      __attribute__((unused)) void *data)
 {
 	struct cmd_state3_result *res = parsed_result;
@@ -315,9 +319,9 @@ parse_pgm_inst_t cmd_state3 = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_state3,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_state3_arg0, 
-		(prog_void *)&cmd_state3_arg1, 
-		(prog_void *)&cmd_state3_arg2, 
+		(prog_void *)&cmd_state3_arg0,
+		(prog_void *)&cmd_state3_arg1,
+		(prog_void *)&cmd_state3_arg2,
 		NULL,
 	},
 };
@@ -346,7 +350,7 @@ parse_pgm_inst_t cmd_state_machine = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_state_machine,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_state_machine_arg0, 
+		(prog_void *)&cmd_state_machine_arg0,
 		NULL,
 	},
 };
@@ -378,8 +382,8 @@ parse_pgm_inst_t cmd_state_debug = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_state_debug,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_state_debug_arg0, 
-		(prog_void *)&cmd_state_debug_on, 
+		(prog_void *)&cmd_state_debug_arg0,
+		(prog_void *)&cmd_state_debug_on,
 		NULL,
 	},
 };
@@ -417,8 +421,8 @@ parse_pgm_inst_t cmd_servo_door = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_servo_door,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_servo_door_arg0, 
-		(prog_void *)&cmd_servo_door_arg1, 
+		(prog_void *)&cmd_servo_door_arg0,
+		(prog_void *)&cmd_servo_door_arg1,
 		NULL,
 	},
 };
@@ -464,9 +468,9 @@ parse_pgm_inst_t cmd_cobroller = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_cobroller,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_cobroller_arg0, 
-		(prog_void *)&cmd_cobroller_arg1, 
-		(prog_void *)&cmd_cobroller_arg2, 
+		(prog_void *)&cmd_cobroller_arg0,
+		(prog_void *)&cmd_cobroller_arg1,
+		(prog_void *)&cmd_cobroller_arg2,
 		NULL,
 	},
 };
@@ -504,8 +508,8 @@ parse_pgm_inst_t cmd_shovel = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_shovel,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_shovel_arg0, 
-		(prog_void *)&cmd_shovel_arg1, 
+		(prog_void *)&cmd_shovel_arg0,
+		(prog_void *)&cmd_shovel_arg1,
 		NULL,
 	},
 };
@@ -541,8 +545,8 @@ parse_pgm_inst_t cmd_servo_carry = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_servo_carry,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_servo_carry_arg0, 
-		(prog_void *)&cmd_servo_carry_arg1, 
+		(prog_void *)&cmd_servo_carry_arg0,
+		(prog_void *)&cmd_servo_carry_arg1,
 		NULL,
 	},
 };
@@ -597,9 +601,9 @@ parse_pgm_inst_t cmd_spickle = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_spickle,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_spickle_arg0, 
-		(prog_void *)&cmd_spickle_arg1, 
-		(prog_void *)&cmd_spickle_arg2, 
+		(prog_void *)&cmd_spickle_arg0,
+		(prog_void *)&cmd_spickle_arg1,
+		(prog_void *)&cmd_spickle_arg2,
 		NULL,
 	},
 };
@@ -680,8 +684,8 @@ parse_pgm_inst_t cmd_spickle_params_show = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_spickle_params_show,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_spickle_params_arg0, 
-		(prog_void *)&cmd_spickle_params_arg1_show, 
+		(prog_void *)&cmd_spickle_params_arg0,
+		(prog_void *)&cmd_spickle_params_arg1_show,
 		NULL,
 	},
 };
@@ -702,7 +706,7 @@ static void cmd_spickle_params2_parsed(void *parsed_result,
 				      __attribute__((unused)) void *data)
 {
 	struct cmd_spickle_params2_result * res = parsed_result;
-	
+
 	if (!strcmp_P(res->arg1, PSTR("coef"))) {
 		spickle_set_coefs(res->arg2, res->arg3);
 	}
@@ -728,10 +732,10 @@ parse_pgm_inst_t cmd_spickle_params2 = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_spickle_params2,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_spickle_params2_arg0, 
-		(prog_void *)&cmd_spickle_params2_arg1, 
-		(prog_void *)&cmd_spickle_params2_arg2, 
-		(prog_void *)&cmd_spickle_params2_arg3, 
+		(prog_void *)&cmd_spickle_params2_arg0,
+		(prog_void *)&cmd_spickle_params2_arg1,
+		(prog_void *)&cmd_spickle_params2_arg2,
+		(prog_void *)&cmd_spickle_params2_arg3,
 		NULL,
 	},
 };
@@ -746,8 +750,8 @@ parse_pgm_inst_t cmd_spickle_params2_show = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_spickle_params2_show,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_spickle_params2_arg0, 
-		(prog_void *)&cmd_spickle_params2_arg1_show, 
+		(prog_void *)&cmd_spickle_params2_arg0,
+		(prog_void *)&cmd_spickle_params2_arg1_show,
 		NULL,
 	},
 };
@@ -776,7 +780,7 @@ parse_pgm_inst_t cmd_test = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_test,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_test_arg0, 
+		(prog_void *)&cmd_test_arg0,
 		NULL,
 	},
 };

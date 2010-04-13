@@ -58,6 +58,7 @@
 
 static struct vt100 local_vt100;
 static volatile uint8_t state_mode;
+static volatile uint8_t state_status;
 static uint8_t cob_count;
 
 /* short aliases */
@@ -71,13 +72,6 @@ static uint8_t cob_count;
 #define INIT(mode)       (!!((mode) & I2C_COBBOARD_MODE_INIT))
 
 uint8_t state_debug = 0;
-
-#if 0
-static void state_dump_sensors(void)
-{
-	STMCH_DEBUG("TODO\n");
-}
-#endif
 
 uint8_t state_get_cob_count(void)
 {
@@ -125,10 +119,29 @@ static uint8_t state_no_cob_inside(void)
 		!sensor_get(S_COB_INSIDE_R);
 }
 
+/* pack/deploy spickles depending on mode */
+static void spickle_prepare(uint8_t side)
+{
+	if (cob_count >= 5)
+		spickle_pack(side);
+	else if (DEPLOY(side, state_mode) && !HARVEST(side, state_mode))
+		spickle_mid(side);
+	else if (DEPLOY(side, state_mode) && HARVEST(side, state_mode))
+		spickle_deploy(side);
+	else
+		spickle_pack(side);
+}
+
 /* set a new state, return 0 on success */
 int8_t state_set_mode(uint8_t mode)
 {
 	state_mode = mode;
+
+	/* preempt current action if not busy */
+	if (state_status != I2C_COBBOARD_STATUS_LBUSY)
+		spickle_prepare(I2C_LEFT_SIDE);
+	if (state_status != I2C_COBBOARD_STATUS_RBUSY)
+		spickle_prepare(I2C_RIGHT_SIDE);
 
 /* 	STMCH_DEBUG("%s(): l_deploy=%d l_harvest=%d " */
 /* 		    "r_deploy=%d r_harvest=%d eject=%d", */
@@ -159,9 +172,19 @@ uint8_t state_get_mode(void)
 	return state_mode;
 }
 
+uint8_t state_get_status(void)
+{
+	return state_status;
+}
+
 /* harvest cobs from area */
 static void state_do_harvest(uint8_t side)
 {
+	if (side == I2C_LEFT_SIDE)
+		state_status = I2C_COBBOARD_STATUS_LBUSY;
+	else
+		state_status = I2C_COBBOARD_STATUS_RBUSY;
+
 	/* if there is no cob, return */
 	if (state_cob_present(side))
 		return;
@@ -178,13 +201,38 @@ static void state_do_harvest(uint8_t side)
 	time_wait_ms(250);
 	cobroller_on(side);
 
+	/* check that cob is correctly in place */
 	if (WAIT_COND_OR_TIMEOUT(state_cob_inside(), 750) == 0) {
 		if (state_no_cob_inside()) {
-			printf_P(PSTR("NO COB\r\n"));
+			STMCH_DEBUG("no cob");
 			return;
 		}
-		printf_P(PSTR("BAD COB - press a key\r\n"));
-		while(!cmdline_keypressed());
+		STMCH_DEBUG("bad cob state");
+
+		/* while cob is not correctly placed try to extract
+		 * it as much as we can */
+		while (state_cob_inside() == 0 &&
+		       state_no_cob_inside() == 0) {
+			uint8_t cpt = 0;
+			if (cpt == 0)
+				cobroller_reverse(side);
+			else if (cpt == 1)
+				cobroller_off(side);
+			else if (cpt == 2)
+				cobroller_on(side);
+			cpt ++;
+			cpt %= 3;
+			shovel_mid();
+			time_wait_ms(250);
+			shovel_down();
+			time_wait_ms(250);
+		}
+
+		STMCH_DEBUG("cob removed");
+		if (state_no_cob_inside()) {
+			STMCH_DEBUG("no cob");
+			return;
+		}
 	}
 
 	/* cob is inside, switch off roller */
@@ -208,10 +256,11 @@ static void state_do_harvest(uint8_t side)
 	/* store it */
 	shovel_up();
 
-	if (WAIT_COND_OR_TIMEOUT(shovel_is_up(), 400) == 0) {
-		BRAKE_ON();
-		printf_P(PSTR("BLOCKED\r\n"));
-		while(!cmdline_keypressed());
+	while (WAIT_COND_OR_TIMEOUT(shovel_is_up(), 400) == 0) {
+		STMCH_DEBUG("shovel blocked");
+		shovel_down();
+		time_wait_ms(250);
+		shovel_up();
 	}
 
 	state_debug_wait_key_pressed();
@@ -224,10 +273,11 @@ static void state_do_harvest(uint8_t side)
 
 	shovel_down();
 
-	if (WAIT_COND_OR_TIMEOUT(shovel_is_down(), 400) == 0) {
-		BRAKE_ON();
-		printf_P(PSTR("BLOCKED\r\n"));
-		while(!cmdline_keypressed());
+	while (WAIT_COND_OR_TIMEOUT(shovel_is_down(), 400) == 0) {
+		STMCH_DEBUG("shovel blocked");
+		shovel_up();
+		time_wait_ms(250);
+		shovel_down();
 	}
 
 	STMCH_DEBUG("end");
@@ -236,6 +286,7 @@ static void state_do_harvest(uint8_t side)
 /* eject cobs */
 static void state_do_eject(void)
 {
+	state_status = I2C_COBBOARD_STATUS_EJECT;
 	cob_count = 0;
 	shovel_mid();
 	servo_carry_open();
@@ -251,33 +302,19 @@ void state_machine(void)
 {
 	while (state_want_exit() == 0) {
 
+		state_status = I2C_COBBOARD_STATUS_READY;
+
 		/* init */
 		if (INIT(state_mode)) {
 			state_mode &= (~I2C_COBBOARD_MODE_INIT);
 			state_init();
 		}
 
+		/* pack/deply spickles, enable/disable roller */
 		cobroller_off(I2C_LEFT_SIDE);
 		cobroller_off(I2C_RIGHT_SIDE);
-
-		/* pack/deply spickles, enable/disable roller */
-		if (cob_count >= 5)
-			spickle_pack(I2C_LEFT_SIDE);
-		else if (L_DEPLOY(state_mode) && !L_HARVEST(state_mode))
-			spickle_mid(I2C_LEFT_SIDE);
-		else if (L_DEPLOY(state_mode) && L_HARVEST(state_mode))
-			spickle_deploy(I2C_LEFT_SIDE);
-		else
-			spickle_pack(I2C_LEFT_SIDE);
-
-		if (cob_count >= 5)
-			spickle_pack(I2C_RIGHT_SIDE);
-		else if (R_DEPLOY(state_mode) && !R_HARVEST(state_mode))
-			spickle_mid(I2C_RIGHT_SIDE);
-		else if (R_DEPLOY(state_mode) && R_HARVEST(state_mode))
-			spickle_deploy(I2C_RIGHT_SIDE);
-		else
-			spickle_pack(I2C_RIGHT_SIDE);
+		spickle_prepare(I2C_LEFT_SIDE);
+		spickle_prepare(I2C_RIGHT_SIDE);
 
 		/* harvest */
 		if (cob_count < 5) {
@@ -305,4 +342,5 @@ void state_init(void)
 	spickle_pack(I2C_RIGHT_SIDE);
 	state_mode = 0;
 	cob_count = 0;
+	state_status = I2C_COBBOARD_STATUS_READY;
 }

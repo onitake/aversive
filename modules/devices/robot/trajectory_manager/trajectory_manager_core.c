@@ -643,13 +643,11 @@ static void trajectory_manager_line_event(struct trajectory *traj)
 	}
 
 	/* position consign is infinite */
-	d_consign = (int32_t)(v2pol_target.r * (traj->position->phys.distance_imp_per_mm));
+	d_consign = pos_mm2imp(traj, v2pol_target.r);
 	d_consign += rs_get_distance(traj->robot);
 
-	/* angle consign */
-	a_consign = (int32_t)(v2pol_target.theta *
-			      (traj->position->phys.distance_imp_per_mm) *
-			      (traj->position->phys.track_mm) / 2.2);
+	/* angle consign (1.1 to avoid oscillations) */
+	a_consign = pos_rd2imp(traj, v2pol_target.theta) / 1.1;
 	a_consign += rs_get_angle(traj->robot);
 
 	EVT_DEBUG(E_TRAJECTORY, "target.x=%2.2f target.y=%2.2f "
@@ -849,7 +847,7 @@ void trajectory_line_abs(struct trajectory *traj,
  * - Va_out: the angular speed to configure in quadramp
  * - remain_d_mm_out: remaining distance before start to turn
  */
-static uint8_t calc_clitoid(struct trajectory *traj,
+static int8_t calc_clitoid(struct trajectory *traj,
 			    double x, double y, double a_rad,
 			    double alpha_deg, double beta_deg, double R_mm,
 			    double Vd, double Amax, double d_inter_mm,
@@ -857,12 +855,14 @@ static uint8_t calc_clitoid(struct trajectory *traj,
 {
 	double Vd_mm_s;
 	double Va, Va_rd_s;
-	double t, d_mm, alpha_rad, beta_rad;
+	double t, tau, d_mm, alpha_rad, beta_rad;
 	double remain_d_mm;
 	double Aa, Aa_rd_s2;
 	line_t line1, line2;
-	point_t robot, intersect, pt2, center, proj;
+	line_t line1_int, line2_int;
+	point_t robot, intersect, pt2, center, proj, M;
 	vect_t v;
+	double xm, ym, L, A;
 
 	/* param check */
 	if (fabs(alpha_deg) <= fabs(beta_deg)) {
@@ -896,11 +896,6 @@ static uint8_t calc_clitoid(struct trajectory *traj,
 		return -1;
 	}
 
-	/* the robot position */
-/* 	x = position_get_x_double(&mainboard.pos); */
-/* 	y = position_get_y_double(&mainboard.pos); */
-/* 	a_rad = position_get_a_rad_double(&mainboard.pos); */
-
 	/* define line1 and line2 */
 	robot.x = x;
 	robot.y = y;
@@ -913,46 +908,74 @@ static uint8_t calc_clitoid(struct trajectory *traj,
 	DEBUG(E_TRAJECTORY, "intersect=(%2.2f, %2.2f)",
 	      intersect.x, intersect.y);
 
-	/* the center of the circle is at (d_mm, d_mm) when we have to
-	 * start the clothoid */
-	d_mm = R_mm * sqrt(fabs(alpha_rad - beta_rad)) *
-		sqrt(M_PI) / 2.;
+	/* L and A are the parameters of the clothoid, xm and ym are
+	 * the relative coords (starting from the beginning of
+	 * clothoid) of the crossing point between the clothoid and
+	 * the circle. */
+	L = Vd_mm_s * t;
+	A = R_mm * sqrt(fabs(alpha_rad - beta_rad));
+	xm =
+		L
+		- (pow(L, 5) / (40. * pow(A, 4)))
+		+ (pow(L, 9) / (3456. * pow(A, 8)))
+		- (pow(L, 13) / (599040. * pow(A, 12)));
+	ym =
+		(pow(L, 3) / (6. * pow(A, 2)))
+		- (pow(L, 7) / (336. * pow(A, 6)))
+		+ (pow(L, 11) / (42240. * pow(A, 10)))
+		- (pow(L, 15) / (9676800. * pow(A, 14)));
+	DEBUG(E_TRAJECTORY, "relative xm,ym = (%2.2f, %2.2f)",
+	      xm, ym);
+
+	/* the center of the circle is at d_mm when we have to start
+	 * the clothoid */
+	tau = (alpha_rad - beta_rad) / 2.;
+	d_mm = ym + (R_mm * cos(tau));
 	DEBUG(E_TRAJECTORY, "d_mm=%2.2f", d_mm);
 
 	/* translate line1 */
+	memcpy(&line1_int, &line1, sizeof(line1_int));
+	memcpy(&line2_int, &line2, sizeof(line2_int));
 	v.x = intersect.x - robot.x;
 	v.y = intersect.y - robot.y;
-	if (a_rad > 0)
+	if (alpha_rad > 0)
 		vect_rot_trigo(&v);
 	else
 		vect_rot_retro(&v);
 	vect_resize(&v, d_mm);
-	line_translate(&line1, &v);
+	line_translate(&line1_int, &v);
+	DEBUG(E_TRAJECTORY, "translate line1 by %2.2f,%2.2f", v.x, v.y);
 
-	/* translate line2 */
+	/* translate line2_int */
 	v.x = intersect.x - pt2.x;
 	v.y = intersect.y - pt2.y;
-	if (a_rad > 0)
+	if (alpha_rad < 0)
 		vect_rot_trigo(&v);
 	else
 		vect_rot_retro(&v);
 	vect_resize(&v, d_mm);
-	line_translate(&line2, &v);
+	line_translate(&line2_int, &v);
+	DEBUG(E_TRAJECTORY, "translate line2 by %2.2f,%2.2f", v.x, v.y);
 
 	/* find the center of the circle, at the intersection of the
 	 * new translated lines */
-	if (intersect_line(&line1, &line2, &center) != 1) {
+	if (intersect_line(&line1_int, &line2_int, &center) != 1) {
 		DEBUG(E_TRAJECTORY, "cannot find circle center");
 		return -1;
 	}
 	DEBUG(E_TRAJECTORY, "center=(%2.2f,%2.2f)", center.x, center.y);
 
-	/* project center of circle on line1 */
-	proj_pt_line(&center, &line1, &proj);
-	DEBUG(E_TRAJECTORY, "proj=(%2.2f,%2.2f)", proj.x, proj.y);
+	/* M is the same point than xm, ym but in absolute coords */
+	M.x = center.x + cos(a_rad - M_PI/2 + tau) * R_mm;
+	M.y = center.y + sin(a_rad - M_PI/2 + tau) * R_mm;
+	DEBUG(E_TRAJECTORY, "absolute M = (%2.2f, %2.2f)", M.x, M.y);
+
+	/* project M on line 1 */
+	proj_pt_line(&M, &line1, &proj);
+	DEBUG(E_TRAJECTORY, "proj M = (%2.2f, %2.2f)", proj.x, proj.y);
 
 	/* process remaining distance before start turning */
-	remain_d_mm = d_inter_mm - (pt_norm(&proj, &intersect) + d_mm);
+	remain_d_mm = d_inter_mm - (pt_norm(&proj, &intersect) + xm);
 	DEBUG(E_TRAJECTORY, "remain_d=%2.2f", remain_d_mm);
 	if (remain_d_mm < 0) {
 		DEBUG(E_TRAJECTORY, "too late, cannot turn");
@@ -966,6 +989,7 @@ static uint8_t calc_clitoid(struct trajectory *traj,
 	return 0;
 }
 
+/* after the line, start the clothoid */
 static void start_clitoid(struct trajectory *traj)
 {
 	double Aa = traj->target.line.Aa;
@@ -975,12 +999,14 @@ static void start_clitoid(struct trajectory *traj)
 	double d;
 
 	delete_event(traj);
+	DEBUG(E_TRAJECTORY, "%s() Va=%2.2f Aa=%2.2f",
+	      __FUNCTION__, Va, Aa);
 	traj->state = RUNNING_CLITOID_CURVE;
-	set_quadramp_acc(traj, Aa, Aa);
-	set_quadramp_speed(traj, Va, Va);
-	d = R_mm * a_rad;
-	d *= 2.; /* margin to avoid deceleration */
+	d = fabs(R_mm * a_rad);
+	d *= 3.; /* margin to avoid deceleration */
 	trajectory_d_a_rel(traj, d, DEG(a_rad));
+	set_quadramp_acc(traj, traj->d_acc, Aa);
+	set_quadramp_speed(traj, traj->d_speed, Va);
 }
 
 
@@ -1010,11 +1036,12 @@ static void start_clitoid(struct trajectory *traj)
 int8_t trajectory_clitoid(struct trajectory *traj,
 			  double x, double y, double a, double advance,
 			  double alpha_deg, double beta_deg, double R_mm,
-			  double Vd, double d_inter_mm)
+			  double d_inter_mm)
 {
-	double remain = 0, Aa = 0, Va = 0;
+	double remain = 0, Aa = 0, Va = 0, Vd;
 	double turnx, turny;
 
+	Vd = traj->d_speed;
 	if (calc_clitoid(traj, x, y, a, alpha_deg, beta_deg, R_mm,
 			 Vd, traj->a_acc, d_inter_mm,
 			 &Aa, &Va, &remain) < 0)
@@ -1029,6 +1056,9 @@ int8_t trajectory_clitoid(struct trajectory *traj,
 	traj->target.line.R = R_mm;
 	traj->target.line.turn_pt.x = turnx;
 	traj->target.line.turn_pt.y = turny;
+	DEBUG(E_TRAJECTORY, "%s() turn_pt=%2.2f,%2.2f",
+	      __FUNCTION__, turnx, turny);
+
 	__trajectory_line_abs(traj, x, y, turnx, turny,
 			      advance);
 	traj->state = RUNNING_CLITOID_LINE;

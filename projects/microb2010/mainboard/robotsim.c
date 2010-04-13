@@ -48,6 +48,7 @@
 #include <parse.h>
 #include <rdline.h>
 
+#include "../common/i2c_commands.h"
 #include "strat.h"
 #include "strat_utils.h"
 #include "main.h"
@@ -67,13 +68,88 @@ void robotsim_dump(void)
 	char buf[BUFSIZ];
 	int len;
 
-	len = snprintf(buf, sizeof(buf), "%d %d %d\n",
+	len = snprintf(buf, sizeof(buf), "pos=%d,%d,%d\n",
 		      position_get_x_s16(&mainboard.pos),
 		      position_get_y_s16(&mainboard.pos),
 		      position_get_a_deg_s16(&mainboard.pos));
 	hostsim_lock();
 	write(fdw, buf, len);
 	hostsim_unlock();
+}
+
+static int8_t
+robotsim_i2c_ballboard_set_mode(struct i2c_cmd_ballboard_set_mode *cmd)
+{
+	char buf[BUFSIZ];
+	int len;
+
+	ballboard.mode = cmd->mode;
+	len = snprintf(buf, sizeof(buf), "ballboard=%d\n", cmd->mode);
+	hostsim_lock();
+	write(fdw, buf, len);
+	hostsim_unlock();
+	return 0;
+}
+
+static int8_t
+robotsim_i2c_cobboard_set_mode(struct i2c_cmd_cobboard_set_mode *cmd)
+{
+	char buf[BUFSIZ];
+	int len;
+
+	cobboard.mode = cmd->mode;
+	len = snprintf(buf, sizeof(buf), "cobboard=%d\n", cmd->mode);
+	hostsim_lock();
+	write(fdw, buf, len);
+	hostsim_unlock();
+	return 0;
+}
+
+static int8_t
+robotsim_i2c_ballboard(uint8_t addr, uint8_t *buf, uint8_t size)
+{
+	void *void_cmd = buf;
+
+	switch (buf[0]) {
+	case I2C_CMD_BALLBOARD_SET_MODE:
+		{
+			struct i2c_cmd_ballboard_set_mode *cmd = void_cmd;
+			robotsim_i2c_ballboard_set_mode(cmd);
+			break;
+		}
+
+	default:
+		break;
+	}
+	return 0;
+}
+
+static int8_t
+robotsim_i2c_cobboard(uint8_t addr, uint8_t *buf, uint8_t size)
+{
+	void *void_cmd = buf;
+
+	switch (buf[0]) {
+	case I2C_CMD_COBBOARD_SET_MODE:
+		{
+			struct i2c_cmd_cobboard_set_mode *cmd = void_cmd;
+			robotsim_i2c_cobboard_set_mode(cmd);
+			break;
+		}
+	default:
+		break;
+	}
+	return 0;
+}
+
+int8_t
+robotsim_i2c(uint8_t addr, uint8_t *buf, uint8_t size)
+{
+	if (addr == I2C_BALLBOARD_ADDR)
+		return robotsim_i2c_ballboard(addr, buf, size);
+	else if (addr == I2C_COBBOARD_ADDR)
+		return robotsim_i2c_cobboard(addr, buf, size);
+	return 0;
 }
 
 /* must be called periodically */

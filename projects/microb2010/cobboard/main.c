@@ -115,16 +115,21 @@ void bootloader(void)
 
 void do_led_blink(__attribute__((unused)) void *dummy)
 {
-#if 1 /* simple blink */
-	static uint8_t a=0;
+	static uint8_t a = 0;
 
-	if(a)
-		LED1_ON();
-	else
-		LED1_OFF();
-
-	a = !a;
-#endif
+	if (cobboard.flags & DO_ERRBLOCKING) {
+		if (a & 1)
+			LED1_ON();
+		else
+			LED1_OFF();
+	}
+	else {
+		if (a & 4)
+			LED1_ON();
+		else
+			LED1_OFF();
+	}
+	a++;
 }
 
 static void main_timer_interrupt(void)
@@ -153,7 +158,8 @@ int main(void)
 	memset(&gen, 0, sizeof(gen));
 	memset(&cobboard, 0, sizeof(cobboard));
 	/* cs is enabled after arm_calibrate() */
-	cobboard.flags = DO_ENCODERS | DO_POWER; // DO_BD
+	cobboard.flags = DO_ENCODERS | DO_POWER | DO_BD |
+		DO_ERRBLOCKING;
 
 	/* UART */
 	uart_init();

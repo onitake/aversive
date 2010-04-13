@@ -52,7 +52,7 @@ struct i2c_cmd_hdr {
 struct i2c_cmd_led_control {
 	struct i2c_cmd_hdr hdr;
 	uint8_t led_num:7;
-	uint8_t state:1;	
+	uint8_t state:1;
 };
 
 /****/
@@ -115,9 +115,10 @@ struct i2c_ans_cobboard_status {
 	/* mode type are defined above: I2C_COBBOARD_MODE_xxx */
 	uint8_t mode;
 
-#define I2C_COBBOARD_STATUS_F_READY         0x00
-#define I2C_COBBOARD_STATUS_F_BUSY          0x01
-#define I2C_COBBOARD_STATUS_F_EXCPT         0x02
+#define I2C_COBBOARD_STATUS_READY         0x00
+#define I2C_COBBOARD_STATUS_LBUSY         0x01
+#define I2C_COBBOARD_STATUS_RBUSY         0x02
+#define I2C_COBBOARD_STATUS_EJECT         0x03
 	uint8_t status;
 
 	uint8_t cob_count;

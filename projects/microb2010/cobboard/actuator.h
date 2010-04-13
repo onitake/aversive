@@ -33,6 +33,7 @@ void servo_door_block(void);
 
 void cobroller_on(uint8_t side);
 void cobroller_off(uint8_t side);
+void cobroller_reverse(uint8_t side);
 
 #endif
 

@@ -357,9 +357,7 @@ static const prog_char i2c_log[] = "i2c";
 static const prog_char i2cproto_log[] = "i2cproto";
 static const prog_char sensor_log[] = "sensor";
 static const prog_char block_log[] = "bd";
-static const prog_char beacon_log[] = "beacon";
-static const prog_char scanner_log[] = "scanner";
-static const prog_char imgprocess_log[] = "imgprocess";
+static const prog_char state_log[] = "state";
 
 struct log_name_and_num {
 	const prog_char * name;
@@ -372,9 +370,7 @@ static const struct log_name_and_num log_name_and_num[] = {
 	{ i2cproto_log, E_USER_I2C_PROTO },
 	{ sensor_log, E_USER_SENSOR },
 	{ block_log, E_BLOCKING_DETECTION_MANAGER },
-	{ beacon_log, E_USER_BEACON },
-	{ scanner_log, E_USER_SCANNER },
-	{ imgprocess_log, E_USER_IMGPROCESS },
+	{ state_log, E_USER_ST_MACH },
 };
 
 static uint8_t
@@ -523,7 +519,7 @@ static void cmd_log_type_parsed(void * parsed_result, void * data)
 prog_char str_log_arg1_type[] = "type";
 parse_pgm_token_string_t cmd_log_arg1_type = TOKEN_STRING_INITIALIZER(struct cmd_log_type_result, arg1, str_log_arg1_type);
 /* keep it sync with log_name_and_num above */
-prog_char str_log_arg2_type[] = "uart#i2c#i2cproto#sensor#bd#beacon#scanner#imgprocess";
+prog_char str_log_arg2_type[] = "uart#i2c#i2cproto#sensor#bd#state";
 parse_pgm_token_string_t cmd_log_arg2_type = TOKEN_STRING_INITIALIZER(struct cmd_log_type_result, arg2, str_log_arg2_type);
 prog_char str_log_arg3[] = "on#off";
 parse_pgm_token_string_t cmd_log_arg3 = TOKEN_STRING_INITIALIZER(struct cmd_log_type_result, arg3, str_log_arg3);

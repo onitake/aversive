@@ -168,6 +168,7 @@ struct mainboard {
 #define DO_BD       16
 #define DO_TIMER    32
 #define DO_POWER    64
+#define DO_ERRBLOCKING 128
 	uint8_t flags;                /* misc flags */
 
 	/* control systems */

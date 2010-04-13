@@ -111,3 +111,33 @@ void trajectory_manager_event(void * param);
 /*********** *CIRCLE */
 
 /* XXX TODO */
+
+/*********** CLITOID */
+
+/**
+ * do a superb curve joining line1 to line2 which is composed of:
+ *   - a clothoid starting from line1
+ *   - a circle
+ *   - another clothoid up to line2
+ * this curve is called a clitoid (hehe)
+ *
+ * the function assumes that the initial linear speed is Vd and
+ * angular speed is 0.
+ *
+ * - x,y,a: starting position
+ * - advance: parameter for line following
+ * - alpha: total angle
+ * - beta: circular part of angle (lower than alpha)
+ * - R: the radius of the circle (must be != 0)
+ * - Vd: linear speed to use (in imp per cs period)
+ * - Amax: maximum angular acceleration
+ * - d_inter: distance in mm until the intersection of the
+ *            2 lines
+ *
+ * return 0 if trajectory can be loaded, then it is processed in
+ * background.
+ */
+int8_t trajectory_clitoid(struct trajectory *traj,
+			  double x, double y, double a, double advance,
+			  double alpha_deg, double beta_deg, double R_mm,
+			  double d_inter_mm);

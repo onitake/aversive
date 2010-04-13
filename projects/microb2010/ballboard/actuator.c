@@ -42,11 +42,11 @@
 
 #include "main.h"
 
-#define ROLLER_ON      800
+#define ROLLER_ON      -1200
 #define ROLLER_OFF     0
-#define ROLLER_REVERSE -800
+#define ROLLER_REVERSE 1200
 
-#define FORKROT_DEPLOYED 1000
+#define FORKROT_DEPLOYED -50000
 #define FORKROT_PACKED   0
 
 #define FORKTRANS_LEFT   0

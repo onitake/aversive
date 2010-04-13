@@ -74,6 +74,10 @@ extern parse_pgm_inst_t cmd_cobboard_show;
 extern parse_pgm_inst_t cmd_cobboard_setmode1;
 extern parse_pgm_inst_t cmd_cobboard_setmode2;
 extern parse_pgm_inst_t cmd_cobboard_setmode3;
+extern parse_pgm_inst_t cmd_ballboard_show;
+extern parse_pgm_inst_t cmd_ballboard_setmode1;
+extern parse_pgm_inst_t cmd_ballboard_setmode2;
+extern parse_pgm_inst_t cmd_ballboard_setmode3;
 extern parse_pgm_inst_t cmd_beacon_start;
 extern parse_pgm_inst_t cmd_servo_balls;
 extern parse_pgm_inst_t cmd_clitoid;
@@ -82,6 +86,8 @@ extern parse_pgm_inst_t cmd_test;
 /* commands_traj.c */
 extern parse_pgm_inst_t cmd_traj_speed;
 extern parse_pgm_inst_t cmd_traj_speed_show;
+extern parse_pgm_inst_t cmd_traj_acc;
+extern parse_pgm_inst_t cmd_traj_acc_show;
 extern parse_pgm_inst_t cmd_trajectory;
 extern parse_pgm_inst_t cmd_trajectory_show;
 extern parse_pgm_inst_t cmd_circle_coef;
@@ -159,6 +165,10 @@ parse_pgm_ctx_t main_ctx[] = {
 	(parse_pgm_inst_t *)&cmd_cobboard_setmode1,
 	(parse_pgm_inst_t *)&cmd_cobboard_setmode2,
 	(parse_pgm_inst_t *)&cmd_cobboard_setmode3,
+	(parse_pgm_inst_t *)&cmd_ballboard_show,
+	(parse_pgm_inst_t *)&cmd_ballboard_setmode1,
+	(parse_pgm_inst_t *)&cmd_ballboard_setmode2,
+	(parse_pgm_inst_t *)&cmd_ballboard_setmode3,
 	(parse_pgm_inst_t *)&cmd_servo_balls,
 	(parse_pgm_inst_t *)&cmd_clitoid,
 	(parse_pgm_inst_t *)&cmd_test,
@@ -166,6 +176,8 @@ parse_pgm_ctx_t main_ctx[] = {
 	/* commands_traj.c */
 	(parse_pgm_inst_t *)&cmd_traj_speed,
 	(parse_pgm_inst_t *)&cmd_traj_speed_show,
+	(parse_pgm_inst_t *)&cmd_traj_acc,
+	(parse_pgm_inst_t *)&cmd_traj_acc_show,
 	(parse_pgm_inst_t *)&cmd_trajectory,
 	(parse_pgm_inst_t *)&cmd_trajectory_show,
 	(parse_pgm_inst_t *)&cmd_circle_coef,

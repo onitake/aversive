@@ -1,6 +1,6 @@
 /*
  *  Copyright Droids Corporation (2009)
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -17,7 +17,7 @@
  *
  *  Revision : $Id: commands_traj.c,v 1.8 2009-11-08 17:24:33 zer0 Exp $
  *
- *  Olivier MATZ <zer0@droids-corp.org> 
+ *  Olivier MATZ <zer0@droids-corp.org>
  */
 
 #include <stdio.h>
@@ -69,14 +69,14 @@
 struct cmd_traj_speed_result {
 	fixed_string_t arg0;
 	fixed_string_t arg1;
-	uint16_t s;
+	float s;
 };
 
 /* function called when cmd_traj_speed is parsed successfully */
 static void cmd_traj_speed_parsed(void *parsed_result, void *data)
 {
 	struct cmd_traj_speed_result * res = parsed_result;
-	
+
 	if (!strcmp_P(res->arg1, PSTR("angle"))) {
 		trajectory_set_speed(&mainboard.traj, mainboard.traj.d_speed, res->s);
 	}
@@ -85,7 +85,7 @@ static void cmd_traj_speed_parsed(void *parsed_result, void *data)
 	}
 	/* else it is a "show" */
 
-	printf_P(PSTR("angle %u, distance %u\r\n"), 
+	printf_P(PSTR("angle %2.2f, distance %2.2f\r\n"),
 		 mainboard.traj.a_speed,
 		 mainboard.traj.d_speed);
 }
@@ -94,7 +94,7 @@ prog_char str_traj_speed_arg0[] = "traj_speed";
 parse_pgm_token_string_t cmd_traj_speed_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_traj_speed_result, arg0, str_traj_speed_arg0);
 prog_char str_traj_speed_arg1[] = "angle#distance";
 parse_pgm_token_string_t cmd_traj_speed_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_traj_speed_result, arg1, str_traj_speed_arg1);
-parse_pgm_token_num_t cmd_traj_speed_s = TOKEN_NUM_INITIALIZER(struct cmd_traj_speed_result, s, UINT16);
+parse_pgm_token_num_t cmd_traj_speed_s = TOKEN_NUM_INITIALIZER(struct cmd_traj_speed_result, s, FLOAT);
 
 prog_char help_traj_speed[] = "Set traj_speed values for trajectory manager";
 parse_pgm_inst_t cmd_traj_speed = {
@@ -102,9 +102,9 @@ parse_pgm_inst_t cmd_traj_speed = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_traj_speed,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_traj_speed_arg0, 
-		(prog_void *)&cmd_traj_speed_arg1, 
-		(prog_void *)&cmd_traj_speed_s, 
+		(prog_void *)&cmd_traj_speed_arg0,
+		(prog_void *)&cmd_traj_speed_arg1,
+		(prog_void *)&cmd_traj_speed_s,
 		NULL,
 	},
 };
@@ -120,8 +120,72 @@ parse_pgm_inst_t cmd_traj_speed_show = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_traj_speed_show,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_traj_speed_arg0, 
+		(prog_void *)&cmd_traj_speed_arg0,
 		(prog_void *)&cmd_traj_speed_show_arg,
+		NULL,
+	},
+};
+
+/**********************************************************/
+/* Traj_Accs for trajectory_manager */
+
+/* this structure is filled when cmd_traj_acc is parsed successfully */
+struct cmd_traj_acc_result {
+	fixed_string_t arg0;
+	fixed_string_t arg1;
+	float s;
+};
+
+/* function called when cmd_traj_acc is parsed successfully */
+static void cmd_traj_acc_parsed(void *parsed_result, void *data)
+{
+	struct cmd_traj_acc_result * res = parsed_result;
+
+	if (!strcmp_P(res->arg1, PSTR("angle"))) {
+		trajectory_set_acc(&mainboard.traj, mainboard.traj.d_acc, res->s);
+	}
+	else if (!strcmp_P(res->arg1, PSTR("distance"))) {
+		trajectory_set_acc(&mainboard.traj, res->s, mainboard.traj.a_acc);
+	}
+	/* else it is a "show" */
+
+	printf_P(PSTR("angle %2.2f, distance %2.2f\r\n"),
+		 mainboard.traj.a_acc,
+		 mainboard.traj.d_acc);
+}
+
+prog_char str_traj_acc_arg0[] = "traj_acc";
+parse_pgm_token_string_t cmd_traj_acc_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_traj_acc_result, arg0, str_traj_acc_arg0);
+prog_char str_traj_acc_arg1[] = "angle#distance";
+parse_pgm_token_string_t cmd_traj_acc_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_traj_acc_result, arg1, str_traj_acc_arg1);
+parse_pgm_token_num_t cmd_traj_acc_s = TOKEN_NUM_INITIALIZER(struct cmd_traj_acc_result, s, FLOAT);
+
+prog_char help_traj_acc[] = "Set traj_acc values for trajectory manager";
+parse_pgm_inst_t cmd_traj_acc = {
+	.f = cmd_traj_acc_parsed,  /* function to call */
+	.data = NULL,      /* 2nd arg of func */
+	.help_str = help_traj_acc,
+	.tokens = {        /* token list, NULL terminated */
+		(prog_void *)&cmd_traj_acc_arg0,
+		(prog_void *)&cmd_traj_acc_arg1,
+		(prog_void *)&cmd_traj_acc_s,
+		NULL,
+	},
+};
+
+/* show */
+
+prog_char str_traj_acc_show_arg[] = "show";
+parse_pgm_token_string_t cmd_traj_acc_show_arg = TOKEN_STRING_INITIALIZER(struct cmd_traj_acc_result, arg1, str_traj_acc_show_arg);
+
+prog_char help_traj_acc_show[] = "Show traj_acc values for trajectory manager";
+parse_pgm_inst_t cmd_traj_acc_show = {
+	.f = cmd_traj_acc_parsed,  /* function to call */
+	.data = NULL,      /* 2nd arg of func */
+	.help_str = help_traj_acc_show,
+	.tokens = {        /* token list, NULL terminated */
+		(prog_void *)&cmd_traj_acc_arg0,
+		(prog_void *)&cmd_traj_acc_show_arg,
 		NULL,
 	},
 };
@@ -179,7 +243,7 @@ parse_pgm_inst_t cmd_circle_coef_show = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_circle_coef_show,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_circle_coef_arg0, 
+		(prog_void *)&cmd_circle_coef_arg0,
 		(prog_void *)&cmd_circle_coef_show_arg,
 		NULL,
 	},
@@ -202,7 +266,7 @@ struct cmd_trajectory_result {
 static void cmd_trajectory_parsed(void * parsed_result, void * data)
 {
 	struct cmd_trajectory_result * res = parsed_result;
-	
+
 	if (!strcmp_P(res->arg1, PSTR("set"))) {
 		trajectory_set_windows(&mainboard.traj, res->d_win,
 				       res->a_win, res->a_start);
@@ -226,11 +290,11 @@ parse_pgm_inst_t cmd_trajectory = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_trajectory,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_trajectory_arg0, 
-		(prog_void *)&cmd_trajectory_arg1, 
-		(prog_void *)&cmd_trajectory_d, 
-		(prog_void *)&cmd_trajectory_a, 
-		(prog_void *)&cmd_trajectory_as, 
+		(prog_void *)&cmd_trajectory_arg0,
+		(prog_void *)&cmd_trajectory_arg1,
+		(prog_void *)&cmd_trajectory_d,
+		(prog_void *)&cmd_trajectory_a,
+		(prog_void *)&cmd_trajectory_as,
 		NULL,
 	},
 };
@@ -246,7 +310,7 @@ parse_pgm_inst_t cmd_trajectory_show = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_trajectory_show,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_trajectory_arg0, 
+		(prog_void *)&cmd_trajectory_arg0,
 		(prog_void *)&cmd_trajectory_show_arg,
 		NULL,
 	},
@@ -272,9 +336,9 @@ static void cmd_rs_gains_parsed(void * parsed_result, void * data)
 	struct cmd_rs_gains_result * res = parsed_result;
 
 	if (!strcmp_P(res->arg1, PSTR("set"))) {
-		rs_set_left_ext_encoder(&mainboard.rs, encoders_spi_get_value, 
+		rs_set_left_ext_encoder(&mainboard.rs, encoders_spi_get_value,
 					LEFT_ENCODER, res->left); // en augmentant on tourne à gauche
-		rs_set_right_ext_encoder(&mainboard.rs, encoders_spi_get_value, 
+		rs_set_right_ext_encoder(&mainboard.rs, encoders_spi_get_value,
 					 RIGHT_ENCODER, res->right); //en augmentant on tourne à droite
 	}
 	printf_P(PSTR("rs_gains set %2.2f %2.2f\r\n"),
@@ -295,10 +359,10 @@ parse_pgm_inst_t cmd_rs_gains = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_rs_gains,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_rs_gains_arg0, 
-		(prog_void *)&cmd_rs_gains_arg1, 
-		(prog_void *)&cmd_rs_gains_l, 
-		(prog_void *)&cmd_rs_gains_r, 
+		(prog_void *)&cmd_rs_gains_arg0,
+		(prog_void *)&cmd_rs_gains_arg1,
+		(prog_void *)&cmd_rs_gains_l,
+		(prog_void *)&cmd_rs_gains_r,
 		NULL,
 	},
 };
@@ -314,7 +378,7 @@ parse_pgm_inst_t cmd_rs_gains_show = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_rs_gains_show,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_rs_gains_arg0, 
+		(prog_void *)&cmd_rs_gains_arg0,
 		(prog_void *)&cmd_rs_gains_show_arg,
 		NULL,
 	},
@@ -353,9 +417,9 @@ parse_pgm_inst_t cmd_track = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_track,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_track_arg0, 
-		(prog_void *)&cmd_track_arg1, 
-		(prog_void *)&cmd_track_val, 
+		(prog_void *)&cmd_track_arg0,
+		(prog_void *)&cmd_track_arg1,
+		(prog_void *)&cmd_track_val,
 		NULL,
 	},
 };
@@ -371,7 +435,7 @@ parse_pgm_inst_t cmd_track_show = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_track_show,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_track_arg0, 
+		(prog_void *)&cmd_track_arg0,
 		(prog_void *)&cmd_track_show_arg,
 		NULL,
 	},
@@ -400,7 +464,7 @@ static void cmd_pt_list_parsed(void * parsed_result, void * data)
 {
 	struct cmd_pt_list_result * res = parsed_result;
 	uint8_t i, why=0;
-	
+
 	if (!strcmp_P(res->arg1, PSTR("append"))) {
 		res->arg2 = pt_list_len;
 	}
@@ -419,7 +483,7 @@ static void cmd_pt_list_parsed(void * parsed_result, void * data)
 			printf_P(PSTR("List is too large\r\n"));
 			return;
 		}
-		memmove(&pt_list[res->arg2+1], &pt_list[res->arg2], 
+		memmove(&pt_list[res->arg2+1], &pt_list[res->arg2],
 		       PT_LIST_SIZE-1-res->arg2);
 		pt_list[res->arg2].x = res->arg3;
 		pt_list[res->arg2].y = res->arg4;
@@ -434,14 +498,14 @@ static void cmd_pt_list_parsed(void * parsed_result, void * data)
 			printf_P(PSTR("Index too large\r\n"));
 			return;
 		}
-		memmove(&pt_list[res->arg2], &pt_list[res->arg2+1], 
+		memmove(&pt_list[res->arg2], &pt_list[res->arg2+1],
 		       (PT_LIST_SIZE-1-res->arg2)*sizeof(struct xy_point));
 		pt_list_len--;
 	}
 	else if (!strcmp_P(res->arg1, PSTR("reset"))) {
 		pt_list_len = 0;
 	}
-	
+
 	/* else it is a "show" or a "start" */
 	if (pt_list_len == 0) {
 		printf_P(PSTR("List empty\r\n"));
@@ -493,11 +557,11 @@ parse_pgm_inst_t cmd_pt_list = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_pt_list,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_pt_list_arg0, 
-		(prog_void *)&cmd_pt_list_arg1, 
-		(prog_void *)&cmd_pt_list_arg2, 
-		(prog_void *)&cmd_pt_list_arg3, 
-		(prog_void *)&cmd_pt_list_arg4, 
+		(prog_void *)&cmd_pt_list_arg0,
+		(prog_void *)&cmd_pt_list_arg1,
+		(prog_void *)&cmd_pt_list_arg2,
+		(prog_void *)&cmd_pt_list_arg3,
+		(prog_void *)&cmd_pt_list_arg4,
 		NULL,
 	},
 };
@@ -513,10 +577,10 @@ parse_pgm_inst_t cmd_pt_list_append = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_pt_list_append,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_pt_list_arg0, 
-		(prog_void *)&cmd_pt_list_arg1_append, 
-		(prog_void *)&cmd_pt_list_arg3, 
-		(prog_void *)&cmd_pt_list_arg4, 
+		(prog_void *)&cmd_pt_list_arg0,
+		(prog_void *)&cmd_pt_list_arg1_append,
+		(prog_void *)&cmd_pt_list_arg3,
+		(prog_void *)&cmd_pt_list_arg4,
 		NULL,
 	},
 };
@@ -532,8 +596,8 @@ parse_pgm_inst_t cmd_pt_list_del = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_pt_list_del,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_pt_list_arg0, 
-		(prog_void *)&cmd_pt_list_del_arg, 
+		(prog_void *)&cmd_pt_list_arg0,
+		(prog_void *)&cmd_pt_list_del_arg,
 		(prog_void *)&cmd_pt_list_arg2,
 		NULL,
 	},
@@ -549,7 +613,7 @@ parse_pgm_inst_t cmd_pt_list_show = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_pt_list_show,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_pt_list_arg0, 
+		(prog_void *)&cmd_pt_list_arg0,
 		(prog_void *)&cmd_pt_list_show_arg,
 		NULL,
 	},
@@ -654,9 +718,9 @@ parse_pgm_inst_t cmd_goto1 = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_goto1,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_goto_arg0, 
-		(prog_void *)&cmd_goto_arg1_a, 
-		(prog_void *)&cmd_goto_arg2, 
+		(prog_void *)&cmd_goto_arg0,
+		(prog_void *)&cmd_goto_arg1_a,
+		(prog_void *)&cmd_goto_arg2,
 		NULL,
 	},
 };
@@ -672,10 +736,10 @@ parse_pgm_inst_t cmd_goto2 = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_goto2,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_goto_arg0, 
-		(prog_void *)&cmd_goto_arg1_b, 
+		(prog_void *)&cmd_goto_arg0,
+		(prog_void *)&cmd_goto_arg1_b,
 		(prog_void *)&cmd_goto_arg2,
-		(prog_void *)&cmd_goto_arg3, 
+		(prog_void *)&cmd_goto_arg3,
 		NULL,
 	},
 };
@@ -780,7 +844,7 @@ static void cmd_position_parsed(void * parsed_result, void * data)
 	}
 
 	/* else it's just a "show" */
-	printf_P(PSTR("x=%.2f y=%.2f a=%.2f\r\n"), 
+	printf_P(PSTR("x=%.2f y=%.2f a=%.2f\r\n"),
 		 position_get_x_double(&mainboard.pos),
 		 position_get_y_double(&mainboard.pos),
 		 DEG(position_get_a_rad_double(&mainboard.pos)));
@@ -797,8 +861,8 @@ parse_pgm_inst_t cmd_position = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_position,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_position_arg0, 
-		(prog_void *)&cmd_position_arg1, 
+		(prog_void *)&cmd_position_arg0,
+		(prog_void *)&cmd_position_arg1,
 		NULL,
 	},
 };
@@ -816,11 +880,11 @@ parse_pgm_inst_t cmd_position_set = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_position_set,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_position_arg0, 
-		(prog_void *)&cmd_position_arg1_set, 
-		(prog_void *)&cmd_position_arg2, 
-		(prog_void *)&cmd_position_arg3, 
-		(prog_void *)&cmd_position_arg4, 
+		(prog_void *)&cmd_position_arg0,
+		(prog_void *)&cmd_position_arg1_set,
+		(prog_void *)&cmd_position_arg2,
+		(prog_void *)&cmd_position_arg3,
+		(prog_void *)&cmd_position_arg4,
 		NULL,
 	},
 };
@@ -858,8 +922,8 @@ parse_pgm_inst_t cmd_strat_infos = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_strat_infos,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_strat_infos_arg0, 
-		(prog_void *)&cmd_strat_infos_arg1, 
+		(prog_void *)&cmd_strat_infos_arg0,
+		(prog_void *)&cmd_strat_infos_arg1,
 		NULL,
 	},
 };
@@ -893,8 +957,8 @@ parse_pgm_inst_t cmd_strat_conf = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_strat_conf,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_strat_conf_arg0, 
-		(prog_void *)&cmd_strat_conf_arg1, 
+		(prog_void *)&cmd_strat_conf_arg0,
+		(prog_void *)&cmd_strat_conf_arg1,
 		NULL,
 	},
 };
@@ -919,7 +983,7 @@ static void cmd_strat_conf2_parsed(void *parsed_result, void *data)
 		on = 1;
 	else
 		on = 0;
-	
+
 #if 0
 	if (!strcmp_P(res->arg1, PSTR("one_temple_on_disc")))
 		bit = STRAT_CONF_ONLY_ONE_ON_DISC;
@@ -962,9 +1026,9 @@ parse_pgm_inst_t cmd_strat_conf2 = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_strat_conf2,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_strat_conf2_arg0, 
-		(prog_void *)&cmd_strat_conf2_arg1, 
-		(prog_void *)&cmd_strat_conf2_arg2, 
+		(prog_void *)&cmd_strat_conf2_arg0,
+		(prog_void *)&cmd_strat_conf2_arg1,
+		(prog_void *)&cmd_strat_conf2_arg2,
 		NULL,
 	},
 };
@@ -1028,9 +1092,9 @@ parse_pgm_inst_t cmd_strat_conf3 = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_strat_conf3,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_strat_conf3_arg0, 
-		(prog_void *)&cmd_strat_conf3_arg1, 
-		(prog_void *)&cmd_strat_conf3_arg2, 
+		(prog_void *)&cmd_strat_conf3_arg0,
+		(prog_void *)&cmd_strat_conf3_arg1,
+		(prog_void *)&cmd_strat_conf3_arg2,
 		NULL,
 	},
 };
@@ -1038,6 +1102,224 @@ parse_pgm_inst_t cmd_strat_conf3 = {
 
 /**********************************************************/
 /* Subtraj */
+
+//////////////////////
+
+// 500 -- 5
+// 400 -- 3
+#define TEST_SPEED 400
+#define TEST_ACC 3
+
+static void line2line(double line1x1, double line1y1,
+		      double line1x2, double line1y2,
+		      double line2x1, double line2y1,
+		      double line2x2, double line2y2,
+		      double radius, double dist)
+{
+	uint8_t err;
+	double speed_d, speed_a;
+	double distance, angle;
+	double line1_angle = atan2(line1y2-line1y1, line1x2-line1x1);
+	double line2_angle = atan2(line2y2-line2y1, line2x2-line2x1);
+
+	printf_P(PSTR("%s()\r\n"), __FUNCTION__);
+
+	strat_set_speed(TEST_SPEED, TEST_SPEED);
+	quadramp_set_2nd_order_vars(&mainboard.angle.qr, TEST_ACC, TEST_ACC);
+
+	circle_get_da_speed_from_radius(&mainboard.traj, radius,
+					&speed_d, &speed_a);
+	trajectory_line_abs(&mainboard.traj,
+			    line1x1, line1y1,
+			    line1x2, line1y2, 150.);
+	err = WAIT_COND_OR_TRAJ_END(distance_from_robot(line1x2, line1y2) <
+				    dist, TRAJ_FLAGS_NO_NEAR);
+	/* circle */
+	strat_set_speed(speed_d, speed_a);
+	angle = line2_angle - line1_angle;
+	distance = angle * radius;
+	if (distance < 0)
+		distance = -distance;
+	angle = simple_modulo_2pi(angle);
+	angle = DEG(angle);
+	printf_P(PSTR("(%d,%d,%d) "),
+		 position_get_x_s16(&mainboard.pos),
+		 position_get_y_s16(&mainboard.pos),
+		 position_get_a_deg_s16(&mainboard.pos));
+	printf_P(PSTR("circle distance=%2.2f angle=%2.2f\r\n"),
+		 distance, angle);
+
+	/* take some margin on dist to avoid deceleration */
+	trajectory_d_a_rel(&mainboard.traj, distance + 250, angle);
+
+	/* circle exit condition */
+	err = WAIT_COND_OR_TRAJ_END(trajectory_angle_finished(&mainboard.traj),
+				    TRAJ_FLAGS_NO_NEAR);
+
+	strat_set_speed(500, 500);
+	printf_P(PSTR("(%d,%d,%d) "),
+		 position_get_x_s16(&mainboard.pos),
+		 position_get_y_s16(&mainboard.pos),
+		 position_get_a_deg_s16(&mainboard.pos));
+	printf_P(PSTR("line\r\n"));
+	trajectory_line_abs(&mainboard.traj,
+			    line2x1, line2y1,
+			    line2x2, line2y2, 150.);
+}
+
+static void halfturn(double line1x1, double line1y1,
+		     double line1x2, double line1y2,
+		     double line2x1, double line2y1,
+		     double line2x2, double line2y2,
+		     double radius, double dist, double dir)
+{
+	uint8_t err;
+	double speed_d, speed_a;
+	double distance, angle;
+
+	printf_P(PSTR("%s()\r\n"), __FUNCTION__);
+
+	strat_set_speed(TEST_SPEED, TEST_SPEED);
+	quadramp_set_2nd_order_vars(&mainboard.angle.qr, TEST_ACC, TEST_ACC);
+
+	circle_get_da_speed_from_radius(&mainboard.traj, radius,
+					&speed_d, &speed_a);
+	trajectory_line_abs(&mainboard.traj,
+			    line1x1, line1y1,
+			    line1x2, line1y2, 150.);
+	err = WAIT_COND_OR_TRAJ_END(distance_from_robot(line1x2, line1y2) <
+				    dist, TRAJ_FLAGS_NO_NEAR);
+	/* circle */
+	strat_set_speed(speed_d, speed_a);
+	angle = dir * M_PI/2.;
+	distance = angle * radius;
+	if (distance < 0)
+		distance = -distance;
+	angle = simple_modulo_2pi(angle);
+	angle = DEG(angle);
+
+	/* take some margin on dist to avoid deceleration */
+	DEBUG(E_USER_STRAT, "circle1 distance=%2.2f angle=%2.2f",
+	      distance, angle);
+	trajectory_d_a_rel(&mainboard.traj, distance + 500, angle);
+
+	/* circle exit condition */
+	err = WAIT_COND_OR_TRAJ_END(trajectory_angle_finished(&mainboard.traj),
+				    TRAJ_FLAGS_NO_NEAR);
+
+	DEBUG(E_USER_STRAT, "miniline");
+	err = WAIT_COND_OR_TRAJ_END(distance_from_robot(line2x1, line2y1) <
+				    dist, TRAJ_FLAGS_NO_NEAR);
+	DEBUG(E_USER_STRAT, "circle2");
+	/* take some margin on dist to avoid deceleration */
+	trajectory_d_a_rel(&mainboard.traj, distance + 500, angle);
+
+	err = WAIT_COND_OR_TRAJ_END(trajectory_angle_finished(&mainboard.traj),
+				    TRAJ_FLAGS_NO_NEAR);
+
+	strat_set_speed(500, 500);
+	DEBUG(E_USER_STRAT, "line");
+	trajectory_line_abs(&mainboard.traj,
+			    line2x1, line2y1,
+			    line2x2, line2y2, 150.);
+}
+
+
+/* function called when cmd_test is parsed successfully */
+static void subtraj_test(void)
+{
+#ifdef HOST_VERSION
+	strat_reset_pos(400, 400, 90);
+	mainboard.angle.on = 1;
+	mainboard.distance.on = 1;
+#endif
+	printf_P(PSTR("%s()\r\n"), __FUNCTION__);
+	while (!cmdline_keypressed()) {
+		/****** PASS1 */
+
+#define DIST_HARD_TURN   260
+#define RADIUS_HARD_TURN 100
+#define DIST_EASY_TURN   190
+#define RADIUS_EASY_TURN 190
+#define DIST_HALF_TURN   225
+#define RADIUS_HALF_TURN 130
+
+		/* hard turn */
+		line2line(375, 597, 375, 1847,
+			  375, 1847, 1050, 1472,
+			  RADIUS_HARD_TURN, DIST_HARD_TURN);
+
+		/* easy left and easy right !*/
+		line2line(825, 1596, 1050, 1472,
+			  1050, 1472, 1500, 1722,
+			  RADIUS_EASY_TURN, DIST_EASY_TURN);
+		line2line(1050, 1472, 1500, 1722,
+			  1500, 1722, 2175, 1347,
+			  RADIUS_EASY_TURN, DIST_EASY_TURN);
+		line2line(1500, 1722, 2175, 1347,
+			  2175, 1347, 2175, 847,
+			  RADIUS_EASY_TURN, DIST_EASY_TURN);
+
+		/* half turns */
+		halfturn(2175, 1347, 2175, 722,
+			 2625, 722, 2625, 1597,
+			 RADIUS_HALF_TURN, DIST_HALF_TURN, 1.);
+		halfturn(2625, 847, 2625, 1722,
+			  2175, 1722, 2175, 1097,
+			  RADIUS_HALF_TURN, DIST_HALF_TURN, 1.);
+
+		/* easy turns */
+		line2line(2175, 1597, 2175, 1097,
+			  2175, 1097, 1500, 722,
+			  RADIUS_EASY_TURN, DIST_EASY_TURN);
+		line2line(2175, 1097, 1500, 722,
+			  1500, 722, 1050, 972,
+			  RADIUS_EASY_TURN, DIST_EASY_TURN);
+		line2line(1500, 722, 1050, 972,
+			  1050, 972, 375, 597,
+			  RADIUS_EASY_TURN, DIST_EASY_TURN);
+
+		/* hard turn */
+		line2line(1050, 972, 375, 597,
+			  375, 597, 375, 1097,
+			  RADIUS_HARD_TURN, DIST_HARD_TURN);
+
+		/****** PASS2 */
+
+		/* easy turn */
+		line2line(375, 597, 375, 1097,
+			  375, 1097, 1050, 1472,
+			  RADIUS_EASY_TURN, DIST_EASY_TURN);
+
+		/* hard turn */
+		line2line(375, 1097, 1050, 1472,
+			  1050, 1472, 375, 1847,
+			  RADIUS_HARD_TURN, DIST_HARD_TURN);
+
+		/* hard turn */
+		line2line(1050, 1472, 375, 1847,
+			  375, 1847, 375, 1347,
+			  RADIUS_HARD_TURN, DIST_HARD_TURN);
+
+		/* easy turn */
+		line2line(375, 1847, 375, 1347,
+			  375, 1347, 1050, 972,
+			  RADIUS_EASY_TURN, DIST_EASY_TURN);
+
+		/* hard turn */
+		line2line(375, 1347, 1050, 972,
+			  1050, 972, 375, 597,
+			  RADIUS_HARD_TURN, DIST_HARD_TURN);
+
+		/* hard turn */
+		line2line(1050, 972, 375, 597,
+			  375, 597, 375, 1847,
+			  RADIUS_HARD_TURN, DIST_HARD_TURN);
+
+	}
+	trajectory_hardstop(&mainboard.traj);
+}
+
 
 /* this structure is filled when cmd_subtraj is parsed successfully */
 struct cmd_subtraj_result {
@@ -1052,9 +1334,11 @@ struct cmd_subtraj_result {
 /* function called when cmd_subtraj is parsed successfully */
 static void cmd_subtraj_parsed(void *parsed_result, void *data)
 {
-/* 	struct cmd_subtraj_result *res = parsed_result; */
+ 	struct cmd_subtraj_result *res = parsed_result;
 
-	printf_P(PSTR("TODO\r\n"));
+	if (!strcmp_P(res->arg1, PSTR("test")))
+		subtraj_test();
+
 	trajectory_hardstop(&mainboard.traj);
 }
 
@@ -1073,12 +1357,13 @@ parse_pgm_inst_t cmd_subtraj = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_subtraj,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_subtraj_arg0, 
-		(prog_void *)&cmd_subtraj_arg1, 
-		(prog_void *)&cmd_subtraj_arg2, 
-		(prog_void *)&cmd_subtraj_arg3, 
-		(prog_void *)&cmd_subtraj_arg4, 
-		(prog_void *)&cmd_subtraj_arg5, 
+		(prog_void *)&cmd_subtraj_arg0,
+		(prog_void *)&cmd_subtraj_arg1,
+		(prog_void *)&cmd_subtraj_arg2,
+		(prog_void *)&cmd_subtraj_arg3,
+		(prog_void *)&cmd_subtraj_arg4,
+		(prog_void *)&cmd_subtraj_arg5,
 		NULL,
 	},
 };
+

@@ -95,10 +95,20 @@ static void do_cs(__attribute__((unused)) void *dummy)
 	}
 #endif
 
-	if (cobboard.flags & DO_BD) {
+	if ((cobboard.flags & DO_BD) && (cobboard.flags & DO_POWER)) {
 		bd_manage_from_cs(&cobboard.left_spickle.bd, &cobboard.left_spickle.cs);
 		bd_manage_from_cs(&cobboard.right_spickle.bd, &cobboard.right_spickle.cs);
 		bd_manage_from_cs(&cobboard.shovel.bd, &cobboard.shovel.cs);
+
+		/* urgent case: stop power on blocking */
+		if (cobboard.flags & DO_ERRBLOCKING) {
+			if (bd_get(&cobboard.left_spickle.bd) ||
+			    bd_get(&cobboard.right_spickle.bd) ||
+			    bd_get(&cobboard.shovel.bd)) {
+				printf_P(PSTR("MOTOR BLOCKED STOP ALL\r\n"));
+				cobboard.flags &= ~(DO_POWER | DO_ERRBLOCKING);
+			}
+		}
 	}
 	if (cobboard.flags & DO_POWER)
 		BRAKE_OFF();
@@ -154,7 +164,7 @@ void microb_cs_init(void)
 	/* Blocking detection */
 	bd_init(&cobboard.left_spickle.bd);
 	bd_set_speed_threshold(&cobboard.left_spickle.bd, 150);
-	bd_set_current_thresholds(&cobboard.left_spickle.bd, 500, 8000, 1000000, 40);
+	bd_set_current_thresholds(&cobboard.left_spickle.bd, 500, 8000, 1000000, 200);
 
 	/* ---- CS right_spickle */
 	/* PID */
@@ -174,7 +184,7 @@ void microb_cs_init(void)
 	/* Blocking detection */
 	bd_init(&cobboard.right_spickle.bd);
 	bd_set_speed_threshold(&cobboard.right_spickle.bd, 150);
-	bd_set_current_thresholds(&cobboard.right_spickle.bd, 500, 8000, 1000000, 40);
+	bd_set_current_thresholds(&cobboard.right_spickle.bd, 500, 8000, 1000000, 200);
 
 	/* ---- CS shovel */
 	/* PID */
@@ -200,7 +210,7 @@ void microb_cs_init(void)
 	/* Blocking detection */
 	bd_init(&cobboard.shovel.bd);
 	bd_set_speed_threshold(&cobboard.shovel.bd, 150);
-	bd_set_current_thresholds(&cobboard.shovel.bd, 500, 8000, 1000000, 40);
+	bd_set_current_thresholds(&cobboard.shovel.bd, 500, 8000, 1000000, 200);
 
 	/* set them on (or not) !! */
 	cobboard.left_spickle.on = 0;

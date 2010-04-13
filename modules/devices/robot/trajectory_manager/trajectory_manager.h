@@ -130,7 +130,7 @@ void trajectory_set_robot_params(struct trajectory *traj,
 void trajectory_set_speed(struct trajectory *traj, double d_speed, double a_speed);
 
 /** set speed consign */
-void trajectory_set_speed(struct trajectory *traj, double d_acc, double a_acc);
+void trajectory_set_acc(struct trajectory *traj, double d_acc, double a_acc);
 
 /**
  * set windows for trajectory.

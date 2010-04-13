@@ -60,9 +60,7 @@
 /** ERROR NUMS */
 #define E_USER_I2C_PROTO       195
 #define E_USER_SENSOR          196
-#define E_USER_BEACON          197
-#define E_USER_SCANNER         198
-#define E_USER_IMGPROCESS      199
+#define E_USER_ST_MACH         197
 
 #define LED_PRIO           170
 #define TIME_PRIO          160
@@ -115,6 +113,7 @@ struct ballboard {
 #define DO_CS        2
 #define DO_BD        4
 #define DO_POWER     8
+#define DO_ERRBLOCKING 16
 	uint8_t flags;                /* misc flags */
 
 	/* control systems */

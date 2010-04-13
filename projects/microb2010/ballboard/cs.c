@@ -1,7 +1,7 @@
-/*  
+/*
  *  Copyright Droids Corporation
  *  Olivier Matz <zer0@droids-corp.org>
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -72,10 +72,20 @@ static void do_cs(void *dummy)
 		if (ballboard.forkrot.on)
 			cs_manage(&ballboard.forkrot.cs);
 	}
-	if (ballboard.flags & DO_BD) {
+	if ((ballboard.flags & DO_BD) && (ballboard.flags & DO_POWER)) {
 		bd_manage_from_cs(&ballboard.roller.bd, &ballboard.roller.cs);
 		bd_manage_from_cs(&ballboard.forktrans.bd, &ballboard.forktrans.cs);
 		bd_manage_from_cs(&ballboard.forkrot.bd, &ballboard.forkrot.cs);
+
+		/* urgent case: stop power on blocking */
+		if (ballboard.flags & DO_ERRBLOCKING) {
+			if (bd_get(&ballboard.roller.bd) ||
+			    bd_get(&ballboard.forktrans.bd) ||
+			    bd_get(&ballboard.forkrot.bd)) {
+				printf_P(PSTR("MOTOR BLOCKED STOP ALL\r\n"));
+				ballboard.flags &= ~(DO_POWER | DO_ERRBLOCKING);
+			}
+		}
 	}
 	if (ballboard.flags & DO_POWER)
 		BRAKE_OFF();
@@ -86,7 +96,7 @@ static void do_cs(void *dummy)
 void dump_cs(const char *name, struct cs *cs)
 {
 	printf_P(PSTR("%s cons=% .5ld fcons=% .5ld err=% .5ld "
-		      "in=% .5ld out=% .5ld\r\n"), 
+		      "in=% .5ld out=% .5ld\r\n"),
 		 name, cs_get_consign(cs), cs_get_filtered_consign(cs),
 		 cs_get_error(cs), cs_get_filtered_feedback(cs),
 		 cs_get_out(cs));
@@ -119,10 +129,15 @@ void microb_cs_init(void)
 	cs_set_process_out(&ballboard.roller.cs, encoders_spi_update_roller_speed, ROLLER_ENCODER);
 	cs_set_consign(&ballboard.roller.cs, 0);
 
+	/* Blocking detection */
+	bd_init(&ballboard.roller.bd);
+	bd_set_speed_threshold(&ballboard.roller.bd, 150);
+	bd_set_current_thresholds(&ballboard.roller.bd, 500, 8000, 1000000, 200);
+
 	/* ---- CS forktrans */
 	/* PID */
 	pid_init(&ballboard.forktrans.pid);
-	pid_set_gains(&ballboard.forktrans.pid, 200, 5, 250);
+	pid_set_gains(&ballboard.forktrans.pid, 30, 5, 0);
 	pid_set_maximums(&ballboard.forktrans.pid, 0, 10000, 2047);
 	pid_set_out_shift(&ballboard.forktrans.pid, 6);
 	pid_set_derivate_filter(&ballboard.forktrans.pid, 6);
@@ -143,19 +158,19 @@ void microb_cs_init(void)
 	/* Blocking detection */
 	bd_init(&ballboard.forktrans.bd);
 	bd_set_speed_threshold(&ballboard.forktrans.bd, 150);
-	bd_set_current_thresholds(&ballboard.forktrans.bd, 500, 8000, 1000000, 40);
+	bd_set_current_thresholds(&ballboard.forktrans.bd, 500, 8000, 1000000, 200);
 
 	/* ---- CS forkrot */
 	/* PID */
 	pid_init(&ballboard.forkrot.pid);
-	pid_set_gains(&ballboard.forkrot.pid, 200, 5, 250);
+	pid_set_gains(&ballboard.forkrot.pid, 30, 5, 0);
 	pid_set_maximums(&ballboard.forkrot.pid, 0, 10000, 2047);
 	pid_set_out_shift(&ballboard.forkrot.pid, 6);
 	pid_set_derivate_filter(&ballboard.forkrot.pid, 6);
 
 	/* QUADRAMP */
 	quadramp_init(&ballboard.forkrot.qr);
-	quadramp_set_1st_order_vars(&ballboard.forkrot.qr, 200, 200); /* set speed */
+	quadramp_set_1st_order_vars(&ballboard.forkrot.qr, 800, 800); /* set speed */
 	quadramp_set_2nd_order_vars(&ballboard.forkrot.qr, 20, 20); /* set accel */
 
 	/* CS */
@@ -169,15 +184,15 @@ void microb_cs_init(void)
 	/* Blocking detection */
 	bd_init(&ballboard.forkrot.bd);
 	bd_set_speed_threshold(&ballboard.forkrot.bd, 150);
-	bd_set_current_thresholds(&ballboard.forkrot.bd, 500, 8000, 1000000, 40);
+	bd_set_current_thresholds(&ballboard.forkrot.bd, 500, 8000, 1000000, 200);
 
 	/* set them on !! */
-	ballboard.roller.on = 0;
+	ballboard.roller.on = 1;
 	ballboard.forktrans.on = 1;
 	ballboard.forkrot.on = 1;
 
 
 	scheduler_add_periodical_event_priority(do_cs, NULL,
-						5000L / SCHEDULER_UNIT, 
+						5000L / SCHEDULER_UNIT,
 						CS_PRIO);
 }

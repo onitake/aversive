@@ -103,6 +103,14 @@ void cobroller_off(uint8_t side)
 		cobboard.right_cobroller_speed = 0;
 }
 
+void cobroller_reverse(uint8_t side)
+{
+	if (side == I2C_LEFT_SIDE)
+		cobboard.left_cobroller_speed = -COBROLLER_SPEED;
+	else
+		cobboard.right_cobroller_speed = COBROLLER_SPEED;
+}
+
 void actuator_init(void)
 {
 

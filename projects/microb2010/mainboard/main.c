@@ -133,9 +133,21 @@ void do_time_monitor(void *dummy)
 
 void do_led_blink(void *dummy)
 {
-#if 1 /* simple blink */
-	LED1_TOGGLE();
-#endif
+	static uint8_t a = 0;
+
+	if (mainboard.flags & DO_ERRBLOCKING) {
+		if (a & 1)
+			LED1_ON();
+		else
+			LED1_OFF();
+	}
+	else {
+		if (a & 4)
+			LED1_ON();
+		else
+			LED1_OFF();
+	}
+	a++;
 }
 
 static void main_timer_interrupt(void)
@@ -171,7 +183,7 @@ int main(void)
 	memset(&gen, 0, sizeof(gen));
 	memset(&mainboard, 0, sizeof(mainboard));
 	mainboard.flags = DO_ENCODERS | DO_CS | DO_RS |
-		DO_POS | DO_POWER | DO_BD;
+		DO_POS | DO_POWER | DO_BD | DO_ERRBLOCKING;
 
 	/* UART */
 	uart_init();
@@ -262,12 +274,12 @@ int main(void)
 	/* all cs management */
 	microb_cs_init();
 
+	/* TIME */
+	time_init(TIME_PRIO);
+
 #ifndef HOST_VERSION
 	/* sensors, will also init hardware adc */
 	sensor_init();
-
-	/* TIME */
-	time_init(TIME_PRIO);
 
 	/* start i2c slave polling */
 	scheduler_add_periodical_event_priority(i2c_poll_slaves, NULL,
@@ -281,7 +293,7 @@ int main(void)
 
 	/* strat-related event */
 	scheduler_add_periodical_event_priority(strat_event, NULL,
-						25000L / SCHEDULER_UNIT,
+						10000L / SCHEDULER_UNIT,
 						STRAT_PRIO);
 
 #ifndef HOST_VERSION

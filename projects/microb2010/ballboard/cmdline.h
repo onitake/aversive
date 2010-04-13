@@ -35,6 +35,6 @@ static inline uint8_t cmdline_keypressed(void) {
 	return (uart_recv_nowait(CMDLINE_UART) != -1);
 }
 
-static inline uint8_t cmdline_getchar(void) {
+static inline int16_t cmdline_getchar(void) {
 	return uart_recv_nowait(CMDLINE_UART);
 }

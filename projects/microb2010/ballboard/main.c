@@ -112,16 +112,21 @@ void bootloader(void)
 
 void do_led_blink(__attribute__((unused)) void *dummy)
 {
-#if 1 /* simple blink */
-	static uint8_t a=0;
+	static uint8_t a = 0;
 
-	if(a)
-		LED1_ON();
-	else
-		LED1_OFF();
-
-	a = !a;
-#endif
+	if (ballboard.flags & DO_ERRBLOCKING) {
+		if (a & 1)
+			LED1_ON();
+		else
+			LED1_OFF();
+	}
+	else {
+		if (a & 4)
+			LED1_ON();
+		else
+			LED1_OFF();
+	}
+	a++;
 }
 
 static void main_timer_interrupt(void)
@@ -149,7 +154,8 @@ int main(void)
 	LED1_OFF();
 	memset(&gen, 0, sizeof(gen));
 	memset(&ballboard, 0, sizeof(ballboard));
-	ballboard.flags = DO_ENCODERS | DO_CS | DO_POWER; // DO_BD
+	ballboard.flags = DO_ENCODERS | DO_CS | DO_POWER |
+		DO_ERRBLOCKING | DO_BD;
 
 	/* UART */
 	uart_init();
@@ -238,6 +244,9 @@ int main(void)
 
 	/* ax12 */
 	ax12_user_init();
+
+ 	gen.logs[0] = E_USER_ST_MACH;
+ 	gen.log_level = 5;
 
 	sei();
 

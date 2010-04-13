@@ -1,6 +1,6 @@
-/*  
+/*
  *  Copyright Droids, Microb Technology (2009)
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -17,7 +17,7 @@
  *
  *  Revision : $Id: strat.c,v 1.6 2009-11-08 17:24:33 zer0 Exp $
  *
- *  Olivier MATZ <zer0@droids-corp.org> 
+ *  Olivier MATZ <zer0@droids-corp.org>
  */
 
 #include <stdio.h>
@@ -70,7 +70,10 @@ struct strat_infos strat_infos = {
 	.conf = {
 		.flags = 0,
 	},
-
+	/* status */
+	.status = {
+		.flags = 0,
+	},
 };
 
 /*************************************************************/
@@ -150,7 +153,7 @@ void strat_init(void)
 	interrupt_traj_reset();
 
 	/* used in strat_base for END_TIMER */
-	mainboard.flags = DO_ENCODERS | DO_CS | DO_RS | 
+	mainboard.flags = DO_ENCODERS | DO_CS | DO_RS |
 		DO_POS | DO_BD | DO_TIMER | DO_POWER;
 }
 
@@ -174,6 +177,17 @@ void strat_exit(void)
 /* called periodically */
 void strat_event(void *dummy)
 {
+#if 0
+	/* pack or deploy spickle */
+	if (strat_infos.status.flags & STRAT_STATUS_LHARVEST) {
+		if (sensor_get(S_LCOB_PRESENT)) {
+			if (sensor_get(S_LCOB_WHITE))
+				i2c_ballboard_set_mode();
+			else
+				;
+		}
+	}
+#endif
 	/* limit speed when opponent is close */
 	strat_limit_speed();
 }
@@ -197,7 +211,7 @@ uint8_t strat_main(void)
 {
 	uint8_t err;
 
-	/* do static cols + first temple */
+	/* */
 	err = strat_beginning();
 
 	return err;

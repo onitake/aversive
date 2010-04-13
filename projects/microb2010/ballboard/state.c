@@ -94,6 +94,7 @@ static void state_debug_wait_key_pressed(void)
 int8_t state_set_mode(uint8_t mode)
 {
 	state_mode = mode;
+	STMCH_DEBUG("%s(): mode=%x ", __FUNCTION__, mode);
 
 /* 	STMCH_DEBUG("%s(): l_deploy=%d l_harvest=%d " */
 /* 		    "r_deploy=%d r_harvest=%d eject=%d", */
@@ -135,6 +136,7 @@ static void state_do_harvest(void)
 static void state_do_eject(void)
 {
 	roller_reverse();
+	time_wait_ms(2000);
 }
 
 /* main state machine */

@@ -119,6 +119,7 @@ struct cobboard {
 #define DO_CS        2
 #define DO_BD        4
 #define DO_POWER     8
+#define DO_ERRBLOCKING 16
 	uint8_t flags;                /* misc flags */
 
 	/* control systems */

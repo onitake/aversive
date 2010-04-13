@@ -1,6 +1,6 @@
 /*
  *  Copyright Droids Corporation (2009)
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -17,7 +17,7 @@
  *
  *  Revision : $Id: commands_mainboard.c,v 1.9 2009-11-08 17:24:33 zer0 Exp $
  *
- *  Olivier MATZ <zer0@droids-corp.org> 
+ *  Olivier MATZ <zer0@droids-corp.org>
  */
 
 #include <stdio.h>
@@ -41,6 +41,7 @@
 #include <quadramp.h>
 #include <control_system_manager.h>
 #include <trajectory_manager.h>
+#include <trajectory_manager_core.h>
 #include <trajectory_manager_utils.h>
 #include <vect_base.h>
 #include <lines.h>
@@ -81,29 +82,30 @@ static void cmd_event_parsed(void *parsed_result, void *data)
 	u08 bit=0;
 
 	struct cmd_event_result * res = parsed_result;
-	
+
 	if (!strcmp_P(res->arg1, PSTR("all"))) {
-		bit = DO_ENCODERS | DO_CS | DO_RS | DO_POS |
-			DO_BD | DO_TIMER | DO_POWER;
+		bit = 0xFF;
 		if (!strcmp_P(res->arg2, PSTR("on")))
 			mainboard.flags |= bit;
 		else if (!strcmp_P(res->arg2, PSTR("off")))
 			mainboard.flags &= bit;
 		else { /* show */
-			printf_P(PSTR("encoders is %s\r\n"), 
+			printf_P(PSTR("encoders is %s\r\n"),
 				 (DO_ENCODERS & mainboard.flags) ? "on":"off");
-			printf_P(PSTR("cs is %s\r\n"), 
+			printf_P(PSTR("cs is %s\r\n"),
 				 (DO_CS & mainboard.flags) ? "on":"off");
-			printf_P(PSTR("rs is %s\r\n"), 
+			printf_P(PSTR("rs is %s\r\n"),
 				 (DO_RS & mainboard.flags) ? "on":"off");
-			printf_P(PSTR("pos is %s\r\n"), 
+			printf_P(PSTR("pos is %s\r\n"),
 				 (DO_POS & mainboard.flags) ? "on":"off");
-			printf_P(PSTR("bd is %s\r\n"), 
+			printf_P(PSTR("bd is %s\r\n"),
 				 (DO_BD & mainboard.flags) ? "on":"off");
-			printf_P(PSTR("timer is %s\r\n"), 
+			printf_P(PSTR("timer is %s\r\n"),
 				 (DO_TIMER & mainboard.flags) ? "on":"off");
-			printf_P(PSTR("power is %s\r\n"), 
+			printf_P(PSTR("power is %s\r\n"),
 				 (DO_POWER & mainboard.flags) ? "on":"off");
+			printf_P(PSTR("errblock is %s\r\n"),
+				 (DO_ERRBLOCKING & mainboard.flags) ? "on":"off");
 		}
 		return;
 	}
@@ -126,6 +128,8 @@ static void cmd_event_parsed(void *parsed_result, void *data)
 	}
 	else if (!strcmp_P(res->arg1, PSTR("power")))
 		bit = DO_POWER;
+	else if (!strcmp_P(res->arg1, PSTR("errblock")))
+		bit = DO_ERRBLOCKING;
 
 	if (!strcmp_P(res->arg2, PSTR("on")))
 		mainboard.flags |= bit;
@@ -141,13 +145,13 @@ static void cmd_event_parsed(void *parsed_result, void *data)
 		}
 		mainboard.flags &= (~bit);
 	}
-	printf_P(PSTR("%s is %s\r\n"), res->arg1, 
+	printf_P(PSTR("%s is %s\r\n"), res->arg1,
 		      (bit & mainboard.flags) ? "on":"off");
 }
 
 prog_char str_event_arg0[] = "event";
 parse_pgm_token_string_t cmd_event_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_event_result, arg0, str_event_arg0);
-prog_char str_event_arg1[] = "all#encoders#cs#rs#pos#bd#timer#power";
+prog_char str_event_arg1[] = "all#encoders#cs#rs#pos#bd#timer#power#errblock";
 parse_pgm_token_string_t cmd_event_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_event_result, arg1, str_event_arg1);
 prog_char str_event_arg2[] = "on#off#show";
 parse_pgm_token_string_t cmd_event_arg2 = TOKEN_STRING_INITIALIZER(struct cmd_event_result, arg2, str_event_arg2);
@@ -158,9 +162,9 @@ parse_pgm_inst_t cmd_event = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_event,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_event_arg0, 
-		(prog_void *)&cmd_event_arg1, 
-		(prog_void *)&cmd_event_arg2, 
+		(prog_void *)&cmd_event_arg0,
+		(prog_void *)&cmd_event_arg1,
+		(prog_void *)&cmd_event_arg2,
 		NULL,
 	},
 };
@@ -181,7 +185,7 @@ static void cmd_spi_test_parsed(void * parsed_result, void * data)
 	printf("not implemented\n");
 #else
 	uint16_t i = 0, ret = 0, ret2 = 0;
-	
+
 	if (mainboard.flags & DO_ENCODERS) {
 		printf_P(PSTR("Disable encoder event first\r\n"));
 		return;
@@ -211,7 +215,7 @@ parse_pgm_inst_t cmd_spi_test = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_spi_test,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_spi_test_arg0, 
+		(prog_void *)&cmd_spi_test_arg0,
 		NULL,
 	},
 };
@@ -251,8 +255,8 @@ parse_pgm_inst_t cmd_opponent = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_opponent,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_opponent_arg0, 
-		(prog_void *)&cmd_opponent_arg1, 
+		(prog_void *)&cmd_opponent_arg0,
+		(prog_void *)&cmd_opponent_arg1,
 		NULL,
 	},
 };
@@ -269,10 +273,10 @@ parse_pgm_inst_t cmd_opponent_set = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_opponent_set,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_opponent_arg0, 
+		(prog_void *)&cmd_opponent_arg0,
 		(prog_void *)&cmd_opponent_arg1_set,
-		(prog_void *)&cmd_opponent_arg2, 
-		(prog_void *)&cmd_opponent_arg3, 
+		(prog_void *)&cmd_opponent_arg2,
+		(prog_void *)&cmd_opponent_arg3,
 		NULL,
 	},
 };
@@ -338,9 +342,9 @@ parse_pgm_inst_t cmd_start = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_start,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_start_arg0, 
-		(prog_void *)&cmd_start_color, 
-		(prog_void *)&cmd_start_debug, 
+		(prog_void *)&cmd_start_arg0,
+		(prog_void *)&cmd_start_color,
+		(prog_void *)&cmd_start_debug,
 		NULL,
 	},
 };
@@ -358,7 +362,7 @@ struct cmd_interact_result {
 static void print_cs(void)
 {
 	printf_P(PSTR("cons_d=% .8"PRIi32" cons_a=% .8"PRIi32" fil_d=% .8"PRIi32" fil_a=% .8"PRIi32" "
-		      "err_d=% .8"PRIi32" err_a=% .8"PRIi32" out_d=% .8"PRIi32" out_a=% .8"PRIi32"\r\n"), 
+		      "err_d=% .8"PRIi32" err_a=% .8"PRIi32" out_d=% .8"PRIi32" out_a=% .8"PRIi32"\r\n"),
 		 cs_get_consign(&mainboard.distance.cs),
 		 cs_get_consign(&mainboard.angle.cs),
 		 cs_get_filtered_consign(&mainboard.distance.cs),
@@ -371,7 +375,7 @@ static void print_cs(void)
 
 static void print_pos(void)
 {
-	printf_P(PSTR("x=% .8d y=% .8d a=% .8d\r\n"), 
+	printf_P(PSTR("x=% .8d y=% .8d a=% .8d\r\n"),
 		 position_get_x_s16(&mainboard.pos),
 		 position_get_y_s16(&mainboard.pos),
 		 position_get_a_deg_s16(&mainboard.pos));
@@ -484,7 +488,7 @@ static void cmd_interact_parsed(void * parsed_result, void * data)
 			wait_ms(10);
 			continue;
 		}
-		
+
 		if (cmd == -1) {
 			switch(c) {
 			case '1': print ^= PRINT_POS; break;
@@ -494,7 +498,7 @@ static void cmd_interact_parsed(void * parsed_result, void * data)
 			case '5': print ^= PRINT_TIME; break;
 			case '6': print ^= PRINT_BLOCKING; break;
 
-			case 'q': 
+			case 'q':
 				if (mainboard.flags & DO_CS)
 					strat_hardstop();
 				pwm_set_and_save(LEFT_PWM, 0);
@@ -504,21 +508,21 @@ static void cmd_interact_parsed(void * parsed_result, void * data)
 				pwm_set_and_save(LEFT_PWM, 0);
 				pwm_set_and_save(RIGHT_PWM, 0);
 				break;
-			default: 
+			default:
 				break;
 			}
 		}
 		else {
 			switch(cmd) {
-			case KEY_UP_ARR: 
+			case KEY_UP_ARR:
 				pwm_set_and_save(LEFT_PWM, 1200);
 				pwm_set_and_save(RIGHT_PWM, 1200);
 				break;
-			case KEY_LEFT_ARR: 
+			case KEY_LEFT_ARR:
 				pwm_set_and_save(LEFT_PWM, -1200);
 				pwm_set_and_save(RIGHT_PWM, 1200);
 				break;
-			case KEY_DOWN_ARR: 
+			case KEY_DOWN_ARR:
 				pwm_set_and_save(LEFT_PWM, -1200);
 				pwm_set_and_save(RIGHT_PWM, -1200);
 				break;
@@ -541,7 +545,7 @@ parse_pgm_inst_t cmd_interact = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_interact,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_interact_arg0, 
+		(prog_void *)&cmd_interact_arg0,
 		NULL,
 	},
 };
@@ -588,8 +592,8 @@ parse_pgm_inst_t cmd_color = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_color,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_color_arg0, 
-		(prog_void *)&cmd_color_color, 
+		(prog_void *)&cmd_color_arg0,
+		(prog_void *)&cmd_color_color,
 		NULL,
 	},
 };
@@ -609,11 +613,11 @@ static void cmd_rs_parsed(void *parsed_result, void *data)
 {
 	//	struct cmd_rs_result *res = parsed_result;
 	do {
-		printf_P(PSTR("angle cons=% .6"PRIi32" in=% .6"PRIi32" out=% .6"PRIi32" / "), 
+		printf_P(PSTR("angle cons=% .6"PRIi32" in=% .6"PRIi32" out=% .6"PRIi32" / "),
 			 cs_get_consign(&mainboard.angle.cs),
 			 cs_get_filtered_feedback(&mainboard.angle.cs),
 			 cs_get_out(&mainboard.angle.cs));
-		printf_P(PSTR("distance cons=% .6"PRIi32" in=% .6"PRIi32" out=% .6"PRIi32" / "), 
+		printf_P(PSTR("distance cons=% .6"PRIi32" in=% .6"PRIi32" out=% .6"PRIi32" / "),
 			 cs_get_consign(&mainboard.distance.cs),
 			 cs_get_filtered_feedback(&mainboard.distance.cs),
 			 cs_get_out(&mainboard.distance.cs));
@@ -634,8 +638,8 @@ parse_pgm_inst_t cmd_rs = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_rs,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_rs_arg0, 
-		(prog_void *)&cmd_rs_arg1, 
+		(prog_void *)&cmd_rs_arg0,
+		(prog_void *)&cmd_rs_arg1,
 		NULL,
 	},
 };
@@ -668,7 +672,7 @@ parse_pgm_inst_t cmd_i2cdebug = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_i2cdebug,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_i2cdebug_arg0, 
+		(prog_void *)&cmd_i2cdebug_arg0,
 		NULL,
 	},
 };
@@ -707,8 +711,8 @@ parse_pgm_inst_t cmd_cobboard_show = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_cobboard_show,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_cobboard_show_arg0, 
-		(prog_void *)&cmd_cobboard_show_arg1, 
+		(prog_void *)&cmd_cobboard_show_arg0,
+		(prog_void *)&cmd_cobboard_show_arg1,
 		NULL,
 	},
 };
@@ -725,16 +729,12 @@ struct cmd_cobboard_setmode1_result {
 /* function called when cmd_cobboard_setmode1 is parsed successfully */
 static void cmd_cobboard_setmode1_parsed(void *parsed_result, void *data)
 {
-#ifdef HOST_VERSION
-	printf("not implemented\n");
-#else
 	struct cmd_cobboard_setmode1_result *res = parsed_result;
 
 	if (!strcmp_P(res->arg1, PSTR("init")))
 		i2c_cobboard_mode_init();
 	else if (!strcmp_P(res->arg1, PSTR("eject")))
 		i2c_cobboard_mode_eject();
-#endif
 }
 
 prog_char str_cobboard_setmode1_arg0[] = "cobboard";
@@ -748,8 +748,8 @@ parse_pgm_inst_t cmd_cobboard_setmode1 = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_cobboard_setmode1,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_cobboard_setmode1_arg0, 
-		(prog_void *)&cmd_cobboard_setmode1_arg1, 
+		(prog_void *)&cmd_cobboard_setmode1_arg0,
+		(prog_void *)&cmd_cobboard_setmode1_arg1,
 		NULL,
 	},
 };
@@ -767,9 +767,6 @@ struct cmd_cobboard_setmode2_result {
 /* function called when cmd_cobboard_setmode2 is parsed successfully */
 static void cmd_cobboard_setmode2_parsed(void * parsed_result, void * data)
 {
-#ifdef HOST_VERSION
-	printf("not implemented\n");
-#else
 	struct cmd_cobboard_setmode2_result *res = parsed_result;
 	uint8_t side = I2C_LEFT_SIDE;
 
@@ -784,7 +781,6 @@ static void cmd_cobboard_setmode2_parsed(void * parsed_result, void * data)
 		i2c_cobboard_mode_harvest(side);
 	else if (!strcmp_P(res->arg1, PSTR("pack")))
 		i2c_cobboard_mode_pack(side);
-#endif
 }
 
 prog_char str_cobboard_setmode2_arg0[] = "cobboard";
@@ -800,9 +796,9 @@ parse_pgm_inst_t cmd_cobboard_setmode2 = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_cobboard_setmode2,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_cobboard_setmode2_arg0, 
-		(prog_void *)&cmd_cobboard_setmode2_arg1, 
-		(prog_void *)&cmd_cobboard_setmode2_arg2, 
+		(prog_void *)&cmd_cobboard_setmode2_arg0,
+		(prog_void *)&cmd_cobboard_setmode2_arg1,
+		(prog_void *)&cmd_cobboard_setmode2_arg2,
 		NULL,
 	},
 };
@@ -820,13 +816,9 @@ struct cmd_cobboard_setmode3_result {
 /* function called when cmd_cobboard_setmode3 is parsed successfully */
 static void cmd_cobboard_setmode3_parsed(void *parsed_result, void *data)
 {
-#ifdef HOST_VERSION
-	printf("not implemented\n");
-#else
 	struct cmd_cobboard_setmode3_result *res = parsed_result;
 	if (!strcmp_P(res->arg1, PSTR("xxx")))
 		printf("faux\r\n");
-#endif
 }
 
 prog_char str_cobboard_setmode3_arg0[] = "cobboard";
@@ -841,9 +833,9 @@ parse_pgm_inst_t cmd_cobboard_setmode3 = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_cobboard_setmode3,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_cobboard_setmode3_arg0, 
-		(prog_void *)&cmd_cobboard_setmode3_arg1, 
-		(prog_void *)&cmd_cobboard_setmode3_arg2, 
+		(prog_void *)&cmd_cobboard_setmode3_arg0,
+		(prog_void *)&cmd_cobboard_setmode3_arg1,
+		(prog_void *)&cmd_cobboard_setmode3_arg2,
 		NULL,
 	},
 };
@@ -880,8 +872,8 @@ parse_pgm_inst_t cmd_ballboard_show = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_ballboard_show,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_ballboard_show_arg0, 
-		(prog_void *)&cmd_ballboard_show_arg1, 
+		(prog_void *)&cmd_ballboard_show_arg0,
+		(prog_void *)&cmd_ballboard_show_arg1,
 		NULL,
 	},
 };
@@ -898,9 +890,6 @@ struct cmd_ballboard_setmode1_result {
 /* function called when cmd_ballboard_setmode1 is parsed successfully */
 static void cmd_ballboard_setmode1_parsed(void *parsed_result, void *data)
 {
-#ifdef HOST_VERSION
-	printf("not implemented\n");
-#else
 	struct cmd_ballboard_setmode1_result *res = parsed_result;
 
 	if (!strcmp_P(res->arg1, PSTR("init")))
@@ -913,7 +902,6 @@ static void cmd_ballboard_setmode1_parsed(void *parsed_result, void *data)
 		i2c_ballboard_set_mode(I2C_BALLBOARD_MODE_HARVEST);
 
 	/* other commands */
-#endif
 }
 
 prog_char str_ballboard_setmode1_arg0[] = "ballboard";
@@ -927,8 +915,8 @@ parse_pgm_inst_t cmd_ballboard_setmode1 = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_ballboard_setmode1,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_ballboard_setmode1_arg0, 
-		(prog_void *)&cmd_ballboard_setmode1_arg1, 
+		(prog_void *)&cmd_ballboard_setmode1_arg0,
+		(prog_void *)&cmd_ballboard_setmode1_arg1,
 		NULL,
 	},
 };
@@ -946,9 +934,6 @@ struct cmd_ballboard_setmode2_result {
 /* function called when cmd_ballboard_setmode2 is parsed successfully */
 static void cmd_ballboard_setmode2_parsed(void * parsed_result, void * data)
 {
-#ifdef HOST_VERSION
-	printf("not implemented\n");
-#else
 	struct cmd_ballboard_setmode2_result *res = parsed_result;
 	uint8_t mode = I2C_BALLBOARD_MODE_INIT;
 
@@ -965,7 +950,6 @@ static void cmd_ballboard_setmode2_parsed(void * parsed_result, void * data)
 			mode = I2C_BALLBOARD_MODE_TAKE_R_FORK;
 	}
 	i2c_ballboard_set_mode(mode);
-#endif
 }
 
 prog_char str_ballboard_setmode2_arg0[] = "ballboard";
@@ -981,9 +965,9 @@ parse_pgm_inst_t cmd_ballboard_setmode2 = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_ballboard_setmode2,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_ballboard_setmode2_arg0, 
-		(prog_void *)&cmd_ballboard_setmode2_arg1, 
-		(prog_void *)&cmd_ballboard_setmode2_arg2, 
+		(prog_void *)&cmd_ballboard_setmode2_arg0,
+		(prog_void *)&cmd_ballboard_setmode2_arg1,
+		(prog_void *)&cmd_ballboard_setmode2_arg2,
 		NULL,
 	},
 };
@@ -1001,13 +985,9 @@ struct cmd_ballboard_setmode3_result {
 /* function called when cmd_ballboard_setmode3 is parsed successfully */
 static void cmd_ballboard_setmode3_parsed(void *parsed_result, void *data)
 {
-#ifdef HOST_VERSION
-	printf("not implemented\n");
-#else
 	struct cmd_ballboard_setmode3_result *res = parsed_result;
 	if (!strcmp_P(res->arg1, PSTR("xxx")))
 		printf("faux\r\n");
-#endif
 }
 
 prog_char str_ballboard_setmode3_arg0[] = "ballboard";
@@ -1022,9 +1002,9 @@ parse_pgm_inst_t cmd_ballboard_setmode3 = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_ballboard_setmode3,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_ballboard_setmode3_arg0, 
-		(prog_void *)&cmd_ballboard_setmode3_arg1, 
-		(prog_void *)&cmd_ballboard_setmode3_arg2, 
+		(prog_void *)&cmd_ballboard_setmode3_arg0,
+		(prog_void *)&cmd_ballboard_setmode3_arg1,
+		(prog_void *)&cmd_ballboard_setmode3_arg2,
 		NULL,
 	},
 };
@@ -1063,8 +1043,8 @@ parse_pgm_inst_t cmd_servo_balls = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_servo_balls,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_servo_balls_arg0, 
-		(prog_void *)&cmd_servo_balls_arg1, 
+		(prog_void *)&cmd_servo_balls_arg0,
+		(prog_void *)&cmd_servo_balls_arg1,
 		NULL,
 	},
 };
@@ -1220,8 +1200,16 @@ uint8_t clitoid(double alpha_deg, double beta_deg, double R_mm,
 static void cmd_clitoid_parsed(void *parsed_result, void *data)
 {
 	struct cmd_clitoid_result *res = parsed_result;
-	clitoid(res->alpha_deg, res->beta_deg, res->R_mm,
-		res->Vd, res->Amax, res->d_inter_mm);
+/* 	clitoid(res->alpha_deg, res->beta_deg, res->R_mm, */
+/* 		res->Vd, res->Amax, res->d_inter_mm); */
+	double x = position_get_x_double(&mainboard.pos);
+	double y = position_get_y_double(&mainboard.pos);
+	double a = position_get_a_rad_double(&mainboard.pos);
+
+	strat_set_speed(res->Vd, SPEED_ANGLE_FAST);
+	trajectory_clitoid(&mainboard.traj, x, y, a, 150.,
+			   res->alpha_deg, res->beta_deg, res->R_mm,
+			   res->d_inter_mm);
 }
 
 prog_char str_clitoid_arg0[] = "clitoid";
@@ -1264,127 +1252,6 @@ parse_pgm_inst_t cmd_clitoid = {
 	},
 };
 
-//////////////////////
-
-// 500 -- 5
-// 400 -- 3
-#define TEST_SPEED 400
-#define TEST_ACC 3
-
-static void line2line(double line1x1, double line1y1,
-		      double line1x2, double line1y2,
-		      double line2x1, double line2y1,
-		      double line2x2, double line2y2,
-		      double radius, double dist)
-{
-	uint8_t err;
-	double speed_d, speed_a;
-	double distance, angle;
-	double line1_angle = atan2(line1y2-line1y1, line1x2-line1x1);
-	double line2_angle = atan2(line2y2-line2y1, line2x2-line2x1);
-
-	printf_P(PSTR("%s()\r\n"), __FUNCTION__);
-
-	strat_set_speed(TEST_SPEED, TEST_SPEED);
-	quadramp_set_2nd_order_vars(&mainboard.angle.qr, TEST_ACC, TEST_ACC);
-
-	circle_get_da_speed_from_radius(&mainboard.traj, radius,
-					&speed_d, &speed_a);
-	trajectory_line_abs(&mainboard.traj,
-			    line1x1, line1y1,
-			    line1x2, line1y2, 150.);
-	err = WAIT_COND_OR_TRAJ_END(distance_from_robot(line1x2, line1y2) <
-				    dist, TRAJ_FLAGS_NO_NEAR);
-	/* circle */
-	strat_set_speed(speed_d, speed_a);
-	angle = line2_angle - line1_angle;
-	distance = angle * radius;
-	if (distance < 0)
-		distance = -distance;
-	angle = simple_modulo_2pi(angle);
-	angle = DEG(angle);
-	printf_P(PSTR("(%d,%d,%d) "),
-		 position_get_x_s16(&mainboard.pos),
-		 position_get_y_s16(&mainboard.pos),
-		 position_get_a_deg_s16(&mainboard.pos));
-	printf_P(PSTR("circle distance=%2.2f angle=%2.2f\r\n"),
-		 distance, angle);
-
-	/* take some margin on dist to avoid deceleration */
-	trajectory_d_a_rel(&mainboard.traj, distance + 250, angle);
-
-	/* circle exit condition */
-	err = WAIT_COND_OR_TRAJ_END(trajectory_angle_finished(&mainboard.traj),
-				    TRAJ_FLAGS_NO_NEAR);
-
-	strat_set_speed(500, 500);
-	printf_P(PSTR("(%d,%d,%d) "),
-		 position_get_x_s16(&mainboard.pos),
-		 position_get_y_s16(&mainboard.pos),
-		 position_get_a_deg_s16(&mainboard.pos));
-	printf_P(PSTR("line\r\n"));
-	trajectory_line_abs(&mainboard.traj,
-			    line2x1, line2y1,
-			    line2x2, line2y2, 150.);
-}
-
-static void halfturn(double line1x1, double line1y1,
-		     double line1x2, double line1y2,
-		     double line2x1, double line2y1,
-		     double line2x2, double line2y2,
-		     double radius, double dist, double dir)
-{
-	uint8_t err;
-	double speed_d, speed_a;
-	double distance, angle;
-
-	printf_P(PSTR("%s()\r\n"), __FUNCTION__);
-
-	strat_set_speed(TEST_SPEED, TEST_SPEED);
-	quadramp_set_2nd_order_vars(&mainboard.angle.qr, TEST_ACC, TEST_ACC);
-
-	circle_get_da_speed_from_radius(&mainboard.traj, radius,
-					&speed_d, &speed_a);
-	trajectory_line_abs(&mainboard.traj,
-			    line1x1, line1y1,
-			    line1x2, line1y2, 150.);
-	err = WAIT_COND_OR_TRAJ_END(distance_from_robot(line1x2, line1y2) <
-				    dist, TRAJ_FLAGS_NO_NEAR);
-	/* circle */
-	strat_set_speed(speed_d, speed_a);
-	angle = dir * M_PI/2.;
-	distance = angle * radius;
-	if (distance < 0)
-		distance = -distance;
-	angle = simple_modulo_2pi(angle);
-	angle = DEG(angle);
-
-	/* take some margin on dist to avoid deceleration */
-	DEBUG(E_USER_STRAT, "circle1 distance=%2.2f angle=%2.2f",
-	      distance, angle);
-	trajectory_d_a_rel(&mainboard.traj, distance + 500, angle);
-
-	/* circle exit condition */
-	err = WAIT_COND_OR_TRAJ_END(trajectory_angle_finished(&mainboard.traj),
-				    TRAJ_FLAGS_NO_NEAR);
-
-	DEBUG(E_USER_STRAT, "miniline");
-	err = WAIT_COND_OR_TRAJ_END(distance_from_robot(line2x1, line2y1) <
-				    dist, TRAJ_FLAGS_NO_NEAR);
-	DEBUG(E_USER_STRAT, "circle2");
-	/* take some margin on dist to avoid deceleration */
-	trajectory_d_a_rel(&mainboard.traj, distance + 500, angle);
-
-	err = WAIT_COND_OR_TRAJ_END(trajectory_angle_finished(&mainboard.traj),
-				    TRAJ_FLAGS_NO_NEAR);
-
-	strat_set_speed(500, 500);
-	DEBUG(E_USER_STRAT, "line");
-	trajectory_line_abs(&mainboard.traj,
-			    line2x1, line2y1,
-			    line2x2, line2y2, 150.);
-}
-
 /**********************************************************/
 /* Test */
 
@@ -1398,96 +1265,6 @@ struct cmd_test_result {
 /* function called when cmd_test is parsed successfully */
 static void cmd_test_parsed(void *parsed_result, void *data)
 {
-	//	struct cmd_test_result *res = parsed_result;
-#ifdef HOST_VERSION
-	strat_reset_pos(400, 400, 90);
-	mainboard.angle.on = 1;
-	mainboard.distance.on = 1;
-#endif
-	printf_P(PSTR("%s()\r\n"), __FUNCTION__);
-	while (!cmdline_keypressed()) {
-		/****** PASS1 */
-
-#define DIST_HARD_TURN   260
-#define RADIUS_HARD_TURN 100
-#define DIST_EASY_TURN   190
-#define RADIUS_EASY_TURN 190
-#define DIST_HALF_TURN   225
-#define RADIUS_HALF_TURN 130
-
-		/* hard turn */
-		line2line(375, 597, 375, 1847,
-			  375, 1847, 1050, 1472,
-			  RADIUS_HARD_TURN, DIST_HARD_TURN);
-
-		/* easy left and easy right !*/
-		line2line(825, 1596, 1050, 1472,
-			  1050, 1472, 1500, 1722,
-			  RADIUS_EASY_TURN, DIST_EASY_TURN);
-		line2line(1050, 1472, 1500, 1722,
-			  1500, 1722, 2175, 1347,
-			  RADIUS_EASY_TURN, DIST_EASY_TURN);
-		line2line(1500, 1722, 2175, 1347,
-			  2175, 1347, 2175, 847,
-			  RADIUS_EASY_TURN, DIST_EASY_TURN);
-
-		/* half turns */
-		halfturn(2175, 1347, 2175, 722,
-			 2625, 722, 2625, 1597,
-			 RADIUS_HALF_TURN, DIST_HALF_TURN, 1.);
-		halfturn(2625, 847, 2625, 1722,
-			  2175, 1722, 2175, 1097,
-			  RADIUS_HALF_TURN, DIST_HALF_TURN, 1.);
-
-		/* easy turns */
-		line2line(2175, 1597, 2175, 1097,
-			  2175, 1097, 1500, 722,
-			  RADIUS_EASY_TURN, DIST_EASY_TURN);
-		line2line(2175, 1097, 1500, 722,
-			  1500, 722, 1050, 972,
-			  RADIUS_EASY_TURN, DIST_EASY_TURN);
-		line2line(1500, 722, 1050, 972,
-			  1050, 972, 375, 597,
-			  RADIUS_EASY_TURN, DIST_EASY_TURN);
-
-		/* hard turn */
-		line2line(1050, 972, 375, 597,
-			  375, 597, 375, 1097,
-			  RADIUS_HARD_TURN, DIST_HARD_TURN);
-
-		/****** PASS2 */
-
-		/* easy turn */
-		line2line(375, 597, 375, 1097,
-			  375, 1097, 1050, 1472,
-			  RADIUS_EASY_TURN, DIST_EASY_TURN);
-
-		/* hard turn */
-		line2line(375, 1097, 1050, 1472,
-			  1050, 1472, 375, 1847,
-			  RADIUS_HARD_TURN, DIST_HARD_TURN);
-
-		/* hard turn */
-		line2line(1050, 1472, 375, 1847,
-			  375, 1847, 375, 1347,
-			  RADIUS_HARD_TURN, DIST_HARD_TURN);
-
-		/* easy turn */
-		line2line(375, 1847, 375, 1347,
-			  375, 1347, 1050, 972,
-			  RADIUS_EASY_TURN, DIST_EASY_TURN);
-
-		/* hard turn */
-		line2line(375, 1347, 1050, 972,
-			  1050, 972, 375, 597,
-			  RADIUS_HARD_TURN, DIST_HARD_TURN);
-
-		/* hard turn */
-		line2line(1050, 972, 375, 597,
-			  375, 597, 375, 1847,
-			  RADIUS_HARD_TURN, DIST_HARD_TURN);
-
-	}
 	trajectory_hardstop(&mainboard.traj);
 }
 

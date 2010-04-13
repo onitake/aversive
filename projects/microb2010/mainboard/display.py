@@ -1,5 +1,8 @@
-import math, sys, time, os, random
+import math, sys, time, os, random, re
 from visual import *
+
+FLOAT = "([-+]?[0-9]*\.?[0-9]+)"
+INT = "([-+]?[0-9][0-9]*)"
 
 AREA_X = 3000.
 AREA_Y = 2100.
@@ -16,11 +19,11 @@ scene.autoscale=0
 # all positions of robot every 5ms
 save_pos = []
 
-robot = box(pos = (0, 0, ROBOT_HEIGHT/2),
-            size = (250,320,ROBOT_HEIGHT),
-            color = (0.3, 0.3, 0.3) )
+robot = box(color=(0.4, 0.4, 0.4))
+lspickle = box(color=(0.4, 0.4, 0.4))
+rspickle = box(color=(0.4, 0.4, 0.4))
 
-last_pos = robot.pos.x, robot.pos.y, robot.pos.z
+last_pos = (0.,0.,0.)
 hcenter_line = curve()
 hcenter_line.pos = [(-AREA_X/2, 0., 0.3), (AREA_X/2, 0., 0.3)]
 vcenter_line = curve()
@@ -50,6 +53,11 @@ def square(sz):
 sq1 = square(250)
 sq2 = square(500)
 
+robot_x = 0.
+robot_y = 0.
+robot_a = 0.
+robot_lspickle = 0
+robot_rspickle = 0
 robot_trail = curve()
 robot_trail_list = []
 max_trail = 500
@@ -181,6 +189,21 @@ def init_waypoints():
 def toggle_obj_disp():
     global area_objects
 
+    """
+    if area_objects == []:
+        c = sphere(radius=5, color=(0., 0.,1.),
+                   pos=(1238.-AREA_X/2, 1313.-AREA_Y/2, 5))
+        area_objects.append(c)
+        c = sphere(radius=5, color=(0., 0.,1.),
+                   pos=(1364.-AREA_X/2, 1097.-AREA_Y/2, 5))
+        area_objects.append(c)
+        c = sphere(radius=5, color=(0., 0.,1.),
+                   pos=(1453.-AREA_X/2, 1176.-AREA_Y/2, 5))
+        area_objects.append(c)
+        c = sphere(radius=5, color=(0., 0.,1.),
+                   pos=(1109.-AREA_X/2, 1050.-AREA_Y/2, 5))
+        area_objects.append(c)
+"""
     if area_objects == []:
         i = 0
         j = 0
@@ -223,18 +246,32 @@ def toggle_obj_disp():
                 o.visible = 1
 
 
-def set_robot(x, y, a):
+def set_robot():
     global robot, last_pos, robot_trail, robot_trail_list
-    global save_pos
+    global save_pos, robot_x, robot_y, robot_a
 
-    robot.pos = (x - AREA_X/2, y - AREA_Y/2, ROBOT_HEIGHT/2)
-    robot.axis = (math.cos(a*math.pi/180),
-                  math.sin(a*math.pi/180),
-                  0)
+    axis = (math.cos(robot_a*math.pi/180),
+            math.sin(robot_a*math.pi/180),
+            0)
+
+    robot.pos = (robot_x - AREA_X/2, robot_y - AREA_Y/2, ROBOT_HEIGHT/2)
+    robot.axis = axis
     robot.size = (250, 320, ROBOT_HEIGHT)
 
+    lspickle.pos = (robot_x - AREA_X/2 + (robot_lspickle*70) * math.cos((robot_a-90)*math.pi/180),
+                    robot_y - AREA_Y/2 + (robot_lspickle*70) * math.sin((robot_a-90)*math.pi/180),
+                    ROBOT_HEIGHT/2)
+    lspickle.axis = axis
+    lspickle.size = (20, 320, 5)
+
+    rspickle.pos = (robot_x - AREA_X/2 + (robot_rspickle*70) * math.cos((robot_a+90)*math.pi/180),
+                    robot_y - AREA_Y/2 + (robot_rspickle*70) * math.sin((robot_a+90)*math.pi/180),
+                    ROBOT_HEIGHT/2)
+    rspickle.axis = axis
+    rspickle.size = (20, 320, 5)
+
     # save position
-    save_pos.append((robot.pos.x, robot.pos, a))
+    save_pos.append((robot.pos.x, robot.pos, robot_a))
 
     pos = robot.pos.x, robot.pos.y, 0.3
     if pos != last_pos:
@@ -272,11 +309,30 @@ while True:
         fw = open("/tmp/.robot_dis2sim", "w", 0)
         while True:
             l = fr.readline()
-            try:
-                x,y,a = map(lambda x:int(x), l[:-1].split(" "))
-                set_robot(x,y,a)
-            except ValueError:
-                pass
+            m = re.match("pos=%s,%s,%s"%(INT,INT,INT), l)
+            if m:
+                robot_x = int(m.groups()[0])
+                robot_y = int(m.groups()[1])
+                robot_a = int(m.groups()[2])
+                set_robot()
+            m = re.match("ballboard=%s"%(INT), l)
+            if m:
+                print int(m.groups()[0])
+            m = re.match("cobboard=%s"%(INT), l)
+            if m:
+                mode = int(m.groups()[0])
+                if (mode & 0x01) == 0:
+                    robot_lspickle = 0
+                elif (mode & 0x02) == 0:
+                    robot_lspickle = 1
+                else:
+                    robot_lspickle = 2
+                if (mode & 0x04) == 0:
+                    robot_rspickle = 0
+                elif (mode & 0x08) == 0:
+                    robot_rspickle = 1
+                else:
+                    robot_rspickle = 2
 
             if scene.kb.keys == 0:
                 continue

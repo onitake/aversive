@@ -53,6 +53,9 @@
 #include "main.h"
 #include "sensor.h"
 #include "i2c_protocol.h"
+#ifdef HOST_VERSION
+#include "robotsim.h"
+#endif
 
 #define I2C_STATE_MAX 4
 
@@ -321,7 +324,7 @@ static int8_t
 i2c_send_command(uint8_t addr, uint8_t * buf, uint8_t size)
 {
 #ifdef HOST_VERSION
-	return 0;
+	return robotsim_i2c(addr, buf, size);
 #else
 	uint8_t flags;
         microseconds us = time_get_us2();
@@ -458,6 +461,6 @@ int8_t i2c_ballboard_set_mode(uint8_t mode)
 	struct i2c_cmd_ballboard_set_mode buf;
 	buf.hdr.cmd = I2C_CMD_BALLBOARD_SET_MODE;
 	buf.mode = mode;
-	return i2c_send_command(I2C_COBBOARD_ADDR, (uint8_t*)&buf, sizeof(buf));
+	return i2c_send_command(I2C_BALLBOARD_ADDR, (uint8_t*)&buf, sizeof(buf));
 }
 

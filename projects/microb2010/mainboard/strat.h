@@ -83,23 +83,30 @@
 
 /* strat infos structures */
 
-struct bbox {
+struct strat_bbox {
 	int32_t x1;
 	int32_t y1;
 	int32_t x2;
 	int32_t y2;
 };
 
-struct conf {
+struct strat_conf {
 #define STRAT_CONF_XXX   0x01
+	uint8_t flags;
+};
+
+struct strat_status {
+#define STRAT_STATUS_LHARVEST 0x01
+#define STRAT_STATUS_RHARVEST 0x02
 	uint8_t flags;
 };
 
 /* all infos related to strat */
 struct strat_infos {
 	uint8_t dump_enabled;
-	struct conf conf;
-	struct bbox area_bbox;
+	struct strat_conf conf;
+	struct strat_bbox area_bbox;
+	struct strat_status status;
 };
 extern struct strat_infos strat_infos;
 

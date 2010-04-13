@@ -126,12 +126,19 @@ static void do_cs(void *dummy)
 		 * compensation) */
 		position_manage(&mainboard.pos);
 	}
-	if (mainboard.flags & DO_BD) {
+	if ((mainboard.flags & DO_BD) && (mainboard.flags & DO_POWER)) {
 		bd_manage_from_cs(&mainboard.angle.bd, &mainboard.angle.cs);
 		bd_manage_from_cs(&mainboard.distance.bd, &mainboard.distance.cs);
 #ifndef HOST_VERSION
 		bd_manage_from_cs(&mainboard.left_cobroller.bd, &mainboard.left_cobroller.cs);
 		bd_manage_from_cs(&mainboard.right_cobroller.bd, &mainboard.right_cobroller.cs);
+		if (mainboard.flags & DO_ERRBLOCKING) {
+			if (bd_get(&mainboard.left_cobroller.bd) ||
+			    bd_get(&mainboard.left_cobroller.bd)) {
+				printf_P(PSTR("MOTOR BLOCKED STOP ALL\r\n"));
+				mainboard.flags &= ~(DO_POWER | DO_ERRBLOCKING);
+			}
+		}
 #endif
 	}
 #ifndef HOST_VERSION
@@ -226,7 +233,7 @@ void microb_cs_init(void)
 			  &mainboard.angle.cs);
 	trajectory_set_robot_params(&mainboard.traj, &mainboard.rs, &mainboard.pos);
 	trajectory_set_speed(&mainboard.traj, SPEED_DIST_FAST, SPEED_ANGLE_FAST); /* d, a */
-	trajectory_set_speed(&mainboard.traj, ACC_DIST, ACC_ANGLE); /* d, a */
+	trajectory_set_acc(&mainboard.traj, ACC_DIST, ACC_ANGLE); /* d, a */
 	/* distance window, angle window, angle start */
 	trajectory_set_windows(&mainboard.traj, 200., 5.0, 30.);
 

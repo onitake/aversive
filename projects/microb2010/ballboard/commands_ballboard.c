@@ -1,6 +1,6 @@
 /*
  *  Copyright Droids Corporation (2009)
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -17,7 +17,7 @@
  *
  *  Revision : $Id: commands_ballboard.c,v 1.2 2009-04-24 19:30:42 zer0 Exp $
  *
- *  Olivier MATZ <zer0@droids-corp.org> 
+ *  Olivier MATZ <zer0@droids-corp.org>
  */
 
 #include <stdio.h>
@@ -63,22 +63,24 @@ static void cmd_event_parsed(void *parsed_result, void *data)
 	u08 bit=0;
 
 	struct cmd_event_result * res = parsed_result;
-	
+
 	if (!strcmp_P(res->arg1, PSTR("all"))) {
-		bit = DO_ENCODERS | DO_CS | DO_BD | DO_POWER;
+		bit = 0xFF;
 		if (!strcmp_P(res->arg2, PSTR("on")))
 			ballboard.flags |= bit;
 		else if (!strcmp_P(res->arg2, PSTR("off")))
 			ballboard.flags &= bit;
 		else { /* show */
-			printf_P(PSTR("encoders is %s\r\n"), 
+			printf_P(PSTR("encoders is %s\r\n"),
 				 (DO_ENCODERS & ballboard.flags) ? "on":"off");
-			printf_P(PSTR("cs is %s\r\n"), 
+			printf_P(PSTR("cs is %s\r\n"),
 				 (DO_CS & ballboard.flags) ? "on":"off");
-			printf_P(PSTR("bd is %s\r\n"), 
+			printf_P(PSTR("bd is %s\r\n"),
 				 (DO_BD & ballboard.flags) ? "on":"off");
-			printf_P(PSTR("power is %s\r\n"), 
+			printf_P(PSTR("power is %s\r\n"),
 				 (DO_POWER & ballboard.flags) ? "on":"off");
+			printf_P(PSTR("errblock is %s\r\n"),
+				 (DO_ERRBLOCKING & ballboard.flags) ? "on":"off");
 		}
 		return;
 	}
@@ -92,6 +94,8 @@ static void cmd_event_parsed(void *parsed_result, void *data)
 		bit = DO_BD;
 	else if (!strcmp_P(res->arg1, PSTR("power")))
 		bit = DO_POWER;
+	else if (!strcmp_P(res->arg1, PSTR("errblock")))
+		bit = DO_ERRBLOCKING;
 
 
 	if (!strcmp_P(res->arg2, PSTR("on")))
@@ -104,13 +108,13 @@ static void cmd_event_parsed(void *parsed_result, void *data)
 		}
 		ballboard.flags &= (~bit);
 	}
-	printf_P(PSTR("%s is %s\r\n"), res->arg1, 
+	printf_P(PSTR("%s is %s\r\n"), res->arg1,
 		      (bit & ballboard.flags) ? "on":"off");
 }
 
 prog_char str_event_arg0[] = "event";
 parse_pgm_token_string_t cmd_event_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_event_result, arg0, str_event_arg0);
-prog_char str_event_arg1[] = "all#encoders#cs#bd#power";
+prog_char str_event_arg1[] = "all#encoders#cs#bd#power#errblock";
 parse_pgm_token_string_t cmd_event_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_event_result, arg1, str_event_arg1);
 prog_char str_event_arg2[] = "on#off#show";
 parse_pgm_token_string_t cmd_event_arg2 = TOKEN_STRING_INITIALIZER(struct cmd_event_result, arg2, str_event_arg2);
@@ -121,9 +125,9 @@ parse_pgm_inst_t cmd_event = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_event,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_event_arg0, 
-		(prog_void *)&cmd_event_arg1, 
-		(prog_void *)&cmd_event_arg2, 
+		(prog_void *)&cmd_event_arg0,
+		(prog_void *)&cmd_event_arg1,
+		(prog_void *)&cmd_event_arg2,
 		NULL,
 	},
 };
@@ -161,8 +165,8 @@ parse_pgm_inst_t cmd_color = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_color,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_color_arg0, 
-		(prog_void *)&cmd_color_color, 
+		(prog_void *)&cmd_color_arg0,
+		(prog_void *)&cmd_color_color,
 		NULL,
 	},
 };
@@ -275,7 +279,7 @@ struct cmd_state3_result {
 };
 
 /* function called when cmd_state3 is parsed successfully */
-static void cmd_state3_parsed(void *parsed_result, 
+static void cmd_state3_parsed(void *parsed_result,
 			      __attribute__((unused)) void *data)
 {
 	struct cmd_state3_result *res = parsed_result;
@@ -300,9 +304,9 @@ parse_pgm_inst_t cmd_state3 = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_state3,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_state3_arg0, 
-		(prog_void *)&cmd_state3_arg1, 
-		(prog_void *)&cmd_state3_arg2, 
+		(prog_void *)&cmd_state3_arg0,
+		(prog_void *)&cmd_state3_arg1,
+		(prog_void *)&cmd_state3_arg2,
 		NULL,
 	},
 };
@@ -331,7 +335,7 @@ parse_pgm_inst_t cmd_state_machine = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_state_machine,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_state_machine_arg0, 
+		(prog_void *)&cmd_state_machine_arg0,
 		NULL,
 	},
 };
@@ -363,8 +367,8 @@ parse_pgm_inst_t cmd_state_debug = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_state_debug,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_state_debug_arg0, 
-		(prog_void *)&cmd_state_debug_on, 
+		(prog_void *)&cmd_state_debug_arg0,
+		(prog_void *)&cmd_state_debug_on,
 		NULL,
 	},
 };
@@ -406,8 +410,8 @@ parse_pgm_inst_t cmd_fork = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_fork,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_fork_arg0, 
-		(prog_void *)&cmd_fork_arg1, 
+		(prog_void *)&cmd_fork_arg0,
+		(prog_void *)&cmd_fork_arg1,
 		NULL,
 	},
 };
@@ -445,8 +449,8 @@ parse_pgm_inst_t cmd_roller = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_roller,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_roller_arg0, 
-		(prog_void *)&cmd_roller_arg1, 
+		(prog_void *)&cmd_roller_arg0,
+		(prog_void *)&cmd_roller_arg1,
 		NULL,
 	},
 };
@@ -474,7 +478,7 @@ parse_pgm_inst_t cmd_test = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_test,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_test_arg0, 
+		(prog_void *)&cmd_test_arg0,
 		NULL,
 	},
 };

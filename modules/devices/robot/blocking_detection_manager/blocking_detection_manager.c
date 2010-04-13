@@ -1,6 +1,6 @@
-/*  
+/*
  *  Copyright Droids Corporation (2007)
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -38,8 +38,8 @@ void bd_init(struct blocking_detection * bd)
 }
 
 /* thresholds */
-void bd_set_current_thresholds(struct blocking_detection * bd, 
-			       int32_t k1, int32_t k2, 
+void bd_set_current_thresholds(struct blocking_detection * bd,
+			       int32_t k1, int32_t k2,
 			       uint32_t i_thres, uint16_t cpt_thres)
 {
 	uint8_t flags;
@@ -53,7 +53,7 @@ void bd_set_current_thresholds(struct blocking_detection * bd,
 }
 
 /* speed threshold */
-void bd_set_speed_threshold(struct blocking_detection * bd, 
+void bd_set_speed_threshold(struct blocking_detection * bd,
 			    uint16_t speed)
 {
 	uint8_t flags;
@@ -71,45 +71,48 @@ void bd_reset(struct blocking_detection * bd)
 	IRQ_UNLOCK(flags);
 }
 
-
-
 /** function to be called periodically */
-void bd_manage_from_speed_cmd(struct blocking_detection * bd, 
-			      int32_t speed, int32_t cmd)	   
+void bd_manage_from_speed_cmd(struct blocking_detection * bd,
+			      int32_t speed, int32_t cmd)
 {
-	int32_t i=0;
+	int32_t i = 0;
 
-	/* if current-based blocking_detection enabled */
-	if ( bd->cpt_thres ) {
-		i = bd->k1 * cmd - bd->k2 * speed;
-		if ((uint32_t)ABS(i) > bd->i_thres && 
-		    (bd->speed_thres == 0 || ABS(speed) < bd->speed_thres)) {
-			if (bd->cpt == bd->cpt_thres - 1)
-				WARNING(E_BLOCKING_DETECTION_MANAGER, 
-				      "BLOCKING cmd=%ld, speed=%ld i=%ld",
-				      cmd, speed, i);
-			if (bd->cpt < bd->cpt_thres)
-				bd->cpt++;
-		}
-		else {
-			bd->cpt=0;
-		}
+	/* disabled */
+	if (bd->cpt_thres == 0)
+		return;
+
+	i = bd->k1 * cmd - bd->k2 * speed;
+
+	/* if i is above threshold, speed is below threshold, and cmd
+	 * has the same sign than i */
+	if ((uint32_t)ABS(i) > bd->i_thres &&
+	    (bd->speed_thres == 0 || ABS(speed) < bd->speed_thres) &&
+	    (i * cmd > 0)) {
+		if (bd->cpt == bd->cpt_thres - 1)
+			WARNING(E_BLOCKING_DETECTION_MANAGER,
+				"BLOCKING cmd=%ld, speed=%ld i=%ld",
+				cmd, speed, i);
+		if (bd->cpt < bd->cpt_thres)
+			bd->cpt++;
+	}
+	else {
+		bd->cpt=0;
+	}
 #if BD_DEBUG
-		if (bd->debug_cpt++ == BD_DEBUG) {
-			DEBUG(E_BLOCKING_DETECTION_MANAGER, "cmd=%ld, speed=%ld i=%ld",
-			      cmd, speed, i);
-			bd->debug_cpt = 0;
-		}
+	if (bd->debug_cpt++ == BD_DEBUG) {
+		DEBUG(E_BLOCKING_DETECTION_MANAGER, "cmd=%ld, speed=%ld i=%ld",
+		      cmd, speed, i);
+		bd->debug_cpt = 0;
 	}
 #endif
 }
 
 /** function to be called periodically */
-void bd_manage_from_pos_cmd(struct blocking_detection * bd, 
-			    int32_t pos, int32_t cmd)   
+void bd_manage_from_pos_cmd(struct blocking_detection * bd,
+			    int32_t pos, int32_t cmd)
 {
 	int32_t speed = (pos - bd->prev_pos);
-	bd_manage_from_speed_cmd(bd, speed, cmd);	
+	bd_manage_from_speed_cmd(bd, speed, cmd);
 	bd->prev_pos = pos;
 }
 
