@@ -30,13 +30,13 @@
 #define LED1_OFF() 	cbi(PORTJ, 2)
 #define LED1_TOGGLE() 	LED_TOGGLE(PORTJ, 2)
 
-#define LED2_ON() 	sbi(PORTL, 7)
-#define LED2_OFF() 	cbi(PORTL, 7)
-#define LED2_TOGGLE() 	LED_TOGGLE(PORTL, 7)
+#define LED2_ON() 	sbi(PORTJ, 3)
+#define LED2_OFF() 	cbi(PORTJ, 3)
+#define LED2_TOGGLE() 	LED_TOGGLE(PORTJ, 3)
 
-#define LED3_ON() 	sbi(PORTJ, 3)
-#define LED3_OFF() 	cbi(PORTJ, 3)
-#define LED3_TOGGLE() 	LED_TOGGLE(PORTJ, 3)
+#define LED3_ON() 	sbi(PORTL, 7)
+#define LED3_OFF() 	cbi(PORTL, 7)
+#define LED3_TOGGLE() 	LED_TOGGLE(PORTL, 7)
 
 #define LED4_ON() 	sbi(PORTL, 6)
 #define LED4_OFF() 	cbi(PORTL, 6)

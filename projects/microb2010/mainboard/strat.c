@@ -58,6 +58,7 @@
 #include "main.h"
 #include "strat.h"
 #include "strat_base.h"
+#include "strat_corn.h"
 #include "strat_utils.h"
 #include "sensor.h"
 #include "actuator.h"
@@ -138,12 +139,14 @@ void strat_dump_infos(const char *caller)
  * here */
 void strat_reset_infos(void)
 {
+	init_corn_table(-1, -1);
 }
 
 /* call it just before launching the strat */
 void strat_init(void)
 {
 	/* XXX init rollers, .. */
+
 	strat_reset_infos();
 
 	/* we consider that the color is correctly set */

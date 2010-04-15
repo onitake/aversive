@@ -99,15 +99,9 @@ static void i2c_send_status(void)
 	ans.right_cobroller_speed = cobboard.right_cobroller_speed;
 
 	ans.cob_count = state_get_cob_count();
-;
+
 	i2c_send(I2C_ADD_MASTER, (uint8_t *) &ans,
 		 sizeof(ans), I2C_CTRL_GENERIC);
-}
-
-static int8_t i2c_set_mode(struct i2c_cmd_cobboard_set_mode *cmd)
-{
-	state_set_mode(cmd->mode);
-	return 0;
 }
 
 void i2c_recvevent(uint8_t * buf, int8_t size)
@@ -136,6 +130,7 @@ void i2c_recvevent(uint8_t * buf, int8_t size)
 			break;
 		}
 
+#if 0
 	case I2C_CMD_COBBOARD_SET_MODE:
 		{
 			struct i2c_cmd_cobboard_set_mode *cmd = void_cmd;
@@ -144,6 +139,7 @@ void i2c_recvevent(uint8_t * buf, int8_t size)
 			i2c_set_mode(cmd);
 			break;
 		}
+#endif
 
 	case I2C_CMD_GENERIC_SET_COLOR:
 		{
@@ -164,16 +160,18 @@ void i2c_recvevent(uint8_t * buf, int8_t size)
 			break;
 		}
 #endif
-		
+
 	/* Add other commands here ...*/
 
 
 	case I2C_REQ_COBBOARD_STATUS:
 		{
-			//struct i2c_req_cobboard_status *cmd = void_cmd;
+			struct i2c_req_cobboard_status *cmd = void_cmd;
 			if (size != sizeof (struct i2c_req_cobboard_status))
 				goto error;
-			
+
+			/* mode is in req */
+			state_set_mode(cmd->mode);
 			i2c_send_status();
 			break;
 		}

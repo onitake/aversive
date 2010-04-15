@@ -68,6 +68,7 @@ struct i2c_cmd_generic_color {
 
 #define I2C_CMD_COBBOARD_SET_MODE 0x02
 
+/* XXX disabled, use memory sync instead */
 struct i2c_cmd_cobboard_set_mode {
 	struct i2c_cmd_hdr hdr;
 
@@ -77,7 +78,7 @@ struct i2c_cmd_cobboard_set_mode {
 #define I2C_COBBOARD_MODE_R_HARVEST    0x08 /* auto harvest withe cobs */
 #define I2C_COBBOARD_MODE_EJECT        0x10 /* eject cobs */
 #define I2C_COBBOARD_MODE_INIT         0x20 /* init state machine */
-	uint8_t mode;
+	//uint8_t mode;
 };
 
 #define I2C_CMD_BALLBOARD_SET_MODE 0x10
@@ -105,7 +106,7 @@ struct i2c_cmd_ballboard_set_mode {
 
 struct i2c_req_cobboard_status {
 	struct i2c_cmd_hdr hdr;
-	int16_t sickle_left1_current;
+	uint8_t mode;
 };
 
 #define I2C_ANS_COBBOARD_STATUS 0x81

@@ -66,6 +66,7 @@
 #include "strat.h"
 #include "strat_utils.h"
 #include "strat_base.h"
+#include "strat_corn.h"
 #include "i2c_protocol.h"
 #include "actuator.h"
 
@@ -1202,6 +1203,65 @@ static void reverse_line(struct line_2pts *l)
 }
 #endif
 
+/* return 1 if there is a corn near, and fill the index ptr */
+static uint8_t corn_is_near(int8_t *corn_idx, uint8_t side)
+{
+#define SENSOR_CORN_DIST  225
+#define SENSOR_CORN_ANGLE 90
+	double x = position_get_x_double(&mainboard.pos);
+	double y = position_get_y_double(&mainboard.pos);
+	double a_rad = position_get_a_rad_double(&mainboard.pos);
+	double x_corn, y_corn;
+	int16_t x_corn_int, y_corn_int;
+
+	if (side == I2C_LEFT_SIDE) {
+		x_corn = x + cos(a_rad + RAD(SENSOR_CORN_ANGLE)) * SENSOR_CORN_DIST;
+		y_corn = y + sin(a_rad + RAD(SENSOR_CORN_ANGLE)) * SENSOR_CORN_DIST;
+	}
+	else {
+		x_corn = x + cos(a_rad + RAD(-SENSOR_CORN_ANGLE)) * SENSOR_CORN_DIST;
+		y_corn = y + sin(a_rad + RAD(-SENSOR_CORN_ANGLE)) * SENSOR_CORN_DIST;
+	}
+	x_corn_int = x_corn;
+	y_corn_int = y_corn;
+
+	*corn_idx = xycoord_to_corn_idx(&x_corn_int, &y_corn_int);
+	if (*corn_idx < 0)
+		return 0;
+	return 1;
+}
+
+/*
+ * - send the correct commands to the spickles
+ * - return 1 if we need to stop (cobboard is stucked)
+*/
+static uint8_t handle_spickles(void)
+{
+	int8_t corn_idx;
+
+	if (!corn_is_near(&corn_idx, I2C_LEFT_SIDE))
+		i2c_cobboard_mode_deploy(I2C_LEFT_SIDE);
+	else {
+		if (corn_table[corn_idx] == TYPE_WHITE_CORN)
+			i2c_cobboard_mode_harvest(I2C_LEFT_SIDE);
+		else
+			i2c_cobboard_mode_pack(I2C_LEFT_SIDE);
+	}
+/* 	printf("%d %d\n", corn_idx, corn_table[corn_idx]); */
+/* 	time_wait_ms(100); */
+
+	if (!corn_is_near(&corn_idx, I2C_RIGHT_SIDE))
+		i2c_cobboard_mode_deploy(I2C_RIGHT_SIDE);
+	else {
+		if (corn_table[corn_idx] == TYPE_WHITE_CORN)
+			i2c_cobboard_mode_harvest(I2C_RIGHT_SIDE);
+		else
+			i2c_cobboard_mode_pack(I2C_RIGHT_SIDE);
+	}
+
+	return 0;
+}
+
 static void line2line(uint8_t dir1, uint8_t num1,
 		      uint8_t dir2, uint8_t num2)
 {
@@ -1211,6 +1271,7 @@ static void line2line(uint8_t dir1, uint8_t num1,
 	struct line_2pts l1, l2;
 	line_t ll1, ll2;
 	point_t p;
+	uint8_t err;
 
 	/* convert to 2 points */
 	num2line(&l1, dir1, num1);
@@ -1255,11 +1316,22 @@ static void line2line(uint8_t dir1, uint8_t num1,
 		else
 			beta_deg = -60;
 	}
+
 	trajectory_clitoid(&mainboard.traj, l1.p1.x, l1.p1.y,
 			   line1_a_deg, 150., diff_a_deg, beta_deg,
 			   radius, xy_norm(l1.p1.x, l1.p1.y,
 					   p.x, p.y));
-	wait_traj_end(0xFF);
+	err = 0;
+	while (err == 0) {
+		err = WAIT_COND_OR_TRAJ_END(handle_spickles(), 0xFF);
+		if (err == 0) {
+			/* cobboard is stucked */
+			trajectory_hardstop(&mainboard.traj);
+			return; /* XXX do something */
+		}
+		err = test_traj_end(0xFF);
+	}
+	return;
 }
 
 /* function called when cmd_test is parsed successfully */
@@ -1269,11 +1341,14 @@ static void cmd_test_parsed(void *parsed_result, void *data)
 	strat_reset_pos(298.48, 309.21, 70.02);
 	mainboard.angle.on = 1;
 	mainboard.distance.on = 1;
+	strat_set_speed(250, SPEED_ANGLE_FAST);
 #endif
+	init_corn_table(0, 0);
 	time_wait_ms(100);
 
 	line2line(LINE_UP, 0, LINE_R_DOWN, 2);
-	line2line(LINE_R_DOWN, 2, LINE_R_UP, 1);
+	line2line(LINE_R_DOWN, 2, LINE_R_UP, 2);
+	line2line(LINE_R_UP, 2, LINE_UP, 5);
 
 	trajectory_hardstop(&mainboard.traj);
 }

@@ -102,8 +102,8 @@ static void do_cs(__attribute__((unused)) void *dummy)
 
 		/* urgent case: stop power on blocking */
 		if (cobboard.flags & DO_ERRBLOCKING) {
-			if (bd_get(&cobboard.left_spickle.bd) ||
-			    bd_get(&cobboard.right_spickle.bd) ||
+			if (/* bd_get(&cobboard.left_spickle.bd) || */
+			    /* bd_get(&cobboard.right_spickle.bd) || */
 			    bd_get(&cobboard.shovel.bd)) {
 				printf_P(PSTR("MOTOR BLOCKED STOP ALL\r\n"));
 				cobboard.flags &= ~(DO_POWER | DO_ERRBLOCKING);
@@ -149,8 +149,8 @@ void microb_cs_init(void)
 	/* ---- CS left_spickle */
 	/* PID */
 	pid_init(&cobboard.left_spickle.pid);
-	pid_set_gains(&cobboard.left_spickle.pid, 300, 10, 1500);
-	pid_set_maximums(&cobboard.left_spickle.pid, 0, 10000, 2400); /* max is 12 V */
+	pid_set_gains(&cobboard.left_spickle.pid, 400, 10, 1500);
+	pid_set_maximums(&cobboard.left_spickle.pid, 0, 25000, 4095);
 	pid_set_out_shift(&cobboard.left_spickle.pid, 10);
 	pid_set_derivate_filter(&cobboard.left_spickle.pid, 4);
 
@@ -169,8 +169,8 @@ void microb_cs_init(void)
 	/* ---- CS right_spickle */
 	/* PID */
 	pid_init(&cobboard.right_spickle.pid);
-	pid_set_gains(&cobboard.right_spickle.pid, 300, 10, 1500);
-	pid_set_maximums(&cobboard.right_spickle.pid, 0, 10000, 2400); /* max is 12 V */
+	pid_set_gains(&cobboard.right_spickle.pid, 400, 10, 1500);
+	pid_set_maximums(&cobboard.right_spickle.pid, 0, 25000, 4095);
 	pid_set_out_shift(&cobboard.right_spickle.pid, 10);
 	pid_set_derivate_filter(&cobboard.right_spickle.pid, 4);
 

@@ -207,8 +207,8 @@ int main(void)
 	PWM_NG_TIMER_16BITS_INIT(4, TIMER_16_MODE_PWM_10,
 				 TIMER4_PRESCALER_DIV_1);
 
-	PWM_NG_INIT16(&gen.pwm1_4A, 4, A, 10, PWM_NG_MODE_SIGNED |
-		      PWM_NG_MODE_SIGN_INVERTED, &PORTD, 4);
+	PWM_NG_INIT16(&gen.pwm1_4A, 4, A, 10, PWM_NG_MODE_SIGNED,
+		      &PORTD, 4);
 	PWM_NG_INIT16(&gen.pwm2_4B, 4, B, 10, PWM_NG_MODE_SIGNED |
 		      PWM_NG_MODE_SIGN_INVERTED, &PORTD, 5);
 	PWM_NG_INIT16(&gen.pwm3_1A, 1, A, 10, PWM_NG_MODE_SIGNED,
@@ -270,6 +270,9 @@ int main(void)
  	gen.logs[0] = E_USER_ST_MACH;
  	gen.log_level = 5;
 	cobboard.flags |= DO_CS;
+
+	spickle_pack(I2C_LEFT_SIDE);
+	spickle_pack(I2C_RIGHT_SIDE);
 
  	state_machine();
 	cmdline_interact();

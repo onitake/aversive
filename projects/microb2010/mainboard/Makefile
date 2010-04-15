@@ -6,7 +6,7 @@ AVERSIVE_DIR = ../../..
 SRC  = $(TARGET).c cmdline.c commands_ax12.c commands_gen.c
 SRC += commands_cs.c commands_mainboard.c commands_traj.c commands.c
 SRC += i2c_protocol.c sensor.c actuator.c cs.c ax12_user.c
-SRC += strat_utils.c strat_base.c strat.c
+SRC += strat_utils.c strat_base.c strat.c strat_corn.c
 ifeq ($(H),1)
 SRC += robotsim.c
 endif

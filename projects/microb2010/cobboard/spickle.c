@@ -60,23 +60,23 @@ struct spickle_params {
 };
 
 static struct spickle_params spickle = {
-	.k1 = 500,
+	.k1 = 1000,
 	.k2 = 20,
 	.csb = {
 		&cobboard.left_spickle,
 		&cobboard.right_spickle,
 	},
 	.pos_deployed = {
-		40000, /* left */
-		-40000, /* right */
-	},
-	.pos_mid = {
-		20000, /* left */
-		-20000, /* right */
-	},
-	.pos_packed = {
 		0, /* left */
 		0, /* right */
+	},
+	.pos_mid = {
+		25000, /* left */
+		26000, /* right */
+	},
+	.pos_packed = {
+		53000, /* left */
+		54500, /* right */
 	},
 };
 
@@ -84,9 +84,9 @@ static struct spickle_params spickle = {
 static void spickle_autopos(void)
 {
 	printf_P(PSTR("spickle autopos..."));
-	pwm_ng_set(LEFT_SPICKLE_PWM, -500);
-	pwm_ng_set(RIGHT_SPICKLE_PWM, 500);
-	wait_ms(1000);
+	pwm_ng_set(LEFT_SPICKLE_PWM, -700);
+	pwm_ng_set(RIGHT_SPICKLE_PWM, -700);
+	wait_ms(2500);
 	pwm_ng_set(LEFT_SPICKLE_PWM, 0);
 	pwm_ng_set(RIGHT_SPICKLE_PWM, 0);
 	encoders_spi_set_value(LEFT_SPICKLE_ENCODER, 0);

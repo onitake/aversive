@@ -45,20 +45,21 @@
 /*
  *
  *
- *
- *
- *     +------------------------------------+
- *     |      			            |
- *     |      			            |
- *     |      			            |
- *     |      			            | 
- *  y  |      			            |
- *     |      			            |  
- *     |------			      ------| 
- *     |     |			      |     | 
- *     |     |			      |     | 
- *     +-----+------------------------+-----+
- *                       x
+ *           vertical lines
+ *            O     1     2     3     4     5
+ * 2100 +-----|-----|-----|-----|-----|-----|-----+
+ *      |        o           o           o        |
+ *      |  o           o           o           o  |   diag
+ *      |        o           o           o        |   lines
+ *     0/  o           o           o           o  \0
+ *  y   |        o                       o        |
+ *     1/  o                                   o  \1
+ *      |                                         |
+ *     2/------                             ------\2
+ *      |     |                             |     |
+ *      |     |                             |     |
+ *   0  +-----+-----------------------------+-----+
+ *     0                  x                      3000
  */
 
 /* useful traj flags */
@@ -70,8 +71,8 @@
 #define TRAJ_FLAGS_SMALL_DIST (END_TRAJ|END_BLOCKING|END_INTR)
 
 /* default acc */
-#define ACC_DIST  5.
-#define ACC_ANGLE 5.
+#define ACC_DIST  10.
+#define ACC_ANGLE 10.
 
 /* default speeds */
 #define SPEED_DIST_FAST 2500.

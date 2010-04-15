@@ -36,8 +36,8 @@
 #define S_COLUMN_LEFT  3
 #define S_START_SWITCH 4
 #define S_DISP_LEFT    5
-#define S_DISP_RIGHT   6
-#define S_CAP8         7
+#define S_RCOB_WHITE   6
+#define S_LCOB_WHITE   7
 #define S_RESERVED1    8
 #define S_RESERVED2    9
 #define S_RESERVED3   10

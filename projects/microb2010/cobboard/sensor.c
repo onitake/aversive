@@ -1,7 +1,7 @@
-/*  
+/*
  *  Copyright Droids Corporation (2009)
  *  Olivier MATZ <zer0@droids-corp.org>
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -38,6 +38,7 @@
 #include <parse.h>
 #include <rdline.h>
 
+#include "../common/i2c_commands.h"
 #include "main.h"
 #include "sensor.h"
 
@@ -75,7 +76,7 @@ int16_t rii_strong(struct adc_infos *adc, int16_t val)
 #define ADC_CONF(x) ( ADC_REF_AVCC | ADC_MODE_INT | MUX_ADC##x )
 
 /* define which ADC to poll, see in sensor.h */
-static struct adc_infos adc_infos[ADC_MAX] = { 
+static struct adc_infos adc_infos[ADC_MAX] = {
 	[ADC_CSENSE1] = { .config = ADC_CONF(0), .filter = rii_medium },
 	[ADC_CSENSE2] = { .config = ADC_CONF(1), .filter = rii_medium },
 	[ADC_CSENSE3] = { .config = ADC_CONF(2), .filter = rii_medium },
@@ -91,7 +92,7 @@ static struct adc_infos adc_infos[ADC_MAX] = {
 static void adc_event(int16_t result);
 
 /* called every 10 ms, see init below */
-static void do_adc(__attribute__((unused)) void *dummy) 
+static void do_adc(__attribute__((unused)) void *dummy)
 {
 	/* launch first conversion */
 	adc_launch(adc_infos[0].config);
@@ -146,10 +147,10 @@ static struct sensor_filter sensor_filter[SENSOR_MAX] = {
 	[S_CAP2] =      { 10, 0, 3, 7, 0, 0 }, /* 1 */
 	[S_COB_INSIDE_R] = { 5, 0, 4, 1, 0, 0 }, /* 2 */
 	[S_CAP4] =      { 1, 0, 0, 1, 0, 0 }, /* 3 */
-	[S_LCOB] =      { 1, 0, 0, 1, 0, 0 }, /* 4 */
-	[S_LEFT] =      { 5, 0, 4, 1, 0, 0 }, /* 5 */
-	[S_RIGHT] =     { 5, 0, 4, 1, 0, 1 }, /* 6 */
-	[S_RCOB] =      { 1, 0, 0, 1, 0, 0 }, /* 7 */
+	[S_LCOB] =      { 1, 0, 0, 1, 0, 1 }, /* 4 */
+	[S_LEFT] =      { 5, 0, 4, 1, 0, 0 }, /* 5 */ /////// not used
+	[S_RIGHT] =     { 5, 0, 4, 1, 0, 1 }, /* 6 */ /////// not used
+	[S_RCOB] =      { 1, 0, 0, 1, 0, 1 }, /* 7 */
 	[S_RESERVED1] = { 10, 0, 3, 7, 0, 0 }, /* 8 */
 	[S_RESERVED2] = { 10, 0, 3, 7, 0, 0 }, /* 9 */
 	[S_RESERVED3] = { 1, 0, 0, 1, 0, 0 }, /* 10 */
@@ -163,7 +164,7 @@ static struct sensor_filter sensor_filter[SENSOR_MAX] = {
 /* value of filtered sensors */
 static uint16_t sensor_filtered = 0;
 
-/* sensor mapping : 
+/* sensor mapping :
  * 0-3:  PORTK 2->5 (cap1 -> cap4) (adc10 -> adc13)
  * 4-5:  PORTL 0->1 (cap5 -> cap6)
  * 6-7:  PORTE 3->4 (cap7 -> cap8)
@@ -218,7 +219,7 @@ static void do_boolean_sensors(__attribute__((unused)) void *dummy)
 			if (sensor_filter[i].cpt <= sensor_filter[i].thres_off)
 				sensor_filter[i].prev = 0;
 		}
-		
+
 		if (sensor_filter[i].prev && !sensor_filter[i].invert) {
 			tmp |= (1UL << i);
 		}
@@ -231,6 +232,51 @@ static void do_boolean_sensors(__attribute__((unused)) void *dummy)
 	IRQ_UNLOCK(flags);
 }
 
+static uint8_t lcob_cpt = 0, rcob_cpt = 0;
+uint8_t cob_falling_edge(uint8_t side)
+{
+	uint8_t flags;
+
+	if (side == I2C_LEFT_SIDE) {
+		IRQ_LOCK(flags);
+		if (lcob_cpt == 0) {
+			IRQ_UNLOCK(flags);
+			return 0;
+		}
+		lcob_cpt = 0;
+		IRQ_UNLOCK(flags);
+		return 1;
+	}
+	else {
+		IRQ_LOCK(flags);
+		if (rcob_cpt == 0) {
+			IRQ_UNLOCK(flags);
+			return 0;
+		}
+		rcob_cpt = 0;
+		IRQ_UNLOCK(flags);
+		return 1;
+	}
+}
+
+static void cob_edge_manage(void)
+{
+	static uint8_t lprev, rprev;
+	uint8_t l, r;
+	l = sensor_get(S_LCOB);
+	r = sensor_get(S_RCOB);
+	/* falling edge */
+	if (lprev != 0 && l == 0)
+		lcob_cpt = 10;
+	if (rprev != 0 && r == 0)
+		rcob_cpt = 10;
+	if (lcob_cpt > 0)
+		lcob_cpt --;
+	if (rcob_cpt > 0)
+		rcob_cpt --;
+	lprev = l;
+	rprev = r;
+}
 
 
 /************ global sensor init */
@@ -240,6 +286,7 @@ static void do_sensors(__attribute__((unused)) void *dummy)
 {
 	do_adc(NULL);
 	do_boolean_sensors(NULL);
+	cob_edge_manage();
 }
 
 void sensor_init(void)
@@ -247,8 +294,8 @@ void sensor_init(void)
 	adc_init();
 	adc_register_event(adc_event);
 	/* CS EVENT */
-	scheduler_add_periodical_event_priority(do_sensors, NULL, 
-						10000L / SCHEDULER_UNIT, 
+	scheduler_add_periodical_event_priority(do_sensors, NULL,
+						10000L / SCHEDULER_UNIT,
 						ADC_PRIO);
 }
 

@@ -1,5 +1,5 @@
 /*
- *  Copyright Droids Corporation, Microb Technology, Eirbot (2005)
+ *  Copyright Droids, Microb Technology (2010)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -15,14 +15,22 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- *  Revision : $Id: main.c,v 1.9.4.5 2007-06-01 09:37:22 zer0 Exp $
+ *  Revision : $Id: strat.c,v 1.6 2009-11-08 17:24:33 zer0 Exp $
  *
+ *  Olivier MATZ <zer0@droids-corp.org>
  */
 
-int8_t robotsim_i2c(uint8_t addr, uint8_t *buf, uint8_t size);
-void robotsim_update(void);
-void robotsim_pwm(void *arg, int32_t val);
-int32_t robotsim_encoder_get(void *arg);
-int robotsim_init(void);
-void robotsim_dump(void);
-int8_t robotsim_i2c_cobboard_set_mode(uint8_t mode);
+#define CORN_NB 18
+
+/* enum is better */
+#define TYPE_WAYPOINT 0
+#define TYPE_DANGEROUS 1
+#define TYPE_WHITE_CORN 2
+#define TYPE_BLACK_CORN 3
+#define TYPE_OBSTACLE 4
+
+extern uint8_t corn_table[CORN_NB];
+
+int8_t ijcoord_to_corn_idx(int8_t i, int8_t j);
+int8_t xycoord_to_corn_idx(int16_t *x, int16_t *y);
+void init_corn_table(int8_t conf_side, int8_t conf_center);

@@ -86,25 +86,6 @@ static void state_debug_wait_key_pressed(void)
 	while(!cmdline_keypressed());
 }
 
-/* return true if cob is present */
-static uint8_t state_cob_present(uint8_t side)
-{
-	if (side == I2C_LEFT_SIDE)
-		return sensor_get(S_LCOB);
-	else
-		return sensor_get(S_RCOB);
-}
-
-/* return the detected color of the cob (only valid if present) */
-static uint8_t state_cob_color(uint8_t side)
-{
-	/* XXX no color sensor for now */
-	if (side == I2C_LEFT_SIDE)
-		return I2C_COB_WHITE;
-	else
-		return I2C_COB_WHITE;
-}
-
 /* return true if the cob is correctly inside */
 static uint8_t state_cob_inside(void)
 {
@@ -186,11 +167,7 @@ static void state_do_harvest(uint8_t side)
 		state_status = I2C_COBBOARD_STATUS_RBUSY;
 
 	/* if there is no cob, return */
-	if (state_cob_present(side))
-		return;
-
-	/* if it is black, nothing to do */
-	if (state_cob_color(side) == I2C_COB_BLACK)
+	if (cob_falling_edge(side) == 0)
 		return;
 
 	STMCH_DEBUG("start");
@@ -330,6 +307,7 @@ void state_machine(void)
 			state_do_eject();
 		}
 	}
+	state_status = I2C_COBBOARD_STATUS_READY;
 }
 
 void state_init(void)

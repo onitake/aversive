@@ -54,3 +54,5 @@ int16_t sensor_get_adc(uint8_t i);
 /* get filtered values of boolean sensors */
 uint16_t sensor_get_all(void);
 uint8_t sensor_get(uint8_t i);
+
+uint8_t cob_falling_edge(uint8_t side);

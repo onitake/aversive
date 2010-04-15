@@ -26,8 +26,9 @@
 #define END_OBSTACLE   8 /* There is an obstacle in front of us */
 #define END_ERROR     16 /* Cannot do the command */
 #define END_INTR      32 /* interrupted by user */
-#define END_TIMER     64 /* we don't a lot of time */
-#define END_RESERVED 128 /* reserved */
+#define END_TIMER     64 /* we don't have a lot of time */
+#define END_RESERVED 128 /* reserved... be careful, sometimes error is
+			    coded on a int8_t */
 
 /* only valid after a END_OBSTACLE */
 struct opponent_obstacle {

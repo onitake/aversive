@@ -158,14 +158,14 @@ struct sensor_filter {
  * CAP 1,5,6,7,8
  */
 static struct sensor_filter sensor_filter[SENSOR_MAX] = {
-	[S_CAP1] = { 1, 0, 0, 1, 0, 0 }, /* 4 */
+	[S_CAP1] = { 1, 0, 0, 1, 0, 0 }, /* 0 */
 	[S_CAP2] = { 1, 0, 0, 1, 0, 0 }, /* 1 */
-	[S_COLUMN_LEFT] = { 1, 0, 0, 1, 0, 1 }, /* 2 */
-	[S_COLUMN_RIGHT] = { 1, 0, 0, 1, 0, 1 }, /* 3 */
-	[S_START_SWITCH] = { 10, 0, 3, 7, 0, 0 }, /* 0 */
-	[S_DISP_LEFT] = { 1, 0, 0, 1, 0, 1 }, /* 5 */
-	[S_DISP_RIGHT] = { 1, 0, 0, 1, 0, 1 }, /* 6 */
-	[S_CAP8] = { 1, 0, 0, 1, 0, 0 }, /* 7 */
+	[S_COLUMN_LEFT] = { 1, 0, 0, 1, 0, 1 },    /* 2 */
+	[S_COLUMN_RIGHT] = { 1, 0, 0, 1, 0, 1 },   /* 3 */
+	[S_START_SWITCH] = { 10, 0, 3, 7, 0, 0 },  /* 4 */
+	[S_DISP_LEFT] = { 1, 0, 0, 1, 0, 1 },  /* 5 */
+	[S_RCOB_WHITE] = { 1, 0, 0, 1, 0, 0 }, /* 6 */
+	[S_LCOB_WHITE] = { 1, 0, 0, 1, 0, 0 }, /* 7 */
 	[S_RESERVED1] = { 10, 0, 3, 7, 0, 0 }, /* 8 */
 	[S_RESERVED2] = { 10, 0, 3, 7, 0, 0 }, /* 9 */
 	[S_RESERVED3] = { 1, 0, 0, 1, 0, 0 }, /* 10 */

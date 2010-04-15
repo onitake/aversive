@@ -258,14 +258,14 @@ def set_robot():
     robot.axis = axis
     robot.size = (250, 320, ROBOT_HEIGHT)
 
-    lspickle.pos = (robot_x - AREA_X/2 + (robot_lspickle*60) * math.cos((robot_a-90)*math.pi/180),
-                    robot_y - AREA_Y/2 + (robot_lspickle*60) * math.sin((robot_a-90)*math.pi/180),
+    lspickle.pos = (robot_x - AREA_X/2 + (robot_lspickle*60) * math.cos((robot_a+90)*math.pi/180),
+                    robot_y - AREA_Y/2 + (robot_lspickle*60) * math.sin((robot_a+90)*math.pi/180),
                     ROBOT_HEIGHT/2)
     lspickle.axis = axis
     lspickle.size = (20, 320, 5)
 
-    rspickle.pos = (robot_x - AREA_X/2 + (robot_rspickle*60) * math.cos((robot_a+90)*math.pi/180),
-                    robot_y - AREA_Y/2 + (robot_rspickle*60) * math.sin((robot_a+90)*math.pi/180),
+    rspickle.pos = (robot_x - AREA_X/2 + (robot_rspickle*60) * math.cos((robot_a-90)*math.pi/180),
+                    robot_y - AREA_Y/2 + (robot_rspickle*60) * math.sin((robot_a-90)*math.pi/180),
                     ROBOT_HEIGHT/2)
     rspickle.axis = axis
     rspickle.size = (20, 320, 5)
@@ -297,7 +297,8 @@ def silent_mkfifo(f):
     except:
         pass
 
-init_corn_table(random.randint(0,8), random.randint(0,3))
+#init_corn_table(random.randint(0,8), random.randint(0,3))
+init_corn_table(0, 0)
 waypoints = init_waypoints()
 toggle_obj_disp()
 
