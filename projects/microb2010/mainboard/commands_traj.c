@@ -766,14 +766,13 @@ static void auto_position(void)
 	strat_get_speed(&old_spdd, &old_spda);
 	strat_set_speed(AUTOPOS_SPEED_FAST, AUTOPOS_SPEED_FAST);
 
-	trajectory_d_rel(&mainboard.traj, 300);
-	err = wait_traj_end(END_INTR|END_TRAJ|END_BLOCKING);
+	err = strat_calib(300, END_INTR|END_TRAJ|END_BLOCKING);
 	if (err == END_INTR)
 		goto intr;
-	wait_ms(100);
-	strat_reset_pos(ROBOT_WIDTH/2,
+	strat_reset_pos(ROBOT_WIDTH/2 + 100,
 			COLOR_Y(ROBOT_HALF_LENGTH_FRONT),
 			COLOR_A(-90));
+	strat_hardstop();
 
 	trajectory_d_rel(&mainboard.traj, -180);
 	err = wait_traj_end(END_INTR|END_TRAJ);
@@ -785,14 +784,13 @@ static void auto_position(void)
 	if (err == END_INTR)
 		goto intr;
 
-	trajectory_d_rel(&mainboard.traj, 300);
-	err = wait_traj_end(END_INTR|END_TRAJ|END_BLOCKING);
+	err = strat_calib(300, END_INTR|END_TRAJ|END_BLOCKING);
 	if (err == END_INTR)
 		goto intr;
-	wait_ms(100);
 	strat_reset_pos(ROBOT_HALF_LENGTH_FRONT,
 			DO_NOT_SET_POS,
 			180);
+	strat_hardstop();
 
 	trajectory_d_rel(&mainboard.traj, -170);
 	err = wait_traj_end(END_INTR|END_TRAJ);

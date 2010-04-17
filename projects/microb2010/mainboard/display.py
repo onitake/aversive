@@ -41,6 +41,10 @@ greyarea = [ (0.0, 0.0, -0.5), (1520.0, 500.0, 0.5) ]
 greyareasize = reduce(lambda x,y:tuple([abs(x[i])+abs(y[i]) for i in range(len(x))]) , greyarea)
 greyarea_box = box(pos=(0,-AREA_Y/2+250,0), size=greyareasize, color=(0.3, 0.6, 0.3))
 
+YELLOW = 0
+BLUE = 1
+color = YELLOW
+
 def square(sz):
     sq = curve()
     sq.pos = [(-sz, -sz, 0.3),
@@ -245,33 +249,49 @@ def toggle_obj_disp():
             else:
                 o.visible = 1
 
+def toggle_color():
+    global color
+    global BLUE, YELLOW
+    if color == YELLOW:
+        color = BLUE
+    else:
+        color = YELLOW
 
 def set_robot():
     global robot, last_pos, robot_trail, robot_trail_list
     global save_pos, robot_x, robot_y, robot_a
 
-    axis = (math.cos(robot_a*math.pi/180),
-            math.sin(robot_a*math.pi/180),
+    if color == YELLOW:
+        tmp_x = robot_x - AREA_X/2
+        tmp_y = robot_y - AREA_Y/2
+        tmp_a = robot_a
+    else:
+        tmp_x = -robot_x + AREA_X/2
+        tmp_y = -robot_y + AREA_Y/2
+        tmp_a = robot_a
+
+    robot.pos = (tmp_x, tmp_y, ROBOT_HEIGHT/2)
+    axis = (math.cos(tmp_a*math.pi/180),
+            math.sin(tmp_a*math.pi/180),
             0)
 
-    robot.pos = (robot_x - AREA_X/2, robot_y - AREA_Y/2, ROBOT_HEIGHT/2)
     robot.axis = axis
     robot.size = (250, 320, ROBOT_HEIGHT)
 
-    lspickle.pos = (robot_x - AREA_X/2 + (robot_lspickle*60) * math.cos((robot_a+90)*math.pi/180),
-                    robot_y - AREA_Y/2 + (robot_lspickle*60) * math.sin((robot_a+90)*math.pi/180),
+    lspickle.pos = (tmp_x + (robot_lspickle*60) * math.cos((tmp_a+90)*math.pi/180),
+                    tmp_y + (robot_lspickle*60) * math.sin((tmp_a+90)*math.pi/180),
                     ROBOT_HEIGHT/2)
     lspickle.axis = axis
     lspickle.size = (20, 320, 5)
 
-    rspickle.pos = (robot_x - AREA_X/2 + (robot_rspickle*60) * math.cos((robot_a-90)*math.pi/180),
-                    robot_y - AREA_Y/2 + (robot_rspickle*60) * math.sin((robot_a-90)*math.pi/180),
+    rspickle.pos = (tmp_x + (robot_rspickle*60) * math.cos((tmp_a-90)*math.pi/180),
+                    tmp_y + (robot_rspickle*60) * math.sin((tmp_a-90)*math.pi/180),
                     ROBOT_HEIGHT/2)
     rspickle.axis = axis
     rspickle.size = (20, 320, 5)
 
     # save position
-    save_pos.append((robot.pos.x, robot.pos, robot_a))
+    save_pos.append((robot.pos.x, robot.pos.y, tmp_a))
 
     pos = robot.pos.x, robot.pos.y, 0.3
     if pos != last_pos:
@@ -372,6 +392,8 @@ while True:
                 save()
             elif k == "h":
                 toggle_obj_disp()
+            elif k == "i":
+                toggle_color()
 
             # EOF
             if l == "":

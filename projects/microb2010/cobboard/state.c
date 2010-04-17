@@ -233,7 +233,7 @@ static void state_do_harvest(uint8_t side)
 	/* store it */
 	shovel_up();
 
-	while (WAIT_COND_OR_TIMEOUT(shovel_is_up(), 400) == 0) {
+	while (WAIT_COND_OR_TIMEOUT(shovel_is_up(), 600) == 0) {
 		STMCH_DEBUG("shovel blocked");
 		shovel_down();
 		time_wait_ms(250);

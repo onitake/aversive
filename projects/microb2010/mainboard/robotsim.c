@@ -67,11 +67,16 @@ void robotsim_dump(void)
 {
 	char buf[BUFSIZ];
 	int len;
+	int16_t x, y, a;
+
+	x = position_get_x_s16(&mainboard.pos);
+	y = position_get_y_s16(&mainboard.pos);
+	a = position_get_a_deg_s16(&mainboard.pos);
+/* 	y = COLOR_Y(y); */
+/* 	a = COLOR_A(a); */
 
 	len = snprintf(buf, sizeof(buf), "pos=%d,%d,%d\n",
-		      position_get_x_s16(&mainboard.pos),
-		      position_get_y_s16(&mainboard.pos),
-		      position_get_a_deg_s16(&mainboard.pos));
+		       x, y, a);
 	hostsim_lock();
 	write(fdw, buf, len);
 	hostsim_unlock();

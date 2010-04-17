@@ -83,8 +83,8 @@
 
 struct genboard gen;
 struct mainboard mainboard;
-struct cobboard cobboard;
-struct ballboard ballboard;
+volatile struct cobboard cobboard;
+volatile struct ballboard ballboard;
 
 #ifndef HOST_VERSION
 /***********************/

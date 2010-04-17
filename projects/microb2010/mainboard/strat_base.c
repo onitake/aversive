@@ -1,6 +1,6 @@
-/*  
+/*
  *  Copyright Droids Corporation, Microb Technology (2009)
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -101,7 +101,7 @@ const char *get_err(uint8_t err)
 	return "END_UNKNOWN";
 }
 
-void strat_hardstop(void) 
+void strat_hardstop(void)
 {
 	trajectory_hardstop(&mainboard.traj);
 	pid_reset(&mainboard.angle.pid);
@@ -140,7 +140,7 @@ uint8_t strat_goto_xy_force(int16_t x, int16_t y)
 	return END_BLOCKING;
 }
 
-/* reset position */ 
+/* reset position */
 void strat_reset_pos(int16_t x, int16_t y, int16_t a)
 {
 	int16_t posx = position_get_x_s16(&mainboard.pos);
@@ -162,7 +162,7 @@ void strat_reset_pos(int16_t x, int16_t y, int16_t a)
 	DEBUG(E_USER_STRAT, "pos resetted", __FUNCTION__);
 }
 
-/* 
+/*
  * decrease gain on angle PID, and go forward until we reach the
  * border.
  */
@@ -171,12 +171,17 @@ uint8_t strat_calib(int16_t dist, uint8_t flags)
 	int32_t p = pid_get_gain_P(&mainboard.angle.pid);
 	int32_t i = pid_get_gain_I(&mainboard.angle.pid);
 	int32_t d = pid_get_gain_D(&mainboard.angle.pid);
+	int32_t max_in = pid_get_max_in(&mainboard.angle.pid);
+	int32_t max_i = pid_get_max_I(&mainboard.angle.pid);
+	int32_t max_out = pid_get_max_out(&mainboard.angle.pid);
 	uint8_t err;
 
-	pid_set_gains(&mainboard.angle.pid, 150, 0, 2000);
+	pid_set_maximums(&mainboard.distance.pid, 0, 20000, 1000);
+	pid_set_gains(&mainboard.angle.pid, 200, 0, 2000);
 	trajectory_d_rel(&mainboard.traj, dist);
 	err = wait_traj_end(flags);
 	pid_set_gains(&mainboard.angle.pid, p, i, d);
+	pid_set_maximums(&mainboard.distance.pid, max_in, max_i, max_out);
 	return err;
 }
 
@@ -190,7 +195,7 @@ static void strat_update_traj_speed(void)
 	a = strat_speed_a;
 	if (strat_limit_speed_a && a > strat_limit_speed_a)
 		a = strat_limit_speed_a;
-	
+
 	trajectory_set_speed(&mainboard.traj, d, a);
 }
 
@@ -272,7 +277,7 @@ void strat_limit_speed(void)
 
 /* start the strat */
 void strat_start(void)
-{ 
+{
 	int8_t i;
 	uint8_t err;
 
@@ -294,7 +299,7 @@ void strat_start(void)
 			break;
 		}
 	}
-	
+
 	/* if start sw plugged */
 	if (!sensor_get(S_START_SWITCH)) {
 		printf_P(PSTR("Ready, unplug start switch to start\r\n"));
@@ -344,14 +349,14 @@ uint8_t strat_obstacle(void)
 	/* opponent is in front of us */
 	if (mainboard.speed_d > 0 && (opp_a > 325 || opp_a < 35)) {
 		DEBUG(E_USER_STRAT, "opponent front d=%d, a=%d "
-		      "xrel=%d yrel=%d (speed_d=%d)", 
+		      "xrel=%d yrel=%d (speed_d=%d)",
 		      opp_d, opp_a, x_rel, y_rel, mainboard.speed_d);
 		sensor_obstacle_disable();
 		return 1;
 	}
 	/* opponent is behind us */
 	if (mainboard.speed_d < 0 && (opp_a < 215 && opp_a > 145)) {
-		DEBUG(E_USER_STRAT, "opponent behind d=%d, a=%d xrel=%d yrel=%d", 
+		DEBUG(E_USER_STRAT, "opponent behind d=%d, a=%d xrel=%d yrel=%d",
 		      opp_d, opp_a, x_rel, y_rel);
 		sensor_obstacle_disable();
 		return 1;
@@ -371,7 +376,7 @@ void interrupt_traj_reset(void)
 }
 
 uint8_t test_traj_end(uint8_t why)
-{ 
+{
 	uint16_t cur_timer;
 	point_t robot_pt;
 
@@ -389,26 +394,26 @@ uint8_t test_traj_end(uint8_t why)
 	}
 
 	if ((why & END_INTR) && traj_intr) {
-		interrupt_traj_reset();		
+		interrupt_traj_reset();
 		return END_INTR;
 	}
 
 	if ((why & END_TRAJ) && trajectory_finished(&mainboard.traj))
 		return END_TRAJ;
-	
+
 	/* we are near the destination point (depends on current
 	 * speed) AND the robot is in the area bounding box. */
 	if (why & END_NEAR) {
-		int16_t d_near = 100;	
-		
+		int16_t d_near = 100;
+
 		if (mainboard.speed_d > 2000)
 			d_near = 150;
-		
+
 		if (trajectory_in_window(&mainboard.traj, d_near, RAD(5.0)) &&
 		    is_in_boundingbox(&robot_pt))
 			return END_NEAR;
 	}
-	
+
 	if ((why & END_BLOCKING) && bd_get(&mainboard.angle.bd)) {
 		strat_hardstop();
 		return END_BLOCKING;
@@ -443,7 +448,7 @@ uint8_t __wait_traj_end_debug(uint8_t why, uint16_t line)
 			      line, opp_x, opp_y, opp_d, opp_a);
 	}
 	else {
-		DEBUG(E_USER_STRAT, "Got %s at line %d", 
+		DEBUG(E_USER_STRAT, "Got %s at line %d",
 		      get_err(ret), line);
 	}
 	return ret;

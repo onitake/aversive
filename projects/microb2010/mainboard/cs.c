@@ -213,9 +213,9 @@ void microb_cs_init(void)
 				 RIGHT_ENCODER, IMP_COEF * 1.);
 #else
 	rs_set_left_ext_encoder(&mainboard.rs, encoders_spi_get_value,
-				LEFT_ENCODER, IMP_COEF * -1.036);
+				LEFT_ENCODER, IMP_COEF * -1.011718);
 	rs_set_right_ext_encoder(&mainboard.rs, encoders_spi_get_value,
-				 RIGHT_ENCODER, IMP_COEF * 1.037);
+				 RIGHT_ENCODER, IMP_COEF * 1.012695);
 #endif
 	/* rs will use external encoders */
 	rs_set_flags(&mainboard.rs, RS_USE_EXT);
@@ -261,7 +261,7 @@ void microb_cs_init(void)
 	/* Blocking detection */
 	bd_init(&mainboard.angle.bd);
 	bd_set_speed_threshold(&mainboard.angle.bd, 80);
-	bd_set_current_thresholds(&mainboard.angle.bd, 500, 8000, 1000000, 50);
+	bd_set_current_thresholds(&mainboard.angle.bd, 500, 8000, 1000000, 20);
 
 	/* ---- CS distance */
 	/* PID */
@@ -287,7 +287,7 @@ void microb_cs_init(void)
 	/* Blocking detection */
 	bd_init(&mainboard.distance.bd);
 	bd_set_speed_threshold(&mainboard.distance.bd, 60);
-	bd_set_current_thresholds(&mainboard.distance.bd, 500, 8000, 1000000, 50);
+	bd_set_current_thresholds(&mainboard.distance.bd, 500, 8000, 1000000, 20);
 
 #ifndef HOST_VERSION
 	/* ---- CS left_cobroller */
@@ -332,8 +332,8 @@ void microb_cs_init(void)
 #endif /* !HOST_VERSION */
 
 	/* set them on !! */
-	mainboard.angle.on = 0;
-	mainboard.distance.on = 0;
+	mainboard.angle.on = 1;
+	mainboard.distance.on = 1;
 	mainboard.left_cobroller.on = 1;
 	mainboard.right_cobroller.on = 1;
 

@@ -58,6 +58,7 @@
 #include "actuator.h"
 #include "cs.h"
 #include "i2c_protocol.h"
+#include "state.h"
 
 /* 0 means "programmed"
  * ---- with 16 Mhz quartz
@@ -252,6 +253,8 @@ int main(void)
 
 	printf_P(PSTR("\r\n"));
 	printf_P(PSTR("Dass das Gluck deinen Haus setzt.\r\n"));
+
+ 	state_machine();
 	cmdline_interact();
 
 	return 0;

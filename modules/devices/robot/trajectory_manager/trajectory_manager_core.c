@@ -1007,10 +1007,10 @@ static void start_clitoid(struct trajectory *traj)
 	delete_event(traj);
 	DEBUG(E_TRAJECTORY, "%s() Va=%2.2f Aa=%2.2f",
 	      __FUNCTION__, Va, Aa);
-	traj->state = RUNNING_CLITOID_CURVE;
 	d = fabs(R_mm * a_rad);
 	d *= 3.; /* margin to avoid deceleration */
 	trajectory_d_a_rel(traj, d, DEG(a_rad));
+	traj->state = RUNNING_CLITOID_CURVE;
 	set_quadramp_acc(traj, traj->d_acc, Aa);
 	set_quadramp_speed(traj, traj->d_speed, Va);
 }

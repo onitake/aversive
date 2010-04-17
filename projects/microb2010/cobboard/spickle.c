@@ -67,16 +67,16 @@ static struct spickle_params spickle = {
 		&cobboard.right_spickle,
 	},
 	.pos_deployed = {
-		0, /* left */
-		0, /* right */
+		200, /* left */
+		200, /* right */
 	},
 	.pos_mid = {
 		25000, /* left */
 		26000, /* right */
 	},
 	.pos_packed = {
-		53000, /* left */
-		54500, /* right */
+		55800, /* left */
+		55800, /* right */
 	},
 };
 

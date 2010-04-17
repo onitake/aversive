@@ -56,7 +56,7 @@
 
 static struct vt100 local_vt100;
 static volatile uint8_t state_mode;
-static uint8_t ball_count;
+static volatile uint8_t ball_count;
 
 /* short aliases */
 #define INIT I2C_BALLBOARD_MODE_INIT
@@ -82,6 +82,7 @@ uint8_t state_get_ball_count(void)
 	return ball_count;
 }
 
+#if 0
 static void state_debug_wait_key_pressed(void)
 {
 	if (!state_debug)
@@ -89,6 +90,7 @@ static void state_debug_wait_key_pressed(void)
 	printf_P(PSTR("press a key\r\n"));
 	while (!cmdline_keypressed());
 }
+#endif
 
 /* set a new state, return 0 on success */
 int8_t state_set_mode(uint8_t mode)
@@ -128,7 +130,7 @@ uint8_t state_get_mode(void)
 /* harvest balls from area */
 static void state_do_harvest(void)
 {
-	state_debug_wait_key_pressed();
+	//state_debug_wait_key_pressed();
 	roller_on();
 }
 

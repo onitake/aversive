@@ -112,7 +112,7 @@ void strat_preinit(void)
 	mainboard.flags =  DO_ENCODERS | DO_CS | DO_RS |
 		DO_POS | DO_BD | DO_POWER;
 
-	i2c_cobboard_mode_init();
+	//i2c_cobboard_mode_init();
 	strat_dump_conf();
 	strat_dump_infos(__FUNCTION__);
 }
@@ -154,6 +154,10 @@ void strat_init(void)
 	strat_set_speed(SPEED_DIST_FAST, SPEED_ANGLE_FAST);
 	time_reset();
 	interrupt_traj_reset();
+
+	i2c_cobboard_mode_harvest(I2C_LEFT_SIDE);
+	i2c_cobboard_mode_harvest(I2C_RIGHT_SIDE);
+	i2c_ballboard_set_mode(I2C_BALLBOARD_MODE_HARVEST);
 
 	/* used in strat_base for END_TIMER */
 	mainboard.flags = DO_ENCODERS | DO_CS | DO_RS |
@@ -197,6 +201,35 @@ void strat_event(void *dummy)
 
 static uint8_t strat_beginning(void)
 {
+	uint8_t err;
+
+	strat_set_speed(250, SPEED_ANGLE_FAST);
+	//init_corn_table(0, 0);
+
+	err = line2line(LINE_UP, 0, LINE_R_DOWN, 2);
+	err = line2line(LINE_R_DOWN, 2, LINE_R_UP, 2);
+	err = line2line(LINE_R_UP, 2, LINE_UP, 5);
+	trajectory_hardstop(&mainboard.traj);
+
+	/* ball ejection */
+	trajectory_a_abs(&mainboard.traj, COLOR_A(90));
+	i2c_ballboard_set_mode(I2C_BALLBOARD_MODE_EJECT);
+	time_wait_ms(2000);
+
+	/* half turn */
+	trajectory_goto_xy_abs(&mainboard.traj, 2625, COLOR_Y(1847));
+	err = wait_traj_end(END_INTR|END_TRAJ);
+	i2c_cobboard_mode_pack(I2C_LEFT_SIDE);
+	i2c_cobboard_mode_pack(I2C_RIGHT_SIDE);
+	trajectory_a_rel(&mainboard.traj, COLOR_A(180));
+	err = wait_traj_end(END_INTR|END_TRAJ);
+
+	/* cob ejection */
+	trajectory_d_rel(&mainboard.traj, -100);
+	err = wait_traj_end(END_INTR|END_TRAJ);
+	i2c_cobboard_mode_eject();
+	time_wait_ms(2000);
+
 	return END_TRAJ;
 }
 

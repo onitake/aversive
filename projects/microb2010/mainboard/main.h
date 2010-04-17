@@ -201,15 +201,15 @@ struct cobboard {
 
 /* state of ballboard, synchronized through i2c */
 struct ballboard {
-	uint8_t mode;
+	volatile uint8_t mode;
 	uint8_t status;
 	uint8_t ball_count;
 };
 
 extern struct genboard gen;
 extern struct mainboard mainboard;
-extern struct cobboard cobboard;
-extern struct ballboard ballboard;
+extern volatile struct cobboard cobboard;
+extern volatile struct ballboard ballboard;
 
 /* start the bootloader */
 void bootloader(void);
