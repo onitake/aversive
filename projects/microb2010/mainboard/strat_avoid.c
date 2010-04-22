@@ -58,6 +58,7 @@
 #include "i2c_protocol.h"
 #include "main.h"
 #include "strat.h"
+#include "strat_db.h"
 #include "strat_base.h"
 #include "strat_corn.h"
 #include "strat_utils.h"
@@ -73,24 +74,6 @@ could be optimized in mem space: it is not needed to store the x,y coord,
 
 */
 
-#define OFFSET_CORN_X 150
-#define OFFSET_CORN_Y 222
-#define STEP_CORN_X 225
-#define STEP_CORN_Y 250
-
-#define CORN_NB 18
-
-#define WAYPOINTS_NBX 13
-#define WAYPOINTS_NBY 8
-
-/* enum is better */
-#define TYPE_WAYPOINT   0
-#define TYPE_DANGEROUS  1
-#define TYPE_WHITE_CORN 2
-#define TYPE_BLACK_CORN 3
-#define TYPE_OBSTACLE   4
-#define TYPE_UNKNOWN    5
-
 /* XXX enum possible ? else just rename */
 #define START      0
 #define UP         1
@@ -105,14 +88,13 @@ struct djpoint {
 	uint16_t weight;
 	struct djpoint *parent;
 
-	uint8_t type:3;
 	uint8_t parent_pos:3;
 	uint8_t updated:1;
 	uint8_t todo:1;
+	uint8_t reserved:3;
 };
 
-uint8_t corn_table[CORN_NB];
-
+/* database for dijkstra */
 static struct djpoint djpoints[WAYPOINTS_NBX][WAYPOINTS_NBY];
 
 /* return index from neigh pointer */
@@ -122,6 +104,7 @@ void dump(void)
 {
 	int8_t i, j;
 	struct djpoint *pt;
+	struct waypoint_db *wp;
 
 	printf_P(PSTR("         "));
 	for (i=0; i<WAYPOINTS_NBX; i++) {
@@ -137,19 +120,26 @@ void dump(void)
 
 		for (i=0; i<WAYPOINTS_NBX; i++) {
 			pt = &djpoints[i][j/2];
+			wp = &strat_db.wp_table[i][j/2];
 
 			if (((i+j) & 1) == 0)
 				continue;
 
-			if (pt->type == TYPE_OBSTACLE)
+			if (wp->type == WP_TYPE_OBSTACLE)
 				printf_P(PSTR("     X  "));
-			else if (pt->type == TYPE_DANGEROUS)
+			else if (wp->dangerous)
 				printf_P(PSTR("     D  "));
-			else if (pt->type == TYPE_WHITE_CORN)
+			else if (wp->type == WP_TYPE_CORN &&
+				 wp->corn.color == I2C_COB_WHITE)
 				printf_P(PSTR("     W  "));
-			else if (pt->type == TYPE_BLACK_CORN)
+			else if (wp->type == WP_TYPE_CORN &&
+				 wp->corn.color == I2C_COB_BLACK)
 				printf_P(PSTR("     B  "));
- 			else if (pt->type == TYPE_WAYPOINT)
+			else if (wp->type == WP_TYPE_CORN &&
+				 wp->corn.color == I2C_COB_UNKNOWN)
+				printf_P(PSTR("     U  "));
+ 			else if (wp->type == WP_TYPE_WAYPOINT ||
+				 wp->type == WP_TYPE_TOMATO)
 				printf_P(PSTR(" %5d  "), pt->weight);
  			else
  				printf_P(PSTR("     ?  "));
@@ -166,19 +156,35 @@ static inline uint8_t opposite_position(uint8_t pos)
 	return pos;
 }
 
+/* is point reachable by the robot ? */
+static uint8_t is_reachable(uint8_t i, uint8_t j)
+{
+	struct waypoint_db *wp;
+
+	wp = &strat_db.wp_table[i][j];
+	if (wp->type == WP_TYPE_WAYPOINT)
+		return 1;
+	if (wp->type == WP_TYPE_TOMATO)
+		return 1;
+	if (wp->type == WP_TYPE_CORN &&
+	    wp->present == 0)
+		return 1;
+	return 0;
+}
+
 /* return coord of the entry in the table from the pointer */
-static void djpoint2ij(struct djpoint *pt, int8_t *x, int8_t *y)
+static void djpoint2ij(struct djpoint *pt, uint8_t *i, uint8_t *j)
 {
 	int8_t idx = PT2IDX(pt);
-	*x = idx / WAYPOINTS_NBY;
-	*y = idx % WAYPOINTS_NBY;
+	*i = idx / WAYPOINTS_NBY;
+	*j = idx % WAYPOINTS_NBY;
 }
 
 /* get the neighbour of the point at specified position */
 static struct djpoint *get_neigh(struct djpoint *pt,
 				 uint8_t position)
 {
-	int8_t i,j;
+	uint8_t i,j;
 	struct djpoint *neigh;
 
 	djpoint2ij(pt, &i, &j);
@@ -212,11 +218,10 @@ static struct djpoint *get_neigh(struct djpoint *pt,
 	if (i < 0 || j < 0 || i >= WAYPOINTS_NBX || j >= WAYPOINTS_NBY)
 		return NULL;
 
-	neigh = &djpoints[i][j];
-
-	if (neigh->type != TYPE_WAYPOINT)
+	if (is_reachable(i, j) == 0)
 		return NULL;
 
+	neigh = &djpoints[i][j];
 	return neigh;
 }
 
@@ -252,11 +257,21 @@ int dijkstra_init(void)
 	return 0;
 }
 
+/* return distance between p1 and p2 */
 static uint16_t dist(struct djpoint *p1, struct djpoint *p2)
 {
+	int16_t x1, y1, x2, y2;
 	double vx, vy;
-	vx = p2->pos.x - p1->pos.x;
-	vy = p2->pos.y - p1->pos.y;
+	uint8_t i, j;
+
+	djpoint2ij(p1, &i, &j);
+	ijcoord_to_xycoord(i, j, &x1, &y1);
+
+	djpoint2ij(p2, &i, &j);
+	ijcoord_to_xycoord(i, j, &x2, &y2);
+
+	vx = x2 - x1;
+	vy = y2 - y1;
 	return sqrt(vx * vx + vy * vy);
 }
 
@@ -265,7 +280,7 @@ void dijkstra_process_neighs(struct djpoint *pt)
  	struct djpoint *neigh;
 	uint8_t pos, parent_pos;
 	uint16_t weight;
-	int8_t i,j;
+	uint8_t i,j;
 
 	djpoint2ij(pt, &i, &j);
 	printf_P(PSTR("at %d %d:\r\n"), i, j);
@@ -333,55 +348,10 @@ void init_djpoints(void)
 
 		for (j=0; j<WAYPOINTS_NBY; j++) {
 			pt = &djpoints[i][j];
-
-			pt->type = TYPE_WAYPOINT;
 			pt->parent_pos = END;
 			pt->updated = 0;
 			pt->todo = 0;
-		}
-	}
-}
-
-/* update the type and weight of waypoints, before starting
- * dijkstra */
-void update_djpoints(void)
-{
-	int8_t i, j, c;
-	struct djpoint *pt;
-
-	for (i=0; i<WAYPOINTS_NBX; i++) {
-
-		for (j=0; j<WAYPOINTS_NBY; j++) {
-			pt = &djpoints[i][j];
-
 			pt->weight = 0;
-
-			/* corn */
-			c = ijcoord_to_corn_idx(i, j);
-			if (c >= 0) {
-				pt->type = corn_table[c];
-				continue;
-			}
-			/* too close of border */
-			if ((i & 1) == 1 && j == (WAYPOINTS_NBY-1)) {
-				pt->type = TYPE_OBSTACLE;
-				continue;
-			}
-			/* hill */
-			if (i >= 2 && i < (WAYPOINTS_NBX-2) && j < 2) {
-				pt->type = TYPE_OBSTACLE;
-				continue;
-			}
-			/* dangerous points */
-			if (i == 0 || i == (WAYPOINTS_NBX-1)) {
-				pt->type = TYPE_DANGEROUS;
-				continue;
-			}
-			if ( (i&1) == 0 && j == (WAYPOINTS_NBY-1)) {
-				pt->type = TYPE_DANGEROUS;
-				continue;
-			}
-			pt->type = TYPE_WAYPOINT;
 		}
 	}
 }
@@ -398,14 +368,14 @@ int get_path(struct djpoint *start, struct djpoint *end)
 	     cur = get_neigh(cur, cur->parent_pos)) {
 		if (prev_direction != cur->parent_pos) {
 			idx = PT2IDX(cur);
-			corn_idx_to_coordxy(idx, &x, &y);
+			corn_idx_to_xycoord(idx, &x, &y);
 			printf_P(PSTR("%d %d (%d)\r\n"),
 				 x, y, cur->parent_pos);
 		}
 		prev_direction = cur->parent_pos;
 	}
 	idx = PT2IDX(end);
-	corn_idx_to_coordxy(idx, &x, &y);
+	corn_idx_to_xycoord(idx, &x, &y);
 	printf_P(PSTR("%d %d\r\n"), x, y);
 
 	return 0; /* XXX */

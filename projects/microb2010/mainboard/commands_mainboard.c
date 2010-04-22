@@ -1130,6 +1130,18 @@ struct cmd_test_result {
 /* function called when cmd_test is parsed successfully */
 static void cmd_test_parsed(void *parsed_result, void *data)
 {
+	strat_db.dump_enabled = 1;
+	strat_db_dump(__FUNCTION__);
+
+	corn_set_color(strat_db.corn_table[0], I2C_COB_BLACK);
+	strat_db_dump(__FUNCTION__);
+
+	corn_set_color(strat_db.corn_table[3], I2C_COB_WHITE);
+	strat_db_dump(__FUNCTION__);
+	corn_set_color(strat_db.corn_table[4], I2C_COB_WHITE);
+	strat_db_dump(__FUNCTION__);
+	corn_set_color(strat_db.corn_table[5], I2C_COB_WHITE);
+	strat_db_dump(__FUNCTION__);
 }
 
 prog_char str_test_arg0[] = "test";
