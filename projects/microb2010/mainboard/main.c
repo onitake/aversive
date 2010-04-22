@@ -67,6 +67,7 @@
 #include "actuator.h"
 #include "cs.h"
 #include "strat_base.h"
+#include "strat_db.h"
 #include "i2c_protocol.h"
 
 /* 0 means "programmed"
@@ -289,7 +290,7 @@ int main(void)
 	/* strat */
  	gen.logs[0] = E_USER_STRAT;
  	gen.log_level = 5;
-	strat_reset_infos();
+	strat_db_init();
 
 	/* strat-related event */
 	scheduler_add_periodical_event_priority(strat_event, NULL,

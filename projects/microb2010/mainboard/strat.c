@@ -57,6 +57,7 @@
 #include "i2c_protocol.h"
 #include "main.h"
 #include "strat.h"
+#include "strat_db.h"
 #include "strat_base.h"
 #include "strat_corn.h"
 #include "strat_utils.h"
@@ -66,43 +67,13 @@
 #define COL_DISP_MARGIN 400 /* stop 40 cm in front of dispenser */
 #define COL_SCAN_PRE_MARGIN 250
 
-struct strat_infos strat_infos = {
-	/* conf */
-	.conf = {
-		.flags = 0,
-	},
-	/* status */
-	.status = {
-		.flags = 0,
-	},
-};
+struct strat_conf strat_conf;
 
 /*************************************************************/
 
 /*                  INIT                                     */
 
 /*************************************************************/
-
-void strat_set_bounding_box(void)
-{
-	if (get_color() == I2C_COLOR_YELLOW) {
-		strat_infos.area_bbox.x1 = 300;
-		strat_infos.area_bbox.y1 = 200;
-		strat_infos.area_bbox.x2 = 2720; /* needed for c1 */
-		strat_infos.area_bbox.y2 = 1800;
-	}
-	else {
-		strat_infos.area_bbox.x1 = 200;
-		strat_infos.area_bbox.y1 = 300;
-		strat_infos.area_bbox.x2 = 2720; /* needed for c1 */
-		strat_infos.area_bbox.y2 = 1900;
-	}
-
-	polygon_set_boundingbox(strat_infos.area_bbox.x1,
-				strat_infos.area_bbox.y1,
-				strat_infos.area_bbox.x2,
-				strat_infos.area_bbox.y2);
-}
 
 /* called before each strat, and before the start switch */
 void strat_preinit(void)
@@ -113,33 +84,17 @@ void strat_preinit(void)
 		DO_POS | DO_BD | DO_POWER;
 
 	//i2c_cobboard_mode_init();
-	strat_dump_conf();
-	strat_dump_infos(__FUNCTION__);
+	strat_conf_dump(__FUNCTION__);
+	strat_db_dump(__FUNCTION__);
 }
 
-void strat_dump_conf(void)
+void strat_conf_dump(const char *caller)
 {
-	if (!strat_infos.dump_enabled)
+	if (!strat_conf.dump_enabled)
 		return;
 
 	printf_P(PSTR("-- conf --\r\n"));
 
-}
-
-/* display current information about the state of the game */
-void strat_dump_infos(const char *caller)
-{
-	if (!strat_infos.dump_enabled)
-		return;
-
-	printf_P(PSTR("%s() dump strat infos:\r\n"), caller);
-}
-
-/* init current area state before a match. Dump update user conf
- * here */
-void strat_reset_infos(void)
-{
-	init_corn_table(-1, -1);
 }
 
 /* call it just before launching the strat */
@@ -147,7 +102,7 @@ void strat_init(void)
 {
 	/* XXX init rollers, .. */
 
-	strat_reset_infos();
+	strat_db_init();
 
 	/* we consider that the color is correctly set */
 
@@ -168,17 +123,21 @@ void strat_init(void)
 /* call it after each strat */
 void strat_exit(void)
 {
+#ifndef HOST_VERSION
 	uint8_t flags;
+#endif
 
 	mainboard.flags &= ~(DO_TIMER);
 	strat_hardstop();
 	time_reset();
-	wait_ms(1000);
+	wait_ms(100);
+#ifndef HOST_VERSION
 	IRQ_LOCK(flags);
 	mainboard.flags &= ~(DO_CS);
+	IRQ_UNLOCK(flags);
 	pwm_ng_set(LEFT_PWM, 0);
 	pwm_ng_set(RIGHT_PWM, 0);
-	IRQ_UNLOCK(flags);
+#endif
 }
 
 /* called periodically */
@@ -204,11 +163,31 @@ static uint8_t strat_beginning(void)
 	uint8_t err;
 
 	strat_set_speed(250, SPEED_ANGLE_FAST);
-	//init_corn_table(0, 0);
 
+ l1:
 	err = line2line(LINE_UP, 0, LINE_R_DOWN, 2);
+	if (!TRAJ_SUCCESS(err)) {
+		trajectory_hardstop(&mainboard.traj);
+		time_wait_ms(2000);
+		goto l1;
+	}
+
+ l2:
 	err = line2line(LINE_R_DOWN, 2, LINE_R_UP, 2);
+	if (!TRAJ_SUCCESS(err)) {
+		trajectory_hardstop(&mainboard.traj);
+		time_wait_ms(2000);
+		goto l2;
+	}
+
+ l3:
 	err = line2line(LINE_R_UP, 2, LINE_UP, 5);
+	if (!TRAJ_SUCCESS(err)) {
+		trajectory_hardstop(&mainboard.traj);
+		time_wait_ms(2000);
+		goto l3;
+	}
+
 	trajectory_hardstop(&mainboard.traj);
 
 	/* ball ejection */
@@ -230,6 +209,7 @@ static uint8_t strat_beginning(void)
 	i2c_cobboard_mode_eject();
 	time_wait_ms(2000);
 
+	trajectory_hardstop(&mainboard.traj);
 	return END_TRAJ;
 }
 

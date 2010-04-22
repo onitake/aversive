@@ -42,24 +42,51 @@
 #define CORNER_X 3000
 #define CORNER_Y COLOR_Y(2100)
 
+/* XXX these offset are not related to corn, but to waypoints */
+#define OFFSET_CORN_X 150
+#define OFFSET_CORN_Y 222
+#define STEP_CORN_X 225
+#define STEP_CORN_Y 250
+
+#define CORN_NB 18
+#define TOMATO_NB 14
+
+#define WAYPOINTS_NBX 13
+#define WAYPOINTS_NBY 8
+
 /*
- *
+ * Corn position and lines
  *
  *           vertical lines
  *            O     1     2     3     4     5
  * 2100 +-----|-----|-----|-----|-----|-----|-----+
- *      |        o           o           o        |
- *      |  o           o           o           o  |   diag
- *      |        o           o           o        |   lines
- *     0/  o           o           o           o  \0
- *  y   |        o                       o        |
- *     1/  o                                   o  \1
- *      |                                         |
- *     2/------                             ------\2
- *      |     |                             |     |
+ *      |        c5          c9         c14       |
+ *      |  c2          c7         c11         c17 |   diag
+ *      |        c4          c8         c13       |   lines
+ *     0/  c1          c6         c10         c16 \0
+ *  y   |        c3                     c12       |
+ *     1/  c0                                 c15 \1
+ *      |-----+                             +-----|
+ *     2/     |                             |     \2
  *      |     |                             |     |
  *   0  +-----+-----------------------------+-----+
  *     0                  x                      3000
+ *
+ * Ball (tomato) and i,j coords (for waypoints)
+ *
+ * 2100 +--0--1--2--3--4--5--6--7--8--9-10-11-12--+
+ *      7              t5          t9             |
+ *      6        t3          t7         t11       |
+ *      5  t1          t4          t8         t13 |
+ *      4        t2          t6         t10       |
+ *  y   3  t0                                 t12 |
+ *      2                                         |
+ *      1-----+                             +-----|
+ *      0     |                             |     |
+ *      |     |                             |     |
+ *   0  +-----+-----------------------------+-----+
+ *     0                  x                      3000
+ *
  */
 
 /* useful traj flags */
@@ -83,38 +110,17 @@
 #define SPEED_ANGLE_VERY_SLOW 400.
 
 /* strat infos structures */
-
-struct strat_bbox {
-	int32_t x1;
-	int32_t y1;
-	int32_t x2;
-	int32_t y2;
-};
-
 struct strat_conf {
+	uint8_t dump_enabled;
+
 #define STRAT_CONF_XXX   0x01
 	uint8_t flags;
 };
 
-struct strat_status {
-#define STRAT_STATUS_LHARVEST 0x01
-#define STRAT_STATUS_RHARVEST 0x02
-	uint8_t flags;
-};
-
-/* all infos related to strat */
-struct strat_infos {
-	uint8_t dump_enabled;
-	struct strat_conf conf;
-	struct strat_bbox area_bbox;
-	struct strat_status status;
-};
-extern struct strat_infos strat_infos;
+extern struct strat_conf strat_conf;
 
 /* in strat.c */
-void strat_dump_infos(const char *caller); /* show current known state
-					      of area */
-void strat_dump_conf(void);
+void strat_conf_dump(const char *caller);
 void strat_reset_infos(void); /* reset current known state */
 void strat_preinit(void);
 void strat_init(void);

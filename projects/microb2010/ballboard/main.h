@@ -19,6 +19,8 @@
  *
  */
 
+/* was sensorboard in 2009 */
+
 #define LED_TOGGLE(port, bit) do {		\
 		if (port & _BV(bit))		\
 			port &= ~_BV(bit);	\

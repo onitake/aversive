@@ -59,6 +59,7 @@
 #include "strat_utils.h"
 #include "strat_base.h"
 #include "strat.h"
+#include "strat_db.h"
 #include "../common/i2c_commands.h"
 #include "i2c_protocol.h"
 
@@ -891,37 +892,37 @@ parse_pgm_inst_t cmd_position_set = {
 /**********************************************************/
 /* strat configuration */
 
-/* this structure is filled when cmd_strat_infos is parsed successfully */
-struct cmd_strat_infos_result {
+/* this structure is filled when cmd_strat_db is parsed successfully */
+struct cmd_strat_db_result {
 	fixed_string_t arg0;
 	fixed_string_t arg1;
 };
 
-/* function called when cmd_strat_infos is parsed successfully */
-static void cmd_strat_infos_parsed(void *parsed_result, void *data)
+/* function called when cmd_strat_db is parsed successfully */
+static void cmd_strat_db_parsed(void *parsed_result, void *data)
 {
-	struct cmd_strat_infos_result *res = parsed_result;
+	struct cmd_strat_db_result *res = parsed_result;
 
 	if (!strcmp_P(res->arg1, PSTR("reset"))) {
-		strat_reset_infos();
+		strat_db_init();
 	}
-	strat_infos.dump_enabled = 1;
-	strat_dump_infos(__FUNCTION__);
+	strat_db.dump_enabled = 1;
+	strat_db_dump(__FUNCTION__);
 }
 
-prog_char str_strat_infos_arg0[] = "strat_infos";
-parse_pgm_token_string_t cmd_strat_infos_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_strat_infos_result, arg0, str_strat_infos_arg0);
-prog_char str_strat_infos_arg1[] = "show#reset";
-parse_pgm_token_string_t cmd_strat_infos_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_strat_infos_result, arg1, str_strat_infos_arg1);
+prog_char str_strat_db_arg0[] = "strat_db";
+parse_pgm_token_string_t cmd_strat_db_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_strat_db_result, arg0, str_strat_db_arg0);
+prog_char str_strat_db_arg1[] = "show#reset";
+parse_pgm_token_string_t cmd_strat_db_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_strat_db_result, arg1, str_strat_db_arg1);
 
-prog_char help_strat_infos[] = "reset/show strat_infos";
-parse_pgm_inst_t cmd_strat_infos = {
-	.f = cmd_strat_infos_parsed,  /* function to call */
+prog_char help_strat_db[] = "reset/show strat_db";
+parse_pgm_inst_t cmd_strat_db = {
+	.f = cmd_strat_db_parsed,  /* function to call */
 	.data = NULL,      /* 2nd arg of func */
-	.help_str = help_strat_infos,
+	.help_str = help_strat_db,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_strat_infos_arg0,
-		(prog_void *)&cmd_strat_infos_arg1,
+		(prog_void *)&cmd_strat_db_arg0,
+		(prog_void *)&cmd_strat_db_arg1,
 		NULL,
 	},
 };
@@ -939,9 +940,8 @@ struct cmd_strat_conf_result {
 static void cmd_strat_conf_parsed(void *parsed_result, void *data)
 {
 	//	struct cmd_strat_conf_result *res = parsed_result;
-
-	strat_infos.dump_enabled = 1;
-	strat_dump_conf();
+	strat_conf.dump_enabled = 1;
+	strat_conf_dump(__FUNCTION__);
 }
 
 prog_char str_strat_conf_arg0[] = "strat_conf";
@@ -1002,12 +1002,12 @@ static void cmd_strat_conf2_parsed(void *parsed_result, void *data)
 #endif
 
 	if (on)
-		strat_infos.conf.flags |= bit;
+		strat_conf.flags |= bit;
 	else
-		strat_infos.conf.flags &= (~bit);
+		strat_conf.flags &= (~bit);
 
-	strat_infos.dump_enabled = 1;
-	strat_dump_conf();
+	strat_conf.dump_enabled = 1;
+	strat_conf_dump(__FUNCTION__);
 }
 
 prog_char str_strat_conf2_arg0[] = "strat_conf";
@@ -1050,32 +1050,32 @@ static void cmd_strat_conf3_parsed(void *parsed_result, void *data)
 	if (!strcmp_P(res->arg1, PSTR("scan_opponent_min_time"))) {
 		if (res->arg2 > 90)
 			res->arg2 = 90;
-		strat_infos.conf.scan_opp_min_time = res->arg2;
+		strat_conf.scan_opp_min_time = res->arg2;
 	}
 	else if (!strcmp_P(res->arg1, PSTR("delay_between_opponent_scan"))) {
 		if (res->arg2 > 90)
 			res->arg2 = 90;
-		strat_infos.conf.delay_between_opp_scan = res->arg2;
+		strat_conf.delay_between_opp_scan = res->arg2;
 	}
 	else if (!strcmp_P(res->arg1, PSTR("scan_our_min_time"))) {
 		if (res->arg2 > 90)
 			res->arg2 = 90;
-		strat_infos.conf.scan_our_min_time = res->arg2;
+		strat_conf.scan_our_min_time = res->arg2;
 	}
 	else if (!strcmp_P(res->arg1, PSTR("delay_between_our_scan"))) {
 		if (res->arg2 > 90)
 			res->arg2 = 90;
-		strat_infos.conf.delay_between_our_scan = res->arg2;
+		strat_conf.delay_between_our_scan = res->arg2;
 	}
 	else if (!strcmp_P(res->arg1, PSTR("wait_opponent"))) {
-		strat_infos.conf.wait_opponent = res->arg2;
+		strat_conf.wait_opponent = res->arg2;
 	}
 	else if (!strcmp_P(res->arg1, PSTR("lintel_min_time"))) {
-		strat_infos.conf.lintel_min_time = res->arg2;
+		strat_conf.lintel_min_time = res->arg2;
 	}
 #endif
-	strat_infos.dump_enabled = 1;
-	strat_dump_conf();
+	strat_conf.dump_enabled = 1;
+	strat_conf_dump(__FUNCTION__);
 }
 
 prog_char str_strat_conf3_arg0[] = "strat_conf";

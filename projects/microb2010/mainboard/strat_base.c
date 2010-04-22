@@ -278,13 +278,15 @@ void strat_limit_speed(void)
 /* start the strat */
 void strat_start(void)
 {
-	int8_t i;
 	uint8_t err;
 
 	strat_preinit();
 
+#ifndef HOST_VERSION
 	/* if start sw not plugged */
 	if (sensor_get(S_START_SWITCH)) {
+		int8_t i;
+
 		printf_P(PSTR("No start switch, press a key or plug it\r\n"));
 
 		/* while start sw not plugged */
@@ -306,9 +308,11 @@ void strat_start(void)
 		/* while start sw plugged */
 		while (!sensor_get(S_START_SWITCH));
 	}
+#endif
 
 	strat_init();
 	err = strat_main();
+	printf("coucou\n");
 	NOTICE(E_USER_STRAT, "Finished !! returned %s", get_err(err));
 	strat_exit();
 }
@@ -316,6 +320,7 @@ void strat_start(void)
 /* return true if we have to brake due to an obstacle */
 uint8_t strat_obstacle(void)
 {
+#if 0
 	int16_t x_rel, y_rel;
 	int16_t opp_x, opp_y, opp_d, opp_a;
 
@@ -333,6 +338,25 @@ uint8_t strat_obstacle(void)
 	opponent_obstacle.y = opp_y;
 	opponent_obstacle.d = opp_d;
 	opponent_obstacle.a = opp_a;
+#else /* belgium cup only */
+	int16_t x_rel, y_rel;
+	int16_t opp_d, opp_a;
+	double opp_x, opp_y;
+
+#ifdef HOST_VERSION
+	if (time_get_s() >= 12 && time_get_s() <= 30)
+		return 1;
+#endif
+	if (!sensor_get(S_RCOB_WHITE))
+		return 0;
+
+	opp_a = 0;
+	opp_d = 300;
+
+	rel_da_to_abs_xy(opp_d, RAD(opp_a), &opp_x, &opp_y);
+	if (!is_in_area(opp_x, opp_y, 250))
+		return 0;
+#endif
 
 	/* sensor are temporarily disabled */
 	if (sensor_obstacle_is_disabled())

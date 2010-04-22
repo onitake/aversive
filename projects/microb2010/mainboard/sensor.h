@@ -32,8 +32,8 @@
 /* synchronize with sensor.c */
 #define S_CAP1         0
 #define S_CAP2         1
-#define S_COLUMN_RIGHT 2
-#define S_COLUMN_LEFT  3
+#define S_LFRONT       2
+#define S_RFRONT       3
 #define S_START_SWITCH 4
 #define S_DISP_LEFT    5
 #define S_RCOB_WHITE   6

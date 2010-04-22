@@ -173,7 +173,7 @@ int main(void)
 #  error not supported
 #endif
 
-	//eeprom_write_byte(EEPROM_MAGIC_ADDRESS, EEPROM_MAGIC_COBBOARD);
+	eeprom_write_byte(EEPROM_MAGIC_ADDRESS, EEPROM_MAGIC_COBBOARD);
 	/* check eeprom to avoid to run the bad program */
 	if (eeprom_read_byte(EEPROM_MAGIC_ADDRESS) !=
 	    EEPROM_MAGIC_COBBOARD) {

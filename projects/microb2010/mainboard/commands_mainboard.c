@@ -66,6 +66,7 @@
 #include "strat.h"
 #include "strat_utils.h"
 #include "strat_base.h"
+#include "strat_db.h"
 #include "strat_corn.h"
 #include "i2c_protocol.h"
 #include "actuator.h"
@@ -301,11 +302,11 @@ static void cmd_start_parsed(void *parsed_result, void *data)
 
 	gen.logs[NB_LOGS] = E_USER_STRAT;
 	if (!strcmp_P(res->debug, PSTR("debug"))) {
-		strat_infos.dump_enabled = 1;
+		strat_db.dump_enabled = 1;
 		gen.log_level = 5;
 	}
 	else {
-		strat_infos.dump_enabled = 0;
+		strat_db.dump_enabled = 0;
 		gen.log_level = 0;
 	}
 
@@ -1126,58 +1127,9 @@ struct cmd_test_result {
 	int32_t dist;
 };
 
-#if 0
-static void reverse_line(struct line_2pts *l)
-{
-	point_t tmp;
-
-	tmp.x = l->p1.x;
-	tmp.y = l->p1.y;
-	l->p1.x = l->p2.x;
-	l->p1.y = l->p2.y;
-	l->p2.x = tmp.x;
-	l->p2.y = tmp.y;
-}
-#endif
-
 /* function called when cmd_test is parsed successfully */
 static void cmd_test_parsed(void *parsed_result, void *data)
 {
-	uint8_t err;
-
-#ifdef HOST_VERSION
-	strat_reset_pos(298.48, COLOR_Y(309.21),
-			COLOR_A(70.02));
-	mainboard.angle.on = 1;
-	mainboard.distance.on = 1;
-	strat_set_speed(250, SPEED_ANGLE_FAST);
-#endif
-	init_corn_table(0, 0);
-	time_wait_ms(100);
-
-	err = line2line(LINE_UP, 0, LINE_R_DOWN, 2);
-	err = line2line(LINE_R_DOWN, 2, LINE_R_UP, 2);
-	err = line2line(LINE_R_UP, 2, LINE_UP, 5);
-	trajectory_hardstop(&mainboard.traj);
-
-	/* ball ejection */
-	trajectory_a_abs(&mainboard.traj, COLOR_A(90));
-	i2c_ballboard_set_mode(I2C_BALLBOARD_MODE_EJECT);
-	time_wait_ms(2000);
-
-	/* half turn */
-	trajectory_goto_xy_abs(&mainboard.traj, 2625, COLOR_Y(1847));
-	err = wait_traj_end(END_INTR|END_TRAJ);
-	i2c_cobboard_mode_pack(I2C_LEFT_SIDE);
-	i2c_cobboard_mode_pack(I2C_RIGHT_SIDE);
-	trajectory_a_rel(&mainboard.traj, COLOR_A(180));
-	err = wait_traj_end(END_INTR|END_TRAJ);
-
-	/* cob ejection */
-	trajectory_d_rel(&mainboard.traj, -100);
-	err = wait_traj_end(END_INTR|END_TRAJ);
-	i2c_cobboard_mode_eject();
-	time_wait_ms(2000);
 }
 
 prog_char str_test_arg0[] = "test";

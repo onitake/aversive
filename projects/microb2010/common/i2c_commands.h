@@ -38,6 +38,8 @@
 
 #define I2C_COB_BLACK   0
 #define I2C_COB_WHITE   1
+#define I2C_COB_UNKNOWN 2
+#define I2C_COB_REMOVED 3
 
 struct i2c_cmd_hdr {
 	uint8_t cmd;

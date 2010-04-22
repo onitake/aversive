@@ -19,6 +19,8 @@
  *
  */
 
+/* was mechboard in 2009 */
+
 #define LED_TOGGLE(port, bit) do {		\
 		if (port & _BV(bit))		\
 			port &= ~_BV(bit);	\
@@ -119,7 +121,7 @@
 #define I2C_POLL_PRIO       20
 #define EEPROM_TIME_PRIO    10
 
-#define CS_PERIOD 5000L /* in microsecond */ 
+#define CS_PERIOD 5000L /* in microsecond */
 #define CS_HZ (1000000. / CS_PERIOD)
 
 #define NB_LOGS 4

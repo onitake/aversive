@@ -160,8 +160,8 @@ struct sensor_filter {
 static struct sensor_filter sensor_filter[SENSOR_MAX] = {
 	[S_CAP1] = { 1, 0, 0, 1, 0, 0 }, /* 0 */
 	[S_CAP2] = { 1, 0, 0, 1, 0, 0 }, /* 1 */
-	[S_COLUMN_LEFT] = { 1, 0, 0, 1, 0, 1 },    /* 2 */
-	[S_COLUMN_RIGHT] = { 1, 0, 0, 1, 0, 1 },   /* 3 */
+	[S_LFRONT] = { 1, 0, 0, 1, 0, 1 },    /* 2 */
+	[S_RFRONT] = { 1, 0, 0, 1, 0, 1 },    /* 3 */
 	[S_START_SWITCH] = { 10, 0, 3, 7, 0, 0 },  /* 4 */
 	[S_DISP_LEFT] = { 1, 0, 0, 1, 0, 1 },  /* 5 */
 	[S_RCOB_WHITE] = { 1, 0, 0, 1, 0, 0 }, /* 6 */

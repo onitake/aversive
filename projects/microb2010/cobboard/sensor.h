@@ -33,8 +33,8 @@
 #define S_COB_INSIDE_R  2
 #define S_CAP4          3
 #define S_LCOB          4
-#define S_LEFT          5
-#define S_RIGHT         6
+#define S_CAP6          5
+#define S_CAP7          6
 #define S_RCOB          7
 #define S_RESERVED1     8
 #define S_RESERVED2     9
