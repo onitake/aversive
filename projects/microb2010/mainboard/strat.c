@@ -224,12 +224,67 @@ static uint8_t strat_beginning(void)
 	} while (0)
 
 
+/* return true if we need to grab some more elements */
+static uint8_t need_more_elements(void)
+{
+	if (time_get_s() <= 75) {
+		/* we have enough time left */
+		if (get_ball_count() >= 4)
+			return 0;
+		if (get_cob_count() >= 4)
+			return 0;
+		if ((get_ball_count() >= 2) &&
+		    (get_cob_count() >= 2))
+			return 0;
+		return 1;
+	}
+	else {
+		/* not much time remaining */
+		if ((get_ball_count() >= 1) &&
+		    (get_cob_count() >= 1))
+			return 0;
+		return 1;
+	}
+}
+
+static uint8_t strat_harvest(void)
+{
+	return 0;
+}
+
+static uint8_t strat_eject(void)
+{
+	return 0;
+}
+
 uint8_t strat_main(void)
 {
 	uint8_t err;
 
-	/* */
+	/* harvest the first cobs + balls */
 	err = strat_beginning();
+
+	while (1) {
+		/* end of time exit ! */
+		if (err == END_TIMER) {
+			DEBUG(E_USER_STRAT, "End of time");
+			strat_exit();
+			break;
+		}
+
+		if (need_more_elements() == 0) {
+			/* we have enough elements, go to eject */
+			err = strat_eject();
+			if (!TRAJ_SUCCESS(err))
+				continue;
+		}
+		else {
+			/* harvest */
+			err = strat_harvest();
+			if (!TRAJ_SUCCESS(err))
+				continue;
+		}
+	}
 
 	return err;
 }

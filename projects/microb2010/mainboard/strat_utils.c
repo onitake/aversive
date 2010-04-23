@@ -1,6 +1,6 @@
-/*  
+/*
  *  Copyright Droids Corporation, Microb Technology (2009)
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -75,7 +75,7 @@ int16_t distance_from_robot(int16_t x, int16_t y)
 				position_get_y_s16(&mainboard.pos), x, y);
 }
 
-/** do a modulo 360 -> [-180,+180], knowing that 'a' is in [-3*180,+3*180] */  
+/** do a modulo 360 -> [-180,+180], knowing that 'a' is in [-3*180,+3*180] */
 int16_t simple_modulo_360(int16_t a)
 {
 	if (a < -180) {
@@ -93,10 +93,10 @@ int16_t angle_abs_to_rel(int16_t a_abs)
 	return simple_modulo_360(a_abs - position_get_a_deg_s16(&mainboard.pos));
 }
 
-void rel_da_to_abs_xy(double d_rel, double a_rel_rad, 
+void rel_da_to_abs_xy(double d_rel, double a_rel_rad,
 		      double *x_abs, double *y_abs)
 {
-	double x = position_get_x_double(&mainboard.pos); 
+	double x = position_get_x_double(&mainboard.pos);
 	double y = position_get_y_double(&mainboard.pos);
 	double a = position_get_a_rad_double(&mainboard.pos);
 
@@ -109,7 +109,7 @@ double norm(double x, double y)
 	return sqrt(x*x + y*y);
 }
 
-void rel_xy_to_abs_xy(double x_rel, double y_rel, 
+void rel_xy_to_abs_xy(double x_rel, double y_rel,
 		      double *x_abs, double *y_abs)
 {
 	double d_rel, a_rel;
@@ -119,13 +119,13 @@ void rel_xy_to_abs_xy(double x_rel, double y_rel,
 }
 
 /* return an angle between -pi and pi */
-void abs_xy_to_rel_da(double x_abs, double y_abs, 
+void abs_xy_to_rel_da(double x_abs, double y_abs,
 		      double *d_rel, double *a_rel_rad)
 {
-	double x = position_get_x_double(&mainboard.pos); 
+	double x = position_get_x_double(&mainboard.pos);
 	double y = position_get_y_double(&mainboard.pos);
 	double a = position_get_a_rad_double(&mainboard.pos);
-	
+
 	*a_rel_rad = atan2(y_abs - y, x_abs - x) - a;
 	if (*a_rel_rad < -M_PI) {
 		*a_rel_rad += M_2PI;
@@ -139,7 +139,7 @@ void abs_xy_to_rel_da(double x_abs, double y_abs,
 void rotate(double *x, double *y, double rot)
 {
 	double l, a;
-	
+
 	l = norm(*x, *y);
 	a = atan2(*y, *x);
 
@@ -176,7 +176,7 @@ uint8_t robot_is_in_area(int16_t margin)
 uint8_t y_is_more_than(int16_t y)
 {
 	int16_t posy;
-	
+
 	posy = position_get_y_s16(&mainboard.pos);
 	if (mainboard.our_color == I2C_COLOR_YELLOW) {
 		if (posy > y)
@@ -197,7 +197,7 @@ uint8_t y_is_more_than(int16_t y)
 uint8_t x_is_more_than(int16_t x)
 {
 	int16_t posx;
-	
+
 	posx = position_get_x_s16(&mainboard.pos);
 	if (posx > x)
 		return 1;
@@ -228,15 +228,15 @@ int16_t sin_table[] = {
 int16_t fast_sin(int16_t deg)
 {
 	deg %= 360;
-	
+
 	if (deg < 0)
 		deg += 360;
 
-	if (deg < 90) 
+	if (deg < 90)
 		return sin_table[(deg*16)/90];
-	else if (deg < 180) 
+	else if (deg < 180)
 		return sin_table[((180-deg)*16)/90];
-	else if (deg < 270) 
+	else if (deg < 270)
 		return -sin_table[((deg-180)*16)/90];
 	else
 		return -sin_table[((360-deg)*16)/90];
@@ -317,4 +317,14 @@ uint8_t opponent_is_behind(void)
 /* 	if (opp_there && (opp_a < 215 && opp_a > 145) && opp_d < 600) */
 /* 		return 1; */
 	return 0;
+}
+
+uint8_t get_ball_count(void)
+{
+	return ballboard.ball_count;
+}
+
+uint8_t get_cob_count(void)
+{
+	return cobboard.cob_count;
 }
