@@ -272,7 +272,7 @@ void i2c_recvevent(uint8_t * buf, int8_t size)
 			goto error;
 
 		/* status */
-		//cobboard.mode = ans->mode;
+		cobboard.mode = ans->mode;
 		cobboard.status = ans->status;
 		cobboard.left_cobroller_speed = ans->left_cobroller_speed;
 		cs_set_consign(&mainboard.left_cobroller.cs, cobboard.left_cobroller_speed);
@@ -354,7 +354,8 @@ static int8_t i2c_req_cobboard_status(void)
 	int8_t err;
 
 	buf.hdr.cmd = I2C_REQ_COBBOARD_STATUS;
-	buf.mode = cobboard.mode;
+	buf.lspickle = cobboard.lspickle;
+	buf.rspickle = cobboard.rspickle;
 	err = i2c_send(I2C_COBBOARD_ADDR, (uint8_t*)&buf,
 			sizeof(buf), I2C_CTRL_GENERIC);
 
@@ -391,78 +392,42 @@ int8_t i2c_led_control(uint8_t addr, uint8_t led, uint8_t state)
 	return i2c_send_command(addr, (uint8_t*)&buf, sizeof(buf));
 }
 
-static int8_t i2c_cobboard_set_mode(uint8_t mode)
+int8_t i2c_cobboard_set_mode(uint8_t mode)
 {
 #ifdef HOST_VERSION
 	return robotsim_i2c_cobboard_set_mode(mode);
 #else
-	cobboard.mode = mode;
-	return 0;
-#endif
-
-#if 0 /* old */
 	struct i2c_cmd_cobboard_set_mode buf;
 	buf.hdr.cmd = I2C_CMD_COBBOARD_SET_MODE;
-	buf.mode = cobboard.mode | I2C_COBBOARD_MODE_EJECT;
+	buf.mode = mode;
 	return i2c_send_command(I2C_COBBOARD_ADDR, (uint8_t*)&buf, sizeof(buf));
 #endif
 }
 
-int8_t i2c_cobboard_mode_eject(void)
+static int8_t i2c_cobboard_set_spickle(uint8_t side, uint8_t flags)
 {
-	/* XXXXXXXXX bad bad bad */
-	uint8_t mode = cobboard.mode | I2C_COBBOARD_MODE_EJECT;
-	i2c_cobboard_set_mode(mode);
-	time_wait_ms(500);
-	mode = cobboard.mode & (~I2C_COBBOARD_MODE_EJECT);
-	i2c_cobboard_set_mode(mode);
+	if (side == I2C_LEFT_SIDE)
+		cobboard.lspickle = flags;
+	else
+		cobboard.rspickle = flags;
 	return 0;
 }
 
-int8_t i2c_cobboard_mode_harvest(uint8_t side)
+int8_t i2c_cobboard_pack(uint8_t side)
 {
-	uint8_t mode = cobboard.mode;
-
-	if (side == I2C_LEFT_SIDE) {
-		mode |= I2C_COBBOARD_MODE_L_DEPLOY;
-		mode |= I2C_COBBOARD_MODE_L_HARVEST;
-	}
-	else {
-		mode |= I2C_COBBOARD_MODE_R_DEPLOY;
-		mode |= I2C_COBBOARD_MODE_R_HARVEST;
-	}
-	return i2c_cobboard_set_mode(mode);
+	return i2c_cobboard_set_spickle(side, 0);
 }
 
-int8_t i2c_cobboard_mode_deploy(uint8_t side)
+int8_t i2c_cobboard_harvest(uint8_t side)
 {
-	uint8_t mode = cobboard.mode;
-
-	if (side == I2C_LEFT_SIDE) {
-		mode &= ~(I2C_COBBOARD_MODE_L_DEPLOY | I2C_COBBOARD_MODE_L_HARVEST);
-		mode |= I2C_COBBOARD_MODE_L_DEPLOY;
-	}
-	else {
-		mode &= ~(I2C_COBBOARD_MODE_R_DEPLOY | I2C_COBBOARD_MODE_R_HARVEST);
-		mode |= I2C_COBBOARD_MODE_R_DEPLOY;
-	}
-	return i2c_cobboard_set_mode(mode);
+	return i2c_cobboard_set_spickle(side,
+					I2C_COBBOARD_SPK_DEPLOY |
+					I2C_COBBOARD_SPK_AUTOHARVEST);
 }
 
-int8_t i2c_cobboard_mode_pack(uint8_t side)
+int8_t i2c_cobboard_deploy(uint8_t side)
 {
-	uint8_t mode = cobboard.mode;
-
-	if (side == I2C_LEFT_SIDE)
-		mode &= ~(I2C_COBBOARD_MODE_L_DEPLOY | I2C_COBBOARD_MODE_L_HARVEST);
-	else
-		mode &= ~(I2C_COBBOARD_MODE_R_DEPLOY | I2C_COBBOARD_MODE_R_HARVEST);
-	return i2c_cobboard_set_mode(mode);
-}
-
-int8_t i2c_cobboard_mode_init(void)
-{
-	return i2c_cobboard_set_mode(I2C_COBBOARD_MODE_INIT);
+	return i2c_cobboard_set_spickle(side, I2C_COBBOARD_SPK_DEPLOY);
 }
 
 int8_t i2c_ballboard_set_mode(uint8_t mode)

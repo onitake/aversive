@@ -196,6 +196,8 @@ struct mainboard {
 struct cobboard {
 	uint8_t mode;
 	uint8_t status;
+	uint8_t lspickle;
+	uint8_t rspickle;
 	int16_t left_cobroller_speed;
 	int16_t right_cobroller_speed;
 	uint8_t cob_count;

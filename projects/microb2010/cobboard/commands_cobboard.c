@@ -229,38 +229,26 @@ static void cmd_state2_parsed(void *parsed_result,
 			      __attribute__((unused)) void *data)
 {
 	struct cmd_state2_result *res = parsed_result;
-	uint8_t side, mode = state_get_mode();
+	uint8_t side;
 
-	if (!strcmp_P(res->arg2, PSTR("left"))) {
+	if (!strcmp_P(res->arg2, PSTR("left")))
 		side = I2C_LEFT_SIDE;
-		mode &= ~(I2C_COBBOARD_MODE_L_DEPLOY | I2C_COBBOARD_MODE_L_HARVEST);
-	}
-	else {
+	else
 		side = I2C_RIGHT_SIDE;
-		mode &= ~(I2C_COBBOARD_MODE_R_DEPLOY | I2C_COBBOARD_MODE_R_HARVEST);
-	}
 
 	if (!strcmp_P(res->arg1, PSTR("pack"))) {
-		/* nothing to do */
+		state_set_mode(I2C_COBBOARD_MODE_HARVEST);
+		state_set_spickle(side, 0);
 	}
 	else if (!strcmp_P(res->arg1, PSTR("deploy"))) {
-		if (side == I2C_LEFT_SIDE)
-			mode |= I2C_COBBOARD_MODE_L_DEPLOY;
-		else
-			mode |= I2C_COBBOARD_MODE_R_DEPLOY;
+		state_set_mode(I2C_COBBOARD_MODE_HARVEST);
+		state_set_spickle(side, I2C_COBBOARD_SPK_DEPLOY);
 	}
 	else if (!strcmp_P(res->arg1, PSTR("harvest"))) {
-		if (side == I2C_LEFT_SIDE) {
-			mode |= I2C_COBBOARD_MODE_L_DEPLOY;
-			mode |= I2C_COBBOARD_MODE_L_HARVEST;
-		}
-		else {
-			mode |= I2C_COBBOARD_MODE_R_DEPLOY;
-			mode |= I2C_COBBOARD_MODE_R_HARVEST;
-		}
+		state_set_mode(I2C_COBBOARD_MODE_HARVEST);
+		state_set_spickle(side, I2C_COBBOARD_SPK_DEPLOY |
+				  I2C_COBBOARD_SPK_AUTOHARVEST);
 	}
-
-	state_set_mode(mode);
 }
 
 prog_char str_state2_arg0[] = "cobboard";

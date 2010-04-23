@@ -24,6 +24,7 @@
 
 /* set a new state, return 0 on success */
 int8_t state_set_mode(uint8_t mode);
+void state_set_spickle(uint8_t side, uint8_t flags);
 
 /* get current state */
 uint8_t state_get_mode(void);

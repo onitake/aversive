@@ -110,8 +110,9 @@ void strat_init(void)
 	time_reset();
 	interrupt_traj_reset();
 
-	i2c_cobboard_mode_harvest(I2C_LEFT_SIDE);
-	i2c_cobboard_mode_harvest(I2C_RIGHT_SIDE);
+	i2c_cobboard_set_mode(I2C_COBBOARD_MODE_HARVEST);
+	i2c_cobboard_harvest(I2C_LEFT_SIDE);
+	i2c_cobboard_harvest(I2C_RIGHT_SIDE);
 	i2c_ballboard_set_mode(I2C_BALLBOARD_MODE_HARVEST);
 
 	/* used in strat_base for END_TIMER */
@@ -198,15 +199,15 @@ static uint8_t strat_beginning(void)
 	/* half turn */
 	trajectory_goto_xy_abs(&mainboard.traj, 2625, COLOR_Y(1847));
 	err = wait_traj_end(END_INTR|END_TRAJ);
-	i2c_cobboard_mode_pack(I2C_LEFT_SIDE);
-	i2c_cobboard_mode_pack(I2C_RIGHT_SIDE);
+	i2c_cobboard_pack(I2C_LEFT_SIDE);
+	i2c_cobboard_pack(I2C_RIGHT_SIDE);
 	trajectory_a_rel(&mainboard.traj, COLOR_A(180));
 	err = wait_traj_end(END_INTR|END_TRAJ);
 
 	/* cob ejection */
 	trajectory_d_rel(&mainboard.traj, -100);
 	err = wait_traj_end(END_INTR|END_TRAJ);
-	i2c_cobboard_mode_eject();
+	i2c_cobboard_set_mode(I2C_COBBOARD_MODE_EJECT);
 	time_wait_ms(2000);
 
 	trajectory_hardstop(&mainboard.traj);

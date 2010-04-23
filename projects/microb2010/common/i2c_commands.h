@@ -70,17 +70,13 @@ struct i2c_cmd_generic_color {
 
 #define I2C_CMD_COBBOARD_SET_MODE 0x02
 
-/* XXX disabled, use memory sync instead */
 struct i2c_cmd_cobboard_set_mode {
 	struct i2c_cmd_hdr hdr;
 
-#define I2C_COBBOARD_MODE_L_DEPLOY     0x01 /* deploy the spickle */
-#define I2C_COBBOARD_MODE_L_HARVEST    0x02 /* auto harvest withe cobs */
-#define I2C_COBBOARD_MODE_R_DEPLOY     0x04 /* deploy the spickle */
-#define I2C_COBBOARD_MODE_R_HARVEST    0x08 /* auto harvest withe cobs */
-#define I2C_COBBOARD_MODE_EJECT        0x10 /* eject cobs */
-#define I2C_COBBOARD_MODE_INIT         0x20 /* init state machine */
-	//uint8_t mode;
+#define I2C_COBBOARD_MODE_HARVEST      0x01 /* harvest mode */
+#define I2C_COBBOARD_MODE_EJECT        0x02 /* eject cobs */
+#define I2C_COBBOARD_MODE_INIT         0x03 /* init state machine */
+	uint8_t mode;
 };
 
 #define I2C_CMD_BALLBOARD_SET_MODE 0x10
@@ -108,20 +104,26 @@ struct i2c_cmd_ballboard_set_mode {
 
 struct i2c_req_cobboard_status {
 	struct i2c_cmd_hdr hdr;
-	uint8_t mode;
+
+#define I2C_COBBOARD_SPK_DEPLOY  0x01 /* deploy the spickle */
+#define I2C_COBBOARD_SPK_AUTOHARVEST 0x02 /* auto harvest the cobs */
+	uint8_t lspickle;
+	uint8_t rspickle;
 };
 
 #define I2C_ANS_COBBOARD_STATUS 0x81
 
 struct i2c_ans_cobboard_status {
 	struct i2c_cmd_hdr hdr;
+
 	/* mode type are defined above: I2C_COBBOARD_MODE_xxx */
 	uint8_t mode;
 
 #define I2C_COBBOARD_STATUS_READY         0x00
-#define I2C_COBBOARD_STATUS_LBUSY         0x01
-#define I2C_COBBOARD_STATUS_RBUSY         0x02
-#define I2C_COBBOARD_STATUS_EJECT         0x03
+#define I2C_COBBOARD_STATUS_OFF           0x01
+#define I2C_COBBOARD_STATUS_LBUSY         0x02
+#define I2C_COBBOARD_STATUS_RBUSY         0x03
+#define I2C_COBBOARD_STATUS_EJECT         0x04
 	uint8_t status;
 
 	uint8_t cob_count;

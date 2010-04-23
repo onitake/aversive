@@ -730,9 +730,9 @@ static void cmd_cobboard_setmode1_parsed(void *parsed_result, void *data)
 	struct cmd_cobboard_setmode1_result *res = parsed_result;
 
 	if (!strcmp_P(res->arg1, PSTR("init")))
-		i2c_cobboard_mode_init();
+		i2c_cobboard_set_mode(I2C_COBBOARD_MODE_INIT);
 	else if (!strcmp_P(res->arg1, PSTR("eject")))
-		i2c_cobboard_mode_eject();
+		i2c_cobboard_set_mode(I2C_COBBOARD_MODE_EJECT);
 }
 
 prog_char str_cobboard_setmode1_arg0[] = "cobboard";
@@ -763,7 +763,7 @@ struct cmd_cobboard_setmode2_result {
 };
 
 /* function called when cmd_cobboard_setmode2 is parsed successfully */
-static void cmd_cobboard_setmode2_parsed(void * parsed_result, void * data)
+static void cmd_cobboard_setmode2_parsed(void *parsed_result, void *data)
 {
 	struct cmd_cobboard_setmode2_result *res = parsed_result;
 	uint8_t side = I2C_LEFT_SIDE;
@@ -773,12 +773,18 @@ static void cmd_cobboard_setmode2_parsed(void * parsed_result, void * data)
 	else if (!strcmp_P(res->arg2, PSTR("right")))
 		side = I2C_RIGHT_SIDE;
 
-	if (!strcmp_P(res->arg1, PSTR("deploy")))
-		i2c_cobboard_mode_deploy(side);
-	else if (!strcmp_P(res->arg1, PSTR("harvest")))
-		i2c_cobboard_mode_harvest(side);
-	else if (!strcmp_P(res->arg1, PSTR("pack")))
-		i2c_cobboard_mode_pack(side);
+	if (!strcmp_P(res->arg1, PSTR("deploy"))) {
+		i2c_cobboard_set_mode(I2C_COBBOARD_MODE_HARVEST);
+		i2c_cobboard_deploy(side);
+	}
+	else if (!strcmp_P(res->arg1, PSTR("harvest"))) {
+		i2c_cobboard_set_mode(I2C_COBBOARD_MODE_HARVEST);
+		i2c_cobboard_harvest(side);
+	}
+	else if (!strcmp_P(res->arg1, PSTR("pack"))) {
+		i2c_cobboard_set_mode(I2C_COBBOARD_MODE_HARVEST);
+		i2c_cobboard_pack(side);
+	}
 }
 
 prog_char str_cobboard_setmode2_arg0[] = "cobboard";

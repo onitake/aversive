@@ -130,16 +130,14 @@ void i2c_recvevent(uint8_t * buf, int8_t size)
 			break;
 		}
 
-#if 0
 	case I2C_CMD_COBBOARD_SET_MODE:
 		{
 			struct i2c_cmd_cobboard_set_mode *cmd = void_cmd;
 			if (size != sizeof(struct i2c_cmd_cobboard_set_mode))
 				goto error;
-			i2c_set_mode(cmd);
+			state_set_mode(cmd->mode);
 			break;
 		}
-#endif
 
 	case I2C_CMD_GENERIC_SET_COLOR:
 		{
@@ -151,7 +149,7 @@ void i2c_recvevent(uint8_t * buf, int8_t size)
 		}
 
 #ifdef notyet
-	case I2C_CMD_EXTENSION_TEST: 
+	case I2C_CMD_EXTENSION_TEST:
 		{
 			struct i2c_cmd_extension_test *cmd = void_cmd;
 			if (size != sizeof (*cmd))
@@ -163,7 +161,6 @@ void i2c_recvevent(uint8_t * buf, int8_t size)
 
 	/* Add other commands here ...*/
 
-
 	case I2C_REQ_COBBOARD_STATUS:
 		{
 			struct i2c_req_cobboard_status *cmd = void_cmd;
@@ -171,7 +168,10 @@ void i2c_recvevent(uint8_t * buf, int8_t size)
 				goto error;
 
 			/* mode is in req */
-			state_set_mode(cmd->mode);
+			if (state_get_status() != I2C_COBBOARD_STATUS_OFF) {
+				state_set_spickle(I2C_LEFT_SIDE, cmd->lspickle);
+				state_set_spickle(I2C_RIGHT_SIDE, cmd->rspickle);
+			}
 			i2c_send_status();
 			break;
 		}

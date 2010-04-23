@@ -57,17 +57,12 @@
 #define STMCH_ERROR(args...) ERROR(E_USER_ST_MACH, args)
 
 static struct vt100 local_vt100;
-static volatile uint8_t state_mode;
+static volatile uint8_t state_mode, lspickle, rspickle;
 static volatile uint8_t state_status;
 static uint8_t cob_count;
 
 /* short aliases */
-#define L_DEPLOY(mode)   (!!((mode) & I2C_COBBOARD_MODE_L_DEPLOY))
-#define R_DEPLOY(mode)   (!!((mode) & I2C_COBBOARD_MODE_R_DEPLOY))
-#define DEPLOY(side, mode) ((side) == I2C_LEFT_SIDE ? L_DEPLOY(mode) : R_DEPLOY(mode))
-#define L_HARVEST(mode)  (!!((mode) & I2C_COBBOARD_MODE_L_HARVEST))
-#define R_HARVEST(mode)  (!!((mode) & I2C_COBBOARD_MODE_R_HARVEST))
-#define HARVEST(side, mode) ((side) == I2C_LEFT_SIDE ? L_HARVEST(mode) : R_HARVEST(mode))
+#define HARVEST(mode)    (!!((mode) & I2C_COBBOARD_MODE_HARVEST))
 #define EJECT(mode)      (!!((mode) & I2C_COBBOARD_MODE_EJECT))
 #define INIT(mode)       (!!((mode) & I2C_COBBOARD_MODE_INIT))
 
@@ -100,29 +95,57 @@ static uint8_t state_no_cob_inside(void)
 		!sensor_get(S_COB_INSIDE_R);
 }
 
+static uint8_t is_deployed(uint8_t side)
+{
+	if (side == I2C_LEFT_SIDE)
+		return lspickle & I2C_COBBOARD_SPK_DEPLOY;
+	else
+		return rspickle & I2C_COBBOARD_SPK_DEPLOY;
+}
+
+static uint8_t is_autoharvest(uint8_t side)
+{
+	if (side == I2C_LEFT_SIDE)
+		return lspickle & I2C_COBBOARD_SPK_AUTOHARVEST;
+	else
+		return rspickle & I2C_COBBOARD_SPK_AUTOHARVEST;
+}
+
 /* pack/deploy spickles depending on mode */
 static void spickle_prepare(uint8_t side)
 {
 	if (cob_count >= 5)
 		spickle_pack(side);
-	else if (DEPLOY(side, state_mode) && !HARVEST(side, state_mode))
+	else if (is_deployed(side) && !is_autoharvest(side))
 		spickle_mid(side);
-	else if (DEPLOY(side, state_mode) && HARVEST(side, state_mode))
+	else if (is_deployed(side) && is_autoharvest(side))
 		spickle_deploy(side);
 	else
 		spickle_pack(side);
+}
+
+void state_set_spickle(uint8_t side, uint8_t flags)
+{
+	if (side == I2C_LEFT_SIDE) {
+		/* preempt current action if not busy */
+		if (lspickle != 0 && flags == 0 &&
+		    state_status != I2C_COBBOARD_STATUS_LBUSY)
+			spickle_prepare(I2C_LEFT_SIDE);
+		lspickle = flags;
+	}
+	else {
+		/* preempt current action if not busy */
+		if (rspickle != 0 && flags == 0 &&
+		    state_status != I2C_COBBOARD_STATUS_RBUSY)
+			spickle_prepare(I2C_RIGHT_SIDE);
+		rspickle = flags;
+	}
 }
 
 /* set a new state, return 0 on success */
 int8_t state_set_mode(uint8_t mode)
 {
 	state_mode = mode;
-
-	/* preempt current action if not busy */
-	if (state_status != I2C_COBBOARD_STATUS_LBUSY)
-		spickle_prepare(I2C_LEFT_SIDE);
-	if (state_status != I2C_COBBOARD_STATUS_RBUSY)
-		spickle_prepare(I2C_RIGHT_SIDE);
 
 /* 	STMCH_DEBUG("%s(): l_deploy=%d l_harvest=%d " */
 /* 		    "r_deploy=%d r_harvest=%d eject=%d", */
@@ -295,9 +318,11 @@ void state_machine(void)
 
 		/* harvest */
 		if (cob_count < 5) {
-			if (L_DEPLOY(state_mode) && L_HARVEST(state_mode))
+			if ((lspickle & I2C_COBBOARD_SPK_DEPLOY) &&
+			    (lspickle & I2C_COBBOARD_SPK_DEPLOY))
 				state_do_harvest(I2C_LEFT_SIDE);
-			if (R_DEPLOY(state_mode) && R_HARVEST(state_mode))
+			if ((rspickle & I2C_COBBOARD_SPK_DEPLOY) &&
+			    (rspickle & I2C_COBBOARD_SPK_DEPLOY))
 				state_do_harvest(I2C_RIGHT_SIDE);
 		}
 
@@ -307,7 +332,7 @@ void state_machine(void)
 			state_do_eject();
 		}
 	}
-	state_status = I2C_COBBOARD_STATUS_READY;
+	state_status = I2C_COBBOARD_STATUS_OFF;
 }
 
 void state_init(void)
@@ -320,5 +345,5 @@ void state_init(void)
 	spickle_pack(I2C_RIGHT_SIDE);
 	state_mode = 0;
 	cob_count = 0;
-	state_status = I2C_COBBOARD_STATUS_READY;
+	state_status = I2C_COBBOARD_STATUS_OFF;
 }
