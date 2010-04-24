@@ -78,9 +78,9 @@ static void do_cs(__attribute__((unused)) void *dummy)
 		ls = (cobboard.left_spickle.prev - cobboard.left_spickle.cs.filtered_feedback_value);
 		rs = (cobboard.right_spickle.prev - cobboard.right_spickle.cs.filtered_feedback_value);
 		sh = (cobboard.shovel.prev - cobboard.shovel.cs.filtered_feedback_value);
-		if (ls < -2000 || ls > 2000 ||
-		    rs < -2000 || rs > 2000 ||
-		    sh < -2000 || sh > 2000) {
+		if (ls < -3000 || ls > 3000 ||
+		    rs < -3000 || rs > 3000 ||
+		    sh < -3000 || sh > 3000) {
 			printf_P(PSTR("left_spickle %ld "), ls);
 			printf_P(PSTR("right_spickle %ld "), rs);
 			printf_P(PSTR("shovel %ld "), sh);
@@ -196,7 +196,7 @@ void microb_cs_init(void)
 
 	/* quadramp */
 	quadramp_init(&cobboard.shovel.qr);
-	quadramp_set_1st_order_vars(&cobboard.shovel.qr, 2000, 2000); /* set speed */
+	quadramp_set_1st_order_vars(&cobboard.shovel.qr, 2500, 2500); /* set speed */
 	quadramp_set_2nd_order_vars(&cobboard.shovel.qr, 50, 20); /* set accel */
 
 	/* CS */

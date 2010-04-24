@@ -135,7 +135,8 @@ void i2c_recvevent(uint8_t * buf, int8_t size)
 			struct i2c_cmd_cobboard_set_mode *cmd = void_cmd;
 			if (size != sizeof(struct i2c_cmd_cobboard_set_mode))
 				goto error;
-			state_set_mode(cmd->mode);
+			if (!state_get_i2c_ignore())
+				state_set_mode(cmd->mode);
 			break;
 		}
 
@@ -168,7 +169,8 @@ void i2c_recvevent(uint8_t * buf, int8_t size)
 				goto error;
 
 			/* mode is in req */
-			if (state_get_status() != I2C_COBBOARD_STATUS_OFF) {
+			if (state_get_status() != I2C_COBBOARD_STATUS_OFF &&
+			    !state_get_i2c_ignore()) {
 				state_set_spickle(I2C_LEFT_SIDE, cmd->lspickle);
 				state_set_spickle(I2C_RIGHT_SIDE, cmd->rspickle);
 			}
