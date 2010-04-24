@@ -1124,6 +1124,47 @@ parse_pgm_inst_t cmd_clitoid = {
 };
 
 /**********************************************************/
+/* Time_Monitor */
+
+/* this structure is filled when cmd_time_monitor is parsed successfully */
+struct cmd_time_monitor_result {
+	fixed_string_t arg0;
+	fixed_string_t arg1;
+};
+
+/* function called when cmd_time_monitor is parsed successfully */
+static void cmd_time_monitor_parsed(void *parsed_result, void *data)
+{
+#ifndef HOST_VERSION
+	struct cmd_time_monitor_result *res = parsed_result;
+	uint16_t seconds;
+
+	if (!strcmp_P(res->arg1, PSTR("reset"))) {
+		eeprom_write_word(EEPROM_TIME_ADDRESS, 0);
+	}
+	seconds = eeprom_read_word(EEPROM_TIME_ADDRESS);
+	printf_P(PSTR("Running since %d mn %d\r\n"), seconds/60, seconds%60);
+#endif
+}
+
+prog_char str_time_monitor_arg0[] = "time_monitor";
+parse_pgm_token_string_t cmd_time_monitor_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_time_monitor_result, arg0, str_time_monitor_arg0);
+prog_char str_time_monitor_arg1[] = "show#reset";
+parse_pgm_token_string_t cmd_time_monitor_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_time_monitor_result, arg1, str_time_monitor_arg1);
+
+prog_char help_time_monitor[] = "Show since how long we are running";
+parse_pgm_inst_t cmd_time_monitor = {
+	.f = cmd_time_monitor_parsed,  /* function to call */
+	.data = NULL,      /* 2nd arg of func */
+	.help_str = help_time_monitor,
+	.tokens = {        /* token list, NULL terminated */
+		(prog_void *)&cmd_time_monitor_arg0,
+		(prog_void *)&cmd_time_monitor_arg1,
+		NULL,
+	},
+};
+
+/**********************************************************/
 /* Test */
 
 /* this structure is filled when cmd_test is parsed successfully */

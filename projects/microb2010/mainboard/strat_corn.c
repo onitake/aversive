@@ -161,7 +161,16 @@ uint8_t line2line(uint8_t dir1, uint8_t num1,
 	line2_a_rad = atan2(l2.p2.y - l2.p1.y,
 			    l2.p2.x - l2.p1.x);
 	diff_a_deg = DEG(line2_a_rad - line1_a_rad);
+	if (diff_a_deg < -180) {
+		diff_a_deg += 360;
+	}
+	else if (diff_a_deg > 180) {
+		diff_a_deg -= 360;
+	}
 	diff_a_deg_abs = fabs(diff_a_deg);
+
+/* 	printf_P(PSTR("diff_a_deg=%2.2f\r\n"), diff_a_deg_abs); */
+/* 	printf_P(PSTR("inter=%2.2f,%2.2f\r\n"), p.x, p.y); */
 
 	if (diff_a_deg_abs < 70.) {
 		radius = 200;
@@ -185,10 +194,12 @@ uint8_t line2line(uint8_t dir1, uint8_t num1,
 			beta_deg = -60;
 	}
 
+	/* XXX check return value !! */
 	trajectory_clitoid(&mainboard.traj, l1.p1.x, l1.p1.y,
 			   line1_a_deg, 150., diff_a_deg, beta_deg,
 			   radius, xy_norm(l1.p1.x, l1.p1.y,
 					   p.x, p.y));
+	/* disabled */
 	if (0) {
 		err = 0;
 		while (err == 0) {

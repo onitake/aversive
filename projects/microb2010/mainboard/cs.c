@@ -224,7 +224,7 @@ void microb_cs_init(void)
 	position_init(&mainboard.pos);
 	position_set_physical_params(&mainboard.pos, VIRTUAL_TRACK_MM, DIST_IMP_MM);
 	position_set_related_robot_system(&mainboard.pos, &mainboard.rs);
-	position_set_centrifugal_coef(&mainboard.pos, 0.000016);
+	//	position_set_centrifugal_coef(&mainboard.pos, 0.000016);
 	position_use_ext(&mainboard.pos);
 
 	/* TRAJECTORY MANAGER */
@@ -240,8 +240,8 @@ void microb_cs_init(void)
 	/* ---- CS angle */
 	/* PID */
 	pid_init(&mainboard.angle.pid);
-	pid_set_gains(&mainboard.angle.pid, 500, 10, 7000);
-	pid_set_maximums(&mainboard.angle.pid, 0, 20000, 4095);
+	pid_set_gains(&mainboard.angle.pid, 850, 30, 15000);
+	pid_set_maximums(&mainboard.angle.pid, 0, 10000, 4095);
 	pid_set_out_shift(&mainboard.angle.pid, 10);
 	pid_set_derivate_filter(&mainboard.angle.pid, 4);
 
@@ -266,8 +266,8 @@ void microb_cs_init(void)
 	/* ---- CS distance */
 	/* PID */
 	pid_init(&mainboard.distance.pid);
-	pid_set_gains(&mainboard.distance.pid, 500, 10, 7000);
-	pid_set_maximums(&mainboard.distance.pid, 0, 2000, 4095);
+	pid_set_gains(&mainboard.distance.pid, 850, 30, 15000);
+	pid_set_maximums(&mainboard.distance.pid, 0, 10000, 4095);
 	pid_set_out_shift(&mainboard.distance.pid, 10);
 	pid_set_derivate_filter(&mainboard.distance.pid, 6);
 

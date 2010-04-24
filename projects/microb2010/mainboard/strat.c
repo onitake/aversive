@@ -100,6 +100,9 @@ void strat_conf_dump(const char *caller)
 /* call it just before launching the strat */
 void strat_init(void)
 {
+	position_set(&mainboard.pos, 298.16,
+		     COLOR_Y(308.78), COLOR_A(70.00));
+
 	/* XXX init rollers, .. */
 
 	strat_db_init();
@@ -110,9 +113,9 @@ void strat_init(void)
 	time_reset();
 	interrupt_traj_reset();
 
-	i2c_cobboard_set_mode(I2C_COBBOARD_MODE_HARVEST);
-	i2c_cobboard_harvest(I2C_LEFT_SIDE);
-	i2c_cobboard_harvest(I2C_RIGHT_SIDE);
+	//i2c_cobboard_set_mode(I2C_COBBOARD_MODE_HARVEST);
+	//i2c_cobboard_harvest(I2C_LEFT_SIDE);
+	//i2c_cobboard_harvest(I2C_RIGHT_SIDE);
 	i2c_ballboard_set_mode(I2C_BALLBOARD_MODE_HARVEST);
 
 	/* used in strat_base for END_TIMER */
@@ -163,9 +166,29 @@ static uint8_t strat_beginning(void)
 {
 	uint8_t err;
 
-	strat_set_speed(250, SPEED_ANGLE_FAST);
+	strat_set_acc(ACC_DIST, ACC_ANGLE);
+#ifdef HOST_VERSION
+	strat_set_speed(600, SPEED_ANGLE_FAST);
+#else
+	/* 250 */
+	strat_set_speed(600, SPEED_ANGLE_FAST);
+#endif
 
+
+	strat_set_speed(600, 60); /* OK */
+	// strat_set_speed(250, 28); /* OK */
+
+	trajectory_d_a_rel(&mainboard.traj, 500, COLOR_A(20));
+	err = WAIT_COND_OR_TRAJ_END(trajectory_angle_finished(&mainboard.traj),
+				    TRAJ_FLAGS_STD);
+
+	strat_set_acc(ACC_DIST, ACC_ANGLE);
+
+#if 0
  l1:
+	if (get_cob_count() >= 5)
+		strat_set_speed(600, SPEED_ANGLE_FAST);
+
 	err = line2line(LINE_UP, 0, LINE_R_DOWN, 2);
 	if (!TRAJ_SUCCESS(err)) {
 		trajectory_hardstop(&mainboard.traj);
@@ -174,6 +197,9 @@ static uint8_t strat_beginning(void)
 	}
 
  l2:
+	if (get_cob_count() >= 5)
+		strat_set_speed(600, SPEED_ANGLE_FAST);
+
 	err = line2line(LINE_R_DOWN, 2, LINE_R_UP, 2);
 	if (!TRAJ_SUCCESS(err)) {
 		trajectory_hardstop(&mainboard.traj);
@@ -182,12 +208,30 @@ static uint8_t strat_beginning(void)
 	}
 
  l3:
+	if (get_cob_count() >= 5)
+		strat_set_speed(600, SPEED_ANGLE_FAST);
+
 	err = line2line(LINE_R_UP, 2, LINE_UP, 5);
 	if (!TRAJ_SUCCESS(err)) {
 		trajectory_hardstop(&mainboard.traj);
 		time_wait_ms(2000);
 		goto l3;
 	}
+#else
+	strat_set_speed(600, SPEED_ANGLE_FAST);
+	err = line2line(LINE_UP, 0, LINE_R_DOWN, 3);
+	err = line2line(LINE_R_DOWN, 3, LINE_R_UP, 2);
+	err = line2line(LINE_R_UP, 2, LINE_R_DOWN, 2);
+	err = line2line(LINE_R_DOWN, 2, LINE_R_UP, 3);
+	err = line2line(LINE_R_UP, 3, LINE_UP, 5);
+	err = line2line(LINE_UP, 5, LINE_L_DOWN, 2);
+	err = line2line(LINE_L_DOWN, 2, LINE_L_UP, 1);
+	err = line2line(LINE_L_UP, 1, LINE_L_DOWN, 1);
+	err = line2line(LINE_L_DOWN, 1, LINE_DOWN, 0);
+	wait_ms(500);
+	trajectory_hardstop(&mainboard.traj);
+	return END_TRAJ;
+#endif
 
 	trajectory_hardstop(&mainboard.traj);
 

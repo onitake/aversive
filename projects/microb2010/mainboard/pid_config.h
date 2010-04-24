@@ -25,6 +25,6 @@
 /** the derivate term can be filtered to remove the noise. This value
  * is the maxium sample count to keep in memory to do this
  * filtering. For an instance of pid, this count is defined o*/
-#define PID_DERIVATE_FILTER_MAX_SIZE 4
+#define PID_DERIVATE_FILTER_MAX_SIZE 6
 
 #endif

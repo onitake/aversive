@@ -247,6 +247,7 @@ parse_pgm_inst_t cmd_speed_show = {
 /* this structure is filled when cmd_derivate_filter is parsed successfully */
 struct cmd_derivate_filter_result {
 	struct cmd_cs_result cs;
+	fixed_string_t show;
 	uint8_t size;
 };
 
@@ -273,12 +274,12 @@ static void cmd_derivate_filter_parsed(void *parsed_result, void *show)
 
 prog_char str_derivate_filter_arg0[] = "derivate_filter";
 parse_pgm_token_string_t cmd_derivate_filter_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_derivate_filter_result, cs.cmdname, str_derivate_filter_arg0);
-parse_pgm_token_num_t cmd_derivate_filter_size = TOKEN_NUM_INITIALIZER(struct cmd_derivate_filter_result, size, UINT32);
+parse_pgm_token_num_t cmd_derivate_filter_size = TOKEN_NUM_INITIALIZER(struct cmd_derivate_filter_result, size, UINT8);
 
 prog_char help_derivate_filter[] = "Set derivate_filter values for PID (in, I, out)";
 parse_pgm_inst_t cmd_derivate_filter = {
 	.f = cmd_derivate_filter_parsed,  /* function to call */
-	.data = (void *)1,      /* 2nd arg of func */
+	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_derivate_filter,
 	.tokens = {        /* token list, NULL terminated */
 		(prog_void *)&cmd_derivate_filter_arg0,
@@ -290,18 +291,13 @@ parse_pgm_inst_t cmd_derivate_filter = {
 
 /* show */
 
-struct cmd_derivate_filter_show_result {
-	struct cmd_cs_result cs;
-	fixed_string_t show;
-};
-
 prog_char str_derivate_filter_show_arg[] = "show";
-parse_pgm_token_string_t cmd_derivate_filter_show_arg = TOKEN_STRING_INITIALIZER(struct cmd_derivate_filter_show_result, show, str_derivate_filter_show_arg);
+parse_pgm_token_string_t cmd_derivate_filter_show_arg = TOKEN_STRING_INITIALIZER(struct cmd_derivate_filter_result, show, str_derivate_filter_show_arg);
 
 prog_char help_derivate_filter_show[] = "Show derivate_filter values for PID";
 parse_pgm_inst_t cmd_derivate_filter_show = {
 	.f = cmd_derivate_filter_parsed,  /* function to call */
-	.data = NULL,      /* 2nd arg of func */
+	.data = (void *)1,      /* 2nd arg of func */
 	.help_str = help_derivate_filter_show,
 	.tokens = {        /* token list, NULL terminated */
 		(prog_void *)&cmd_derivate_filter_arg0,

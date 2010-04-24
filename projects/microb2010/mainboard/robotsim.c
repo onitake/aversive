@@ -57,9 +57,23 @@ static int32_t l_pwm, r_pwm;
 static int32_t l_enc, r_enc;
 
 static int fdr, fdw;
+/*
+ * Debug with GDB:
+ *
+ * (gdb) handle SIGUSR1 pass
+ * Signal        Stop	Print	Pass to program	Description
+ * SIGUSR1       Yes	Yes	Yes		User defined signal 1
+ * (gdb) handle SIGUSR2 pass
+ * Signal        Stop	Print	Pass to program	Description
+ * SIGUSR2       Yes	Yes	Yes		User defined signal 2
+ * (gdb) handle SIGUSR1 noprint
+ * Signal        Stop	Print	Pass to program	Description
+ * SIGUSR1       No	No	Yes		User defined signal 1
+ * (gdb) handle SIGUSR2 noprint
+ */
 
 /* */
-#define FILTER  97
+#define FILTER  98
 #define FILTER2 (100-FILTER)
 #define SHIFT   4
 

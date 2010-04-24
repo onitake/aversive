@@ -215,7 +215,7 @@ static struct djpoint *get_neigh(struct djpoint *pt,
 	default:
 		return NULL;
 	}
-	if (i < 0 || j < 0 || i >= WAYPOINTS_NBX || j >= WAYPOINTS_NBY)
+	if (i >= WAYPOINTS_NBX || j >= WAYPOINTS_NBY)
 		return NULL;
 
 	if (is_reachable(i, j) == 0)

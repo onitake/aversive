@@ -103,6 +103,8 @@ const char *get_err(uint8_t err)
 
 void strat_hardstop(void)
 {
+	DEBUG(E_USER_STRAT, "strat_hardstop");
+
 	trajectory_hardstop(&mainboard.traj);
 	pid_reset(&mainboard.angle.pid);
 	pid_reset(&mainboard.distance.pid);
@@ -209,6 +211,11 @@ void strat_set_speed(uint16_t d, uint16_t a)
 	IRQ_UNLOCK(flags);
 }
 
+void strat_set_acc(double d, double a)
+{
+	trajectory_set_acc(&mainboard.traj, d, a);
+}
+
 void strat_get_speed(uint16_t *d, uint16_t *a)
 {
 	uint8_t flags;
@@ -312,7 +319,6 @@ void strat_start(void)
 
 	strat_init();
 	err = strat_main();
-	printf("coucou\n");
 	NOTICE(E_USER_STRAT, "Finished !! returned %s", get_err(err));
 	strat_exit();
 }
@@ -344,9 +350,12 @@ uint8_t strat_obstacle(void)
 	double opp_x, opp_y;
 
 #ifdef HOST_VERSION
+	return 0;
 	if (time_get_s() >= 12 && time_get_s() <= 30)
 		return 1;
 #endif
+	return 0; /* XXX disabled */
+
 	if (!sensor_get(S_RCOB_WHITE))
 		return 0;
 

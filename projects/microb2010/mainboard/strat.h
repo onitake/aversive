@@ -98,8 +98,8 @@
 #define TRAJ_FLAGS_SMALL_DIST (END_TRAJ|END_BLOCKING|END_INTR)
 
 /* default acc */
-#define ACC_DIST  10.
-#define ACC_ANGLE 10.
+#define ACC_DIST  15.
+#define ACC_ANGLE 15.
 
 /* default speeds */
 #define SPEED_DIST_FAST 2500.

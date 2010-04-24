@@ -274,6 +274,7 @@ void i2c_recvevent(uint8_t * buf, int8_t size)
 		/* status */
 		cobboard.mode = ans->mode;
 		cobboard.status = ans->status;
+		cobboard.cob_count = ans->cob_count;
 		cobboard.left_cobroller_speed = ans->left_cobroller_speed;
 		cs_set_consign(&mainboard.left_cobroller.cs, cobboard.left_cobroller_speed);
 		cobboard.right_cobroller_speed = ans->right_cobroller_speed;
