@@ -89,6 +89,9 @@ void trajectory_goto_xy_rel(struct trajectory *traj, double x_rel_mm, double y_r
 
 /************ FUNCS FOR GETTING TRAJ STATE */
 
+uint8_t trajectory_angle_finished(struct trajectory *traj);
+uint8_t trajectory_distance_finished(struct trajectory *traj);
+
 /** return true if the position consign is equal to the filtered
  * position consign (after quadramp filter), for angle and
  * distance. */

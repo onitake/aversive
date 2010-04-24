@@ -186,15 +186,20 @@ void trajectory_d_a_rel(struct trajectory *traj, double d_mm, double a_deg)
 /** set relative angle and distance consign to 0 */
 void trajectory_stop(struct trajectory *traj)
 {
+	DEBUG(E_TRAJECTORY, "stop");
 	__trajectory_goto_d_a_rel(traj, 0, 0, READY,
 				  UPDATE_A | UPDATE_D | RESET_D | RESET_A);
 }
+
+#include <stackdump.h>
 
 /** set relative angle and distance consign to 0, and break any
  * deceleration ramp in quadramp filter */
 void trajectory_hardstop(struct trajectory *traj)
 {
 	struct quadramp_filter *q_d, *q_a;
+
+	DEBUG(E_TRAJECTORY, "hardstop");
 
 	q_d = traj->csm_distance->consign_filter_params;
 	q_a = traj->csm_angle->consign_filter_params;
@@ -1004,15 +1009,15 @@ static void start_clitoid(struct trajectory *traj)
 	double R_mm = traj->target.line.R;
 	double d;
 
-	delete_event(traj);
 	DEBUG(E_TRAJECTORY, "%s() Va=%2.2f Aa=%2.2f",
 	      __FUNCTION__, Va, Aa);
+	delete_event(traj);
 	d = fabs(R_mm * a_rad);
 	d *= 3.; /* margin to avoid deceleration */
 	trajectory_d_a_rel(traj, d, DEG(a_rad));
-	traj->state = RUNNING_CLITOID_CURVE;
 	set_quadramp_acc(traj, traj->d_acc, Aa);
 	set_quadramp_speed(traj, traj->d_speed, Va);
+	traj->state = RUNNING_CLITOID_CURVE;
 }
 
 
@@ -1051,8 +1056,10 @@ int8_t trajectory_clitoid(struct trajectory *traj,
 	Vd = traj->d_speed;
 	if (calc_clitoid(traj, x, y, a_rad, alpha_deg, beta_deg, R_mm,
 			 Vd, traj->a_acc, d_inter_mm,
-			 &Aa, &Va, &remain) < 0)
+			 &Aa, &Va, &remain) < 0) {
+		DEBUG(E_TRAJECTORY, "%s() calc_clitoid returned an error");
 		return -1;
+	}
 
 	delete_event(traj);
 	turnx = x + cos(a_rad) * remain;
