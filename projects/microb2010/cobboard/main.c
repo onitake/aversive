@@ -173,13 +173,17 @@ int main(void)
 #  error not supported
 #endif
 
-	eeprom_write_byte(EEPROM_MAGIC_ADDRESS, EEPROM_MAGIC_COBBOARD);
 	/* check eeprom to avoid to run the bad program */
 	if (eeprom_read_byte(EEPROM_MAGIC_ADDRESS) !=
 	    EEPROM_MAGIC_COBBOARD) {
+		int c;
 		sei();
-		printf_P(PSTR("Bad eeprom value\r\n"));
-		while(1);
+		printf_P(PSTR("Bad eeprom value ('f' to force)\r\n"));
+		c = uart_recv(CMDLINE_UART);
+		if (c == 'f')
+			eeprom_write_byte(EEPROM_MAGIC_ADDRESS, EEPROM_MAGIC_COBBOARD);
+		wait_ms(100);
+		bootloader();
 	}
 
 	/* LOGS */
