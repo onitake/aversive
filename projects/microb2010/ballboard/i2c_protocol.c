@@ -47,6 +47,7 @@
 #include "../common/i2c_commands.h"
 #include "main.h"
 #include "state.h"
+#include "sensor.h"
 #include "actuator.h"
 
 void i2c_protocol_init(void)
@@ -75,6 +76,8 @@ void i2c_send_status(void)
 	ans.hdr.cmd =  I2C_ANS_BALLBOARD_STATUS;
 	ans.status = 0x55; /* XXX */
 	ans.ball_count = state_get_ball_count();
+	ans.lcob = cob_detect_left();
+	ans.rcob = cob_detect_right();
 
 	i2c_send(I2C_ADD_MASTER, (uint8_t *) &ans,
 		 sizeof(ans), I2C_CTRL_GENERIC);

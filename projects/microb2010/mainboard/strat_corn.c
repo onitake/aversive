@@ -27,6 +27,7 @@
 #include <math.h>
 
 #include <aversive.h>
+#include <aversive/error.h>
 #include <aversive/pgmspace.h>
 
 #include <ax12.h>
@@ -140,15 +141,16 @@ uint8_t line2line(uint8_t dir1, uint8_t num1,
 	line_t ll1, ll2;
 	point_t p;
 	uint8_t err;
+	uint16_t a_speed, d_speed;
 
 	/* convert to 2 points */
 	num2line(&l1, dir1, num1);
 	num2line(&l2, dir2, num2);
 
-	printf_P(PSTR("A2 (%2.2f, %2.2f) -> (%2.2f, %2.2f)\r\n"),
-		 l1.p1.x, l1.p1.y, l1.p2.x, l1.p2.y);
-	printf_P(PSTR("B2 (%2.2f, %2.2f) -> (%2.2f, %2.2f)\r\n"),
-		 l2.p1.x, l2.p1.y, l2.p2.x, l2.p2.y);
+	DEBUG(E_USER_STRAT, "line1: (%2.2f, %2.2f) -> (%2.2f, %2.2f)",
+	      l1.p1.x, l1.p1.y, l1.p2.x, l1.p2.y);
+	DEBUG(E_USER_STRAT, "line2: (%2.2f, %2.2f) -> (%2.2f, %2.2f)",
+	      l2.p1.x, l2.p1.y, l2.p2.x, l2.p2.y);
 
 	/* convert to line eq and find intersection */
 	pts2line(&l1.p1, &l1.p2, &ll1);
@@ -213,7 +215,15 @@ uint8_t line2line(uint8_t dir1, uint8_t num1,
 		}
 	}
 
-	err = wait_traj_end(TRAJ_FLAGS_NO_NEAR);
+	err = WAIT_COND_OR_TRAJ_END(get_cob_count() == 5, 0xFF);
+	strat_get_speed(&d_speed, &a_speed);
+
+	/* XXX 600 -> cste */
+	if (err == 0 && d_speed < 600 &&
+	    mainboard.traj.state == RUNNING_CLITOID_LINE)
+		strat_set_speed(600, SPEED_ANGLE_FAST);
+	err = wait_traj_end(0xFF);
+
 	return err;
 }
 

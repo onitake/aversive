@@ -40,6 +40,7 @@
 #define I2C_COB_WHITE   1
 #define I2C_COB_UNKNOWN 2
 #define I2C_COB_REMOVED 3
+#define I2C_COB_NONE    4
 
 struct i2c_cmd_hdr {
 	uint8_t cmd;
@@ -151,6 +152,10 @@ struct i2c_ans_ballboard_status {
 	uint8_t status;
 
 	uint8_t ball_count;
+
+	/* detection of cobs */
+	uint8_t lcob;
+	uint8_t rcob;
 };
 
 #endif /* _I2C_PROTOCOL_H_ */

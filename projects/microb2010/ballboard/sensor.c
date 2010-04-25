@@ -1,7 +1,7 @@
-/*  
+/*
  *  Copyright Droids Corporation (2009)
  *  Olivier MATZ <zer0@droids-corp.org>
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -40,6 +40,7 @@
 
 #include "main.h"
 #include "sensor.h"
+#include "../common/i2c_commands.h"
 
 /************ ADC */
 
@@ -75,13 +76,13 @@ int16_t rii_strong(struct adc_infos *adc, int16_t val)
 #define ADC_CONF(x) ( ADC_REF_AVCC | ADC_MODE_INT | MUX_ADC##x )
 
 /* define which ADC to poll, see in sensor.h */
-static struct adc_infos adc_infos[ADC_MAX] = { 
-  
+static struct adc_infos adc_infos[ADC_MAX] = {
+
 	[ADC_CSENSE1] = { .config = ADC_CONF(0), .filter = rii_medium },
 	[ADC_CSENSE2] = { .config = ADC_CONF(1), .filter = rii_medium },
 	[ADC_CSENSE3] = { .config = ADC_CONF(2), .filter = rii_medium },
 	[ADC_CSENSE4] = { .config = ADC_CONF(3), .filter = rii_medium },
- 
+
 	/* add adc on "cap" pins if needed */
 /* 	[ADC_CAP1] = { .config = ADC_CONF(10) }, */
 /* 	[ADC_CAP2] = { .config = ADC_CONF(11) }, */
@@ -92,7 +93,7 @@ static struct adc_infos adc_infos[ADC_MAX] = {
 static void adc_event(int16_t result);
 
 /* called every 10 ms, see init below */
-static void do_adc(void *dummy) 
+static void do_adc(void *dummy)
 {
 	/* launch first conversion */
 	adc_launch(adc_infos[0].config);
@@ -149,10 +150,10 @@ static struct sensor_filter sensor_filter[SENSOR_MAX] = {
 	[S_CAP2] = { 1, 0, 0, 1, 0, 0 }, /* 1 */
 	[S_CAP3] = { 1, 0, 0, 1, 0, 0 }, /* 2 */
 	[S_CAP4] = { 1, 0, 0, 1, 0, 0 }, /* 3 */
-	[S_CAP5] = { 1, 0, 0, 1, 0, 0 }, /* 4 */
-	[S_CAP6] = { 1, 0, 0, 1, 0, 0 }, /* 5 */
-	[S_CAP7] = { 1, 0, 0, 1, 0, 0 }, /* 6 */
-	[S_CAP8] = { 1, 0, 0, 1, 0, 0 }, /* 7 */
+	[S_R_IR] = { 1, 0, 0, 1, 0, 0 }, /* 4 */
+	[S_R_US] = { 1, 0, 0, 1, 0, 1 }, /* 5 */
+	[S_L_US] = { 1, 0, 0, 1, 0, 1 }, /* 6 */
+	[S_L_IR] = { 1, 0, 0, 1, 0, 0 }, /* 7 */
 	[S_RESERVED1] = { 10, 0, 3, 7, 0, 0 }, /* 8 */
 	[S_RESERVED2] = { 10, 0, 3, 7, 0, 0 }, /* 9 */
 	[S_RESERVED3] = { 1, 0, 0, 1, 0, 0 }, /* 10 */
@@ -166,7 +167,7 @@ static struct sensor_filter sensor_filter[SENSOR_MAX] = {
 /* value of filtered sensors */
 static uint16_t sensor_filtered = 0;
 
-/* sensor mapping : 
+/* sensor mapping :
  * 0-3:  PORTK 2->5 (cap1 -> cap4) (adc10 -> adc13)
  * 4-5:  PORTL 0->1 (cap5 -> cap6)
  * 6-7:  PORTE 3->4 (cap7 -> cap8)
@@ -186,7 +187,7 @@ uint16_t sensor_get_all(void)
 uint8_t sensor_get(uint8_t i)
 {
 	uint16_t tmp = sensor_get_all();
-	return (tmp & _BV(i));
+	return !!(tmp & _BV(i));
 }
 
 /* get the physical value of pins */
@@ -221,8 +222,11 @@ static void do_boolean_sensors(void *dummy)
 			if (sensor_filter[i].cpt <= sensor_filter[i].thres_off)
 				sensor_filter[i].prev = 0;
 		}
-		
-		if (sensor_filter[i].prev) {
+
+		if (sensor_filter[i].prev && !sensor_filter[i].invert) {
+			tmp |= (1UL << i);
+		}
+		else if (!sensor_filter[i].prev && sensor_filter[i].invert) {
 			tmp |= (1UL << i);
 		}
 	}
@@ -231,7 +235,108 @@ static void do_boolean_sensors(void *dummy)
 	IRQ_UNLOCK(flags);
 }
 
+static volatile uint8_t lcob_seen = I2C_COB_NONE, rcob_seen = I2C_COB_NONE;
 
+uint8_t cob_detect_left(void)
+{
+	uint8_t flags;
+	uint8_t ret;
+	IRQ_LOCK(flags);
+	ret = lcob_seen;
+	lcob_seen = I2C_COB_NONE;
+	IRQ_UNLOCK(flags);
+	return ret;
+}
+
+uint8_t cob_detect_right(void)
+{
+	uint8_t flags;
+	uint8_t ret;
+	IRQ_LOCK(flags);
+	ret = rcob_seen;
+	rcob_seen = I2C_COB_NONE;
+	IRQ_UNLOCK(flags);
+	return ret;
+}
+
+#define COB_MIN_DETECT 4
+#define COB_MAX_DETECT 50
+static void do_cob_detection(void)
+{
+	uint8_t flags;
+	uint16_t tmp = sensor_get_all();
+	uint8_t l_us = !!(tmp & _BV(S_L_US));
+	uint8_t r_us = !!(tmp & _BV(S_R_US));
+	uint8_t l_ir = !!(tmp & _BV(S_L_IR));
+	uint8_t r_ir = !!(tmp & _BV(S_R_IR));
+	static uint8_t l_us_prev, r_us_prev, l_ir_prev, r_ir_prev;
+	static uint8_t l_cpt_on, l_cpt_off;
+	static uint8_t r_cpt_on, r_cpt_off;
+
+	/* rising edge on US */
+	if (l_us_prev == 0 && l_us == 1) {
+		l_cpt_off = 0;
+		l_cpt_on = 0;
+	}
+
+	/* us is on */
+	if (l_us) {
+		if (l_ir && l_cpt_on < COB_MAX_DETECT)
+			l_cpt_on ++;
+		else if (l_cpt_off < COB_MAX_DETECT)
+			l_cpt_off ++;
+	}
+
+	/* falling edge on US */
+	if (l_us_prev == 1 && l_us == 0) {
+		/* detection should not be too short or too long */
+		if ((l_cpt_off + l_cpt_on) < COB_MAX_DETECT &&
+		    (l_cpt_off + l_cpt_on) > COB_MIN_DETECT) {
+			IRQ_LOCK(flags);
+			if (l_cpt_on > l_cpt_off)
+				lcob_seen = I2C_COB_WHITE;
+			else
+				lcob_seen = I2C_COB_BLACK;
+			IRQ_UNLOCK(flags);
+		}
+	}
+
+
+	/* rising edge on US */
+	if (r_us_prev == 0 && r_us == 1) {
+		r_cpt_off = 0;
+		r_cpt_on = 0;
+	}
+
+	/* us is on */
+	if (r_us) {
+		if (r_ir && r_cpt_on < COB_MAX_DETECT)
+			r_cpt_on ++;
+		else if (r_cpt_off < COB_MAX_DETECT)
+			r_cpt_off ++;
+	}
+
+	/* falling edge on US */
+	if (r_us_prev == 1 && r_us == 0) {
+
+		/* detection should not be too short or too long */
+		if ((r_cpt_off + r_cpt_on) < COB_MAX_DETECT &&
+		    (r_cpt_off + r_cpt_on) > COB_MIN_DETECT) {
+			IRQ_LOCK(flags);
+			if (r_cpt_on > r_cpt_off)
+				rcob_seen = I2C_COB_WHITE;
+			else
+				rcob_seen = I2C_COB_BLACK;
+			IRQ_UNLOCK(flags);
+		}
+	}
+
+
+	l_us_prev = l_us;
+	r_us_prev = r_us;
+	l_ir_prev = l_ir;
+	r_ir_prev = r_ir;
+}
 
 /************ global sensor init */
 #define BACKGROUND_ADC  0
@@ -240,18 +345,19 @@ static void do_boolean_sensors(void *dummy)
 static void do_sensors(void *dummy)
 {
 	if (BACKGROUND_ADC)
-	  do_adc(NULL);
+		do_adc(NULL);
 	do_boolean_sensors(NULL);
+	do_cob_detection();
 }
 
 void sensor_init(void)
 {
 	adc_init();
 	if (BACKGROUND_ADC)
-	  adc_register_event(adc_event);
+		adc_register_event(adc_event);
 	/* CS EVENT */
-	scheduler_add_periodical_event_priority(do_sensors, NULL, 
-						10000L / SCHEDULER_UNIT, 
+	scheduler_add_periodical_event_priority(do_sensors, NULL,
+						10000L / SCHEDULER_UNIT,
 						ADC_PRIO);
 
 }

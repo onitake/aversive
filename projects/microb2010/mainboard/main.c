@@ -185,6 +185,8 @@ int main(void)
 	memset(&mainboard, 0, sizeof(mainboard));
 	mainboard.flags = DO_ENCODERS | DO_CS | DO_RS |
 		DO_POS | DO_POWER | DO_BD | DO_ERRBLOCKING;
+	ballboard.lcob = I2C_COB_NONE;
+	ballboard.rcob = I2C_COB_NONE;
 
 	/* UART */
 	uart_init();

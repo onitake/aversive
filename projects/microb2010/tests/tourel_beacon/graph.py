@@ -367,5 +367,5 @@ def do_graph_2d_move_error():
 #do_random_test()
 #do_graph_2d_simple_error()
 #do_graph_2d_move_error()
-#do_graph_2d_ad_error()
-do_graph_2d_ad_error_mm()
+do_graph_2d_ad_error()
+#do_graph_2d_ad_error_mm()

@@ -284,6 +284,7 @@ void i2c_recvevent(uint8_t * buf, int8_t size)
 	}
 
 	case I2C_ANS_BALLBOARD_STATUS: {
+		uint8_t tmp;
 		struct i2c_ans_ballboard_status * ans =
 			(struct i2c_ans_ballboard_status *)buf;
 
@@ -292,6 +293,12 @@ void i2c_recvevent(uint8_t * buf, int8_t size)
 		ballboard.mode = ans->mode;
 		ballboard.status = ans->status;
 		ballboard.ball_count = ans->ball_count;
+		tmp = ans->lcob;
+		if (tmp != I2C_COB_NONE)
+			ballboard.lcob = tmp;
+		tmp = ans->rcob;
+		if (tmp != I2C_COB_NONE)
+			ballboard.rcob = tmp;
 		break;
 	}
 

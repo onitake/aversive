@@ -208,6 +208,8 @@ struct ballboard {
 	volatile uint8_t mode;
 	uint8_t status;
 	uint8_t ball_count;
+	uint8_t lcob;
+	uint8_t rcob;
 };
 
 extern struct genboard gen;

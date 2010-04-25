@@ -113,9 +113,9 @@ void strat_init(void)
 	time_reset();
 	interrupt_traj_reset();
 
-	//i2c_cobboard_set_mode(I2C_COBBOARD_MODE_HARVEST);
-	//i2c_cobboard_harvest(I2C_LEFT_SIDE);
-	//i2c_cobboard_harvest(I2C_RIGHT_SIDE);
+	i2c_cobboard_set_mode(I2C_COBBOARD_MODE_HARVEST);
+	i2c_cobboard_harvest(I2C_LEFT_SIDE);
+	i2c_cobboard_harvest(I2C_RIGHT_SIDE);
 	i2c_ballboard_set_mode(I2C_BALLBOARD_MODE_HARVEST);
 
 	/* used in strat_base for END_TIMER */
@@ -147,17 +147,25 @@ void strat_exit(void)
 /* called periodically */
 void strat_event(void *dummy)
 {
-#if 0
-	/* pack or deploy spickle */
-	if (strat_infos.status.flags & STRAT_STATUS_LHARVEST) {
-		if (sensor_get(S_LCOB_PRESENT)) {
-			if (sensor_get(S_LCOB_WHITE))
-				i2c_ballboard_set_mode();
-			else
-				;
-		}
-	}
-#endif
+	uint8_t flags;
+	uint8_t lcob, rcob;
+
+	IRQ_LOCK(flags);
+	lcob = ballboard.lcob;
+	ballboard.lcob = I2C_COB_NONE;
+	rcob = ballboard.rcob;
+	ballboard.rcob = I2C_COB_NONE;
+	IRQ_UNLOCK(flags);
+
+	if (lcob == I2C_COB_WHITE)
+		DEBUG(E_USER_STRAT, "lcob white");
+	if (lcob == I2C_COB_BLACK)
+		DEBUG(E_USER_STRAT, "lcob black");
+	if (rcob == I2C_COB_WHITE)
+		DEBUG(E_USER_STRAT, "rcob white");
+	if (rcob == I2C_COB_BLACK)
+		DEBUG(E_USER_STRAT, "rcob black");
+
 	/* limit speed when opponent is close */
 	strat_limit_speed();
 }
@@ -171,20 +179,20 @@ static uint8_t strat_beginning(void)
 	strat_set_speed(600, SPEED_ANGLE_FAST);
 #else
 	/* 250 */
-	strat_set_speed(600, SPEED_ANGLE_FAST);
+	strat_set_speed(250, SPEED_ANGLE_FAST);
 #endif
 
 
-	strat_set_speed(600, 60); /* OK */
-	// strat_set_speed(250, 28); /* OK */
+	// strat_set_speed(600, 60); /* OK */
+	strat_set_speed(250, 28); /* OK */
 
-	trajectory_d_a_rel(&mainboard.traj, 500, COLOR_A(20));
+	trajectory_d_a_rel(&mainboard.traj, 1000, COLOR_A(20));
 	err = WAIT_COND_OR_TRAJ_END(trajectory_angle_finished(&mainboard.traj),
 				    TRAJ_FLAGS_STD);
 
 	strat_set_acc(ACC_DIST, ACC_ANGLE);
 
-#if 0
+#if 1
  l1:
 	if (get_cob_count() >= 5)
 		strat_set_speed(600, SPEED_ANGLE_FAST);
