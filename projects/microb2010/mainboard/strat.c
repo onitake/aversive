@@ -67,6 +67,7 @@
 #define COL_DISP_MARGIN 400 /* stop 40 cm in front of dispenser */
 #define COL_SCAN_PRE_MARGIN 250
 
+static uint8_t strat_running = 0;
 struct strat_conf strat_conf;
 
 /*************************************************************/
@@ -100,22 +101,19 @@ void strat_conf_dump(const char *caller)
 /* call it just before launching the strat */
 void strat_init(void)
 {
+#ifdef HOST_VERSION
 	position_set(&mainboard.pos, 298.16,
 		     COLOR_Y(308.78), COLOR_A(70.00));
-
-	/* XXX init rollers, .. */
-
-	strat_db_init();
+#endif
 
 	/* we consider that the color is correctly set */
-
+	strat_running = 1;
+	strat_db_init();
 	strat_set_speed(SPEED_DIST_FAST, SPEED_ANGLE_FAST);
 	time_reset();
 	interrupt_traj_reset();
 
 	i2c_cobboard_set_mode(I2C_COBBOARD_MODE_HARVEST);
-	i2c_cobboard_harvest(I2C_LEFT_SIDE);
-	i2c_cobboard_harvest(I2C_RIGHT_SIDE);
 	i2c_ballboard_set_mode(I2C_BALLBOARD_MODE_HARVEST);
 
 	/* used in strat_base for END_TIMER */
@@ -131,6 +129,7 @@ void strat_exit(void)
 	uint8_t flags;
 #endif
 
+	strat_running = 0;
 	mainboard.flags &= ~(DO_TIMER);
 	strat_hardstop();
 	time_reset();
@@ -144,11 +143,16 @@ void strat_exit(void)
 #endif
 }
 
-/* called periodically */
+/* called periodically (10ms) */
 void strat_event(void *dummy)
 {
 	uint8_t flags;
 	uint8_t lcob, rcob;
+	uint8_t lidx, ridx;
+
+	/* ignore when strat is not running */
+	if (strat_running == 0)
+		return;
 
 	IRQ_LOCK(flags);
 	lcob = ballboard.lcob;
@@ -157,14 +161,41 @@ void strat_event(void *dummy)
 	ballboard.rcob = I2C_COB_NONE;
 	IRQ_UNLOCK(flags);
 
-	if (lcob == I2C_COB_WHITE)
-		DEBUG(E_USER_STRAT, "lcob white");
-	if (lcob == I2C_COB_BLACK)
-		DEBUG(E_USER_STRAT, "lcob black");
-	if (rcob == I2C_COB_WHITE)
-		DEBUG(E_USER_STRAT, "rcob white");
-	if (rcob == I2C_COB_BLACK)
-		DEBUG(E_USER_STRAT, "rcob black");
+	/* XXX take opponent position into account */
+
+
+	/* detect cob on left side */
+	if (corn_is_near(&lidx, I2C_LEFT_SIDE)) {
+		if (lcob != I2C_COB_NONE) {
+			corn_set_color(strat_db.corn_table[lidx], lcob);
+			DEBUG(E_USER_STRAT, "lcob %s %d",
+			      lcob == I2C_COB_WHITE ? "white" : "black", lidx);
+		}
+		if (strat_db.corn_table[lidx]->corn.color == I2C_COB_WHITE)
+			i2c_cobboard_autoharvest(I2C_LEFT_SIDE);
+		else
+			i2c_cobboard_deploy(I2C_LEFT_SIDE);
+	}
+	else {
+		i2c_cobboard_deploy(I2C_LEFT_SIDE);
+	}
+
+	/* detect cob on right side */
+	if (corn_is_near(&ridx, I2C_RIGHT_SIDE)) {
+		if (rcob != I2C_COB_NONE) {
+			corn_set_color(strat_db.corn_table[ridx], rcob);
+			DEBUG(E_USER_STRAT, "rcob %s %d",
+			      rcob == I2C_COB_WHITE ? "white" : "black", ridx);
+		}
+		if (strat_db.corn_table[ridx]->corn.color == I2C_COB_WHITE)
+			i2c_cobboard_autoharvest(I2C_RIGHT_SIDE);
+		else
+			i2c_cobboard_deploy(I2C_RIGHT_SIDE);
+	}
+	else {
+		i2c_cobboard_deploy(I2C_RIGHT_SIDE);
+	}
+
 
 	/* limit speed when opponent is close */
 	strat_limit_speed();

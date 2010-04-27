@@ -32,6 +32,8 @@ struct line_2pts {
 	point_t p2;
 };
 
+int8_t corn_is_near(uint8_t *corn_idx, uint8_t side);
+
 void num2line(struct line_2pts *l, uint8_t dir, uint8_t num);
 
 uint8_t line2line(uint8_t dir1, uint8_t num1,

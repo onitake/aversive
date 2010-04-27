@@ -37,7 +37,7 @@ int8_t i2c_led_control(uint8_t addr, uint8_t led, uint8_t state);
 
 int8_t i2c_cobboard_set_mode(uint8_t mode);
 int8_t i2c_cobboard_pack(uint8_t side);
-int8_t i2c_cobboard_harvest(uint8_t side);
+int8_t i2c_cobboard_autoharvest(uint8_t side);
 int8_t i2c_cobboard_deploy(uint8_t side);
 int8_t i2c_ballboard_set_mode(uint8_t mode);
 

@@ -66,9 +66,8 @@
 #include "sensor.h"
 #include "actuator.h"
 
-#if 0
 /* return 1 if there is a corn near, and fill the index ptr */
-uint8_t corn_is_near(int8_t *corn_idx, uint8_t side)
+int8_t corn_is_near(uint8_t *corn_idx, uint8_t side)
 {
 #define SENSOR_CORN_DIST  225
 #define SENSOR_CORN_ANGLE 90
@@ -91,11 +90,11 @@ uint8_t corn_is_near(int8_t *corn_idx, uint8_t side)
 	y_corn_int = y_corn;
 
 	wp = xycoord_to_corn_idx(&x_corn_int, &y_corn_int);
-	if (wp->corn.idx < 0)
+	if (wp == NULL)
 		return 0;
+	*corn_idx = wp->corn.idx;
 	return 1;
 }
-#endif
 
 /*
  * - send the correct commands to the spickles

@@ -289,6 +289,8 @@ void corn_set_color(struct waypoint_db *wp, uint8_t color)
 	wp->corn.color = color;
 	if (color == I2C_COB_UNKNOWN)
 		return;
+	if (wp->corn.color != I2C_COB_UNKNOWN)
+		return;
 	corn_deduct_other(wp->corn.idx, color);
 	symidx = corn_get_sym_idx(wp->corn.idx);
 	strat_db.corn_table[symidx]->corn.color = color;

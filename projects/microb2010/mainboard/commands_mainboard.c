@@ -779,7 +779,7 @@ static void cmd_cobboard_setmode2_parsed(void *parsed_result, void *data)
 	}
 	else if (!strcmp_P(res->arg1, PSTR("harvest"))) {
 		i2c_cobboard_set_mode(I2C_COBBOARD_MODE_HARVEST);
-		i2c_cobboard_harvest(side);
+		i2c_cobboard_autoharvest(side);
 	}
 	else if (!strcmp_P(res->arg1, PSTR("pack"))) {
 		i2c_cobboard_set_mode(I2C_COBBOARD_MODE_HARVEST);
