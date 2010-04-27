@@ -118,7 +118,7 @@ static void spickle_prepare(uint8_t side)
 	if (cob_count >= 5)
 		spickle_pack(side);
 	else if (is_deployed(side) && !is_autoharvest(side))
-		spickle_mid(side);
+		spickle_deploy(side); /*spickle_mid(side);*/
 	else if (is_deployed(side) && is_autoharvest(side))
 		spickle_deploy(side);
 	else
@@ -206,7 +206,7 @@ static void state_do_harvest(uint8_t side)
 	/* eat the cob */
 	spickle_pack(side);
 
-	time_wait_ms(250);
+	time_wait_ms(200);
 	cobroller_on(side);
 
 	/* check that cob is correctly in place */

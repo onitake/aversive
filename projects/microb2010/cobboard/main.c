@@ -258,12 +258,12 @@ int main(void)
 
 	printf_P(PSTR("cobboard start\r\n"));
 
+	/* actuators */
+	actuator_init();
+
 	/* spickle, shovel */
 	spickle_init();
 	shovel_init();
-
-	/* actuators */
-	actuator_init();
 
 	state_init();
 

@@ -45,12 +45,12 @@
 #include "main.h"
 #include "actuator.h"
 
-#define COBROLLER_SPEED 800
+#define COBROLLER_SPEED 600
 //#define COBROLLER_SPEED 400
 
-#define SERVO_DOOR_OPEN 260
-#define SERVO_DOOR_CLOSED 500
-#define SERVO_DOOR_BLOCK 500
+#define SERVO_DOOR_OPEN 300
+#define SERVO_DOOR_CLOSED 530
+#define SERVO_DOOR_BLOCK 530
 
 #define SERVO_CARRY_L_OPEN 295
 #define SERVO_CARRY_L_CLOSED 400 // 510
@@ -113,5 +113,6 @@ void cobroller_reverse(uint8_t side)
 
 void actuator_init(void)
 {
-
+	servo_door_open();
+	servo_carry_open();
 }

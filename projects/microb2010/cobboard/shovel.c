@@ -43,8 +43,8 @@
 #include "shovel.h"
 
 #define SHOVEL_DOWN 100
-#define SHOVEL_MID  4900
-#define SHOVEL_UP   10000
+#define SHOVEL_MID  4500
+#define SHOVEL_UP   11000
 
 /* init spickle position at beginning */
 static void shovel_autopos(void)
@@ -70,19 +70,22 @@ static uint8_t shovel_is_at_pos(int32_t pos)
 
 void shovel_down(void)
 {
+	quadramp_set_1st_order_vars(&cobboard.shovel.qr, 2500, 2500);
 	quadramp_set_2nd_order_vars(&cobboard.shovel.qr, 50, 80);
 	cs_set_consign(&cobboard.shovel.cs, SHOVEL_DOWN);
 }
 
 void shovel_mid(void)
 {
+	quadramp_set_1st_order_vars(&cobboard.shovel.qr, 2500, 2500);
 	quadramp_set_2nd_order_vars(&cobboard.shovel.qr, 80, 80);
 	cs_set_consign(&cobboard.shovel.cs, SHOVEL_MID);
 }
 
 void shovel_up(void)
 {
-	quadramp_set_2nd_order_vars(&cobboard.shovel.qr, 80, 20);
+	quadramp_set_1st_order_vars(&cobboard.shovel.qr, 2000, 2500);
+	quadramp_set_2nd_order_vars(&cobboard.shovel.qr, 80, 15);
 	cs_set_consign(&cobboard.shovel.cs, SHOVEL_UP);
 }
 
