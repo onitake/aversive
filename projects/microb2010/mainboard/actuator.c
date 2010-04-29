@@ -73,8 +73,8 @@ void pwm_set_and_save(void *pwm, int32_t val)
 void support_balls_deploy(void)
 {
 #ifndef HOST_VERSION
-	pwm_ng_set(SUPPORT_BALLS_R_SERVO, 560);
-	pwm_ng_set(SUPPORT_BALLS_L_SERVO, 155);
+	pwm_ng_set(SUPPORT_BALLS_R_SERVO, 550);
+	pwm_ng_set(SUPPORT_BALLS_L_SERVO, 165);
 #endif
 }
 

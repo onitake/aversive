@@ -45,7 +45,8 @@
 #include "main.h"
 #include "actuator.h"
 
-#define COBROLLER_SPEED 600
+#define COBROLLER_SPEED 1200
+//#define COBROLLER_SPEED 600
 //#define COBROLLER_SPEED 400
 
 #define SERVO_DOOR_OPEN 300
@@ -53,10 +54,10 @@
 #define SERVO_DOOR_BLOCK 530
 
 #define SERVO_CARRY_L_OPEN 295
-#define SERVO_CARRY_L_CLOSED 400 // 510
+#define SERVO_CARRY_L_CLOSED 440//400 // 510
 
 #define SERVO_CARRY_R_OPEN 455
-#define SERVO_CARRY_R_CLOSED 350 // 250
+#define SERVO_CARRY_R_CLOSED 310//350 // 250
 
 void actuator_init(void);
 
