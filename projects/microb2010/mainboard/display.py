@@ -345,7 +345,7 @@ while True:
             if not m:
                 m = re.match("ballboard=%s"%(INT), l)
                 if m:
-                    print int(m.groups()[0])
+                    print "ballboard: %d"%(int(m.groups()[0]))
 
             # parse cobboard
             if not m:

@@ -163,6 +163,14 @@ void strat_event(void *dummy)
 
 	/* XXX take opponent position into account */
 
+#ifdef HOST_VERSION
+	if (time_get_s() == 15)
+		cobboard.cob_count = 5;
+	if (time_get_s() == 16)
+		cobboard.cob_count = 0;
+	if (time_get_s() == 25)
+		cobboard.cob_count = 5;
+#endif
 
 	/* detect cob on left side */
 	if (corn_is_near(&lidx, I2C_LEFT_SIDE)) {
@@ -225,37 +233,34 @@ static uint8_t strat_beginning(void)
 
 #if 1
  l1:
+	DEBUG(E_USER_STRAT, "%s():%d", __FUNCTION__, __LINE__);
 	if (get_cob_count() >= 5)
 		strat_set_speed(600, SPEED_ANGLE_FAST);
 
 	err = line2line(LINE_UP, 0, LINE_R_DOWN, 2);
 	if (!TRAJ_SUCCESS(err)) {
-		trajectory_hardstop(&mainboard.traj);
+		strat_hardstop();
 		time_wait_ms(2000);
 		goto l1;
 	}
 
  l2:
+	DEBUG(E_USER_STRAT, "%s():%d", __FUNCTION__, __LINE__);
 	if (get_cob_count() >= 5)
 		strat_set_speed(600, SPEED_ANGLE_FAST);
 
 	err = line2line(LINE_R_DOWN, 2, LINE_R_UP, 2);
 	if (!TRAJ_SUCCESS(err)) {
-		trajectory_hardstop(&mainboard.traj);
+		strat_hardstop();
 		time_wait_ms(2000);
 		goto l2;
 	}
 
- l3:
-	if (get_cob_count() >= 5)
-		strat_set_speed(600, SPEED_ANGLE_FAST);
+	WAIT_COND_OR_TRAJ_END(distance_from_robot(2625, COLOR_Y(1847)) < 100,
+			      TRAJ_FLAGS_STD);
+	trajectory_goto_xy_abs(&mainboard.traj, 2625, COLOR_Y(1847));
+	err = wait_traj_end(END_INTR|END_TRAJ);
 
-	err = line2line(LINE_R_UP, 2, LINE_UP, 5);
-	if (!TRAJ_SUCCESS(err)) {
-		trajectory_hardstop(&mainboard.traj);
-		time_wait_ms(2000);
-		goto l3;
-	}
 #else
 	strat_set_speed(600, SPEED_ANGLE_FAST);
 	err = line2line(LINE_UP, 0, LINE_R_DOWN, 3);
@@ -268,11 +273,13 @@ static uint8_t strat_beginning(void)
 	err = line2line(LINE_L_UP, 1, LINE_L_DOWN, 1);
 	err = line2line(LINE_L_DOWN, 1, LINE_DOWN, 0);
 	wait_ms(500);
-	trajectory_hardstop(&mainboard.traj);
+	strat_hardstop();
 	return END_TRAJ;
 #endif
 
-	trajectory_hardstop(&mainboard.traj);
+	DEBUG(E_USER_STRAT, "%s():%d", __FUNCTION__, __LINE__);
+	strat_hardstop();
+	strat_set_speed(600, SPEED_ANGLE_FAST);
 
 	/* ball ejection */
 	trajectory_a_abs(&mainboard.traj, COLOR_A(90));
@@ -280,8 +287,6 @@ static uint8_t strat_beginning(void)
 	time_wait_ms(2000);
 
 	/* half turn */
-	trajectory_goto_xy_abs(&mainboard.traj, 2625, COLOR_Y(1847));
-	err = wait_traj_end(END_INTR|END_TRAJ);
 	i2c_cobboard_pack(I2C_LEFT_SIDE);
 	i2c_cobboard_pack(I2C_RIGHT_SIDE);
 	trajectory_a_rel(&mainboard.traj, COLOR_A(180));
@@ -293,7 +298,62 @@ static uint8_t strat_beginning(void)
 	i2c_cobboard_set_mode(I2C_COBBOARD_MODE_EJECT);
 	time_wait_ms(2000);
 
-	trajectory_hardstop(&mainboard.traj);
+	strat_set_speed(250, SPEED_ANGLE_FAST);
+
+ l4:
+	DEBUG(E_USER_STRAT, "%s():%d", __FUNCTION__, __LINE__);
+	if (get_cob_count() >= 5)
+		strat_set_speed(600, SPEED_ANGLE_FAST);
+
+	err = line2line(LINE_DOWN, 5, LINE_L_UP, 2);
+	if (!TRAJ_SUCCESS(err)) {
+		strat_hardstop();
+		time_wait_ms(2000);
+		goto l4;
+	}
+
+ l5:
+	DEBUG(E_USER_STRAT, "%s():%d", __FUNCTION__, __LINE__);
+	if (get_cob_count() >= 5)
+		strat_set_speed(600, SPEED_ANGLE_FAST);
+
+	err = line2line(LINE_L_UP, 2, LINE_R_UP, 2);
+	if (!TRAJ_SUCCESS(err)) {
+		strat_hardstop();
+		time_wait_ms(2000);
+		goto l5;
+	}
+
+	DEBUG(E_USER_STRAT, "%s():%d", __FUNCTION__, __LINE__);
+	if (get_cob_count() >= 5)
+		strat_set_speed(600, SPEED_ANGLE_FAST);
+
+	WAIT_COND_OR_TRAJ_END(distance_from_robot(2625, COLOR_Y(1847)) < 100,
+			      TRAJ_FLAGS_STD);
+	trajectory_goto_xy_abs(&mainboard.traj, 2625, COLOR_Y(1847));
+	err = wait_traj_end(END_INTR|END_TRAJ);
+
+	DEBUG(E_USER_STRAT, "%s():%d", __FUNCTION__, __LINE__);
+	strat_hardstop();
+	strat_set_speed(600, SPEED_ANGLE_FAST);
+
+	/* ball ejection */
+	trajectory_a_abs(&mainboard.traj, COLOR_A(90));
+	i2c_ballboard_set_mode(I2C_BALLBOARD_MODE_EJECT);
+	time_wait_ms(2000);
+
+	/* half turn */
+	i2c_cobboard_pack(I2C_LEFT_SIDE);
+	i2c_cobboard_pack(I2C_RIGHT_SIDE);
+	trajectory_a_rel(&mainboard.traj, COLOR_A(180));
+	err = wait_traj_end(END_INTR|END_TRAJ);
+
+	/* cob ejection */
+	trajectory_d_rel(&mainboard.traj, -100);
+	err = wait_traj_end(END_INTR|END_TRAJ);
+	i2c_cobboard_set_mode(I2C_COBBOARD_MODE_EJECT);
+	time_wait_ms(2000);
+
 	return END_TRAJ;
 }
 

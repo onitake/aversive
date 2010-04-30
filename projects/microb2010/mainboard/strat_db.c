@@ -149,7 +149,7 @@ int8_t ijcoord_to_xycoord(uint8_t i, uint8_t j, int16_t *x, int16_t *y)
 	if (i >= WAYPOINTS_NBX && j >= WAYPOINTS_NBY)
 		return -1;
 	*x = (OFFSET_CORN_X + i*STEP_CORN_X);
-	*y = (OFFSET_CORN_Y + j*STEP_CORN_Y);
+	*y = COLOR_Y(OFFSET_CORN_Y + j*STEP_CORN_Y);
 	return 0;
 }
 
@@ -188,6 +188,7 @@ int8_t corn_idx_to_xycoord(uint8_t idx, int16_t *x, int16_t *y)
 	return 0;
 }
 
+#define CORN_MARGIN 200
 /* return the index of the closest corn at these coordinates. If the
  * corn is really too far (~20cm), return NULL. The x and y pointer are
  * updated with the real position of the corn */
@@ -202,8 +203,7 @@ struct waypoint_db *xycoord_to_corn_idx(int16_t *x, int16_t *y)
 	for (n = 0; n < CORN_NB; n ++) {
 		corn_idx_to_xycoord(n, &x_corn, &y_corn);
 		d = xy_norm(x_corn, y_corn, *x, *y);
-		/* XXX 200 -> constant */
-		if (d < 200 && (d_min == 0 || d < d_min)) {
+		if (d < CORN_MARGIN && (d_min == 0 || d < d_min)) {
 			d_min = d;
 			idx = n;
 			x_corn_min = x_corn;
@@ -341,6 +341,7 @@ int8_t tomato_idx_to_xycoord(uint8_t idx, int16_t *x, int16_t *y)
 	return 0;
 }
 
+#define TOMATO_MARGIN 200
 /* return the index of the closest tomato at these coordinates. If the
  * tomato is really too far (~20cm), return NULL. The x and y pointer are
  * updated with the real position of the tomato */
@@ -355,8 +356,7 @@ struct waypoint_db *xycoord_to_tomato_idx(int16_t *x, int16_t *y)
 	for (n = 0; n < TOMATO_NB; n ++) {
 		tomato_idx_to_xycoord(n, &x_tomato, &y_tomato);
 		d = xy_norm(x_tomato, y_tomato, *x, *y);
-		/* XXX 200 -> constant */
-		if (d < 200 && (d_min == 0 || d < d_min)) {
+		if (d < TOMATO_MARGIN && (d_min == 0 || d < d_min)) {
 			d_min = d;
 			idx = n;
 			x_tomato_min = x_tomato;
