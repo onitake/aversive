@@ -314,8 +314,8 @@ void state_machine(void)
 
 		/* init */
 		if (INIT(state_mode)) {
-			state_mode = I2C_COBBOARD_MODE_HARVEST;
 			state_init();
+			state_mode = I2C_COBBOARD_MODE_HARVEST;
 		}
 
 		/* pack/deply spickles, enable/disable roller */
