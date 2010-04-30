@@ -69,6 +69,7 @@
 /* return 1 if there is a corn near, and fill the index ptr */
 int8_t corn_is_near(uint8_t *corn_idx, uint8_t side)
 {
+	/* XXX to be checked */
 #define SENSOR_CORN_DIST  225
 #define SENSOR_CORN_ANGLE 90
 	double x = position_get_x_double(&mainboard.pos);

@@ -68,6 +68,7 @@
 #define COL_SCAN_PRE_MARGIN 250
 
 static volatile uint8_t strat_running = 0;
+static volatile uint8_t want_pack = 0;
 struct strat_conf strat_conf;
 
 /*************************************************************/
@@ -156,6 +157,7 @@ void strat_exit(void)
 void strat_event(void *dummy)
 {
 	uint8_t flags;
+	int8_t lcob_near, rcob_near;
 	uint8_t lcob, rcob;
 	uint8_t lidx, ridx;
 
@@ -182,35 +184,54 @@ void strat_event(void *dummy)
 #endif
 
 	/* detect cob on left side */
-	if (corn_is_near(&lidx, I2C_LEFT_SIDE)) {
-		if (lcob != I2C_COB_NONE)
-			corn_set_color(strat_db.corn_table[lidx], lcob);
-
-		if (strat_db.corn_table[lidx]->corn.color == I2C_COB_WHITE)
-			i2c_cobboard_autoharvest(I2C_LEFT_SIDE);
-		else
-			i2c_cobboard_deploy(I2C_LEFT_SIDE);
-	}
-	else {
-		i2c_cobboard_deploy(I2C_LEFT_SIDE);
+	lcob_near = corn_is_near(&lidx, I2C_LEFT_SIDE);
+	if (lcob_near && lcob != I2C_COB_NONE) {
+		if (strat_db.corn_table[lidx]->corn.color == I2C_COB_UNKNOWN)
+			DEBUG(E_USER_STRAT, "lcob %s %d",
+			      lcob == I2C_COB_WHITE ? "white" : "black", lidx);
+		corn_set_color(strat_db.corn_table[lidx], lcob);
 	}
 
 	/* detect cob on right side */
-	if (corn_is_near(&ridx, I2C_RIGHT_SIDE)) {
-		if (rcob != I2C_COB_NONE)
-			corn_set_color(strat_db.corn_table[ridx], rcob);
+	rcob_near = corn_is_near(&ridx, I2C_RIGHT_SIDE);
+	if (rcob_near && rcob != I2C_COB_NONE) {
+		if (strat_db.corn_table[ridx]->corn.color == I2C_COB_UNKNOWN)
+			DEBUG(E_USER_STRAT, "rcob %s %d",
+			      rcob == I2C_COB_WHITE ? "white" : "black", ridx);
+		corn_set_color(strat_db.corn_table[ridx], rcob);
+	}
 
-		if (strat_db.corn_table[ridx]->corn.color == I2C_COB_WHITE)
+	/* control the cobboard mode for left spickle */
+	if (get_cob_count() >= 5 || want_pack) {
+		if (strat_db.corn_table[lidx]->corn.color != I2C_COB_WHITE &&
+		    strat_db.corn_table[lidx]->corn.color != I2C_COB_BLACK)
+			i2c_cobboard_pack(I2C_LEFT_SIDE);
+	}
+	else {
+		if (strat_db.corn_table[lidx]->corn.color == I2C_COB_WHITE)
+			i2c_cobboard_autoharvest(I2C_LEFT_SIDE);
+		else if (strat_db.corn_table[lidx]->corn.color == I2C_COB_BLACK)
+			i2c_cobboard_deploy_nomove(I2C_LEFT_SIDE);
+		else
+			i2c_cobboard_deploy(I2C_LEFT_SIDE);
+	}
+
+	/* control the cobboard mode for right spickle */
+	if (get_cob_count() >= 5 || want_pack) {
+		if (strat_db.corn_table[lidx]->corn.color != I2C_COB_WHITE &&
+		    strat_db.corn_table[lidx]->corn.color != I2C_COB_BLACK)
+			i2c_cobboard_pack(I2C_RIGHT_SIDE);
+	}
+	else {
+		if (strat_db.corn_table[lidx]->corn.color == I2C_COB_WHITE)
 			i2c_cobboard_autoharvest(I2C_RIGHT_SIDE);
+		else if (strat_db.corn_table[lidx]->corn.color == I2C_COB_BLACK)
+			i2c_cobboard_deploy_nomove(I2C_RIGHT_SIDE);
 		else
 			i2c_cobboard_deploy(I2C_RIGHT_SIDE);
 	}
-	else {
-		i2c_cobboard_deploy(I2C_RIGHT_SIDE);
-	}
 
-
-	/* limit speed when opponent is close */
+	/* limit speed when opponent is near */
 	strat_limit_speed();
 }
 
@@ -249,6 +270,7 @@ static uint8_t strat_eject(void)
 	/* cob ejection */
 	trajectory_d_rel(&mainboard.traj, -100);
 	err = wait_traj_end(END_INTR|END_TRAJ);
+	strat_running = ;
 	i2c_cobboard_set_mode(I2C_COBBOARD_MODE_EJECT);
 	time_wait_ms(2000);
 

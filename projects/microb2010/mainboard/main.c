@@ -300,7 +300,7 @@ int main(void)
 
 	/* strat-related event */
 	scheduler_add_periodical_event_priority(strat_event, NULL,
-						10000L / SCHEDULER_UNIT,
+						25000L / SCHEDULER_UNIT,
 						STRAT_PRIO);
 
 #ifndef HOST_VERSION
