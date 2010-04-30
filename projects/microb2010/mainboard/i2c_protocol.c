@@ -438,6 +438,20 @@ int8_t i2c_cobboard_deploy(uint8_t side)
 	return i2c_cobboard_set_spickle(side, I2C_COBBOARD_SPK_DEPLOY);
 }
 
+int8_t i2c_cobboard_autoharvest_nomove(uint8_t side)
+{
+	return i2c_cobboard_set_spickle(side,
+					I2C_COBBOARD_SPK_DEPLOY |
+					I2C_COBBOARD_SPK_AUTOHARVEST |
+					I2C_COBBOARD_SPK_NO_MOVE);
+}
+
+int8_t i2c_cobboard_deploy_nomove(uint8_t side)
+{
+	return i2c_cobboard_set_spickle(side, I2C_COBBOARD_SPK_DEPLOY |
+					I2C_COBBOARD_SPK_NO_MOVE);
+}
+
 int8_t i2c_ballboard_set_mode(uint8_t mode)
 {
 	struct i2c_cmd_ballboard_set_mode buf;

@@ -785,11 +785,19 @@ static void cmd_cobboard_setmode2_parsed(void *parsed_result, void *data)
 		i2c_cobboard_set_mode(I2C_COBBOARD_MODE_HARVEST);
 		i2c_cobboard_pack(side);
 	}
+	else if (!strcmp_P(res->arg1, PSTR("deploy_nomove"))) {
+		i2c_cobboard_set_mode(I2C_COBBOARD_MODE_HARVEST);
+		i2c_cobboard_deploy_nomove(side);
+	}
+	else if (!strcmp_P(res->arg1, PSTR("harvest_nomove"))) {
+		i2c_cobboard_set_mode(I2C_COBBOARD_MODE_HARVEST);
+		i2c_cobboard_autoharvest_nomove(side);
+	}
 }
 
 prog_char str_cobboard_setmode2_arg0[] = "cobboard";
 parse_pgm_token_string_t cmd_cobboard_setmode2_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_cobboard_setmode2_result, arg0, str_cobboard_setmode2_arg0);
-prog_char str_cobboard_setmode2_arg1[] = "harvest#deploy#pack";
+prog_char str_cobboard_setmode2_arg1[] = "harvest#deploy#pack#harvest_nomove#deploy_nomove";
 parse_pgm_token_string_t cmd_cobboard_setmode2_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_cobboard_setmode2_result, arg1, str_cobboard_setmode2_arg1);
 prog_char str_cobboard_setmode2_arg2[] = "left#right";
 parse_pgm_token_string_t cmd_cobboard_setmode2_arg2 = TOKEN_STRING_INITIALIZER(struct cmd_cobboard_setmode2_result, arg2, str_cobboard_setmode2_arg2);
@@ -1160,6 +1168,44 @@ parse_pgm_inst_t cmd_time_monitor = {
 	.tokens = {        /* token list, NULL terminated */
 		(prog_void *)&cmd_time_monitor_arg0,
 		(prog_void *)&cmd_time_monitor_arg1,
+		NULL,
+	},
+};
+
+
+/**********************************************************/
+/* Strat_Event */
+
+/* this structure is filled when cmd_strat_event is parsed successfully */
+struct cmd_strat_event_result {
+	fixed_string_t arg0;
+	fixed_string_t arg1;
+};
+
+/* function called when cmd_strat_event is parsed successfully */
+static void cmd_strat_event_parsed(void *parsed_result, void *data)
+{
+	struct cmd_strat_event_result *res = parsed_result;
+
+	if (!strcmp_P(res->arg1, PSTR("on")))
+		strat_event_enable();
+	else
+		strat_event_disable();
+}
+
+prog_char str_strat_event_arg0[] = "strat_event";
+parse_pgm_token_string_t cmd_strat_event_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_strat_event_result, arg0, str_strat_event_arg0);
+prog_char str_strat_event_arg1[] = "on#off";
+parse_pgm_token_string_t cmd_strat_event_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_strat_event_result, arg1, str_strat_event_arg1);
+
+prog_char help_strat_event[] = "Enable/disable strat_event callback";
+parse_pgm_inst_t cmd_strat_event = {
+	.f = cmd_strat_event_parsed,  /* function to call */
+	.data = NULL,      /* 2nd arg of func */
+	.help_str = help_strat_event,
+	.tokens = {        /* token list, NULL terminated */
+		(prog_void *)&cmd_strat_event_arg0,
+		(prog_void *)&cmd_strat_event_arg1,
 		NULL,
 	},
 };

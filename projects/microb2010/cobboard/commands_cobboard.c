@@ -253,11 +253,22 @@ static void cmd_state2_parsed(void *parsed_result,
 		state_set_spickle(side, I2C_COBBOARD_SPK_DEPLOY |
 				  I2C_COBBOARD_SPK_AUTOHARVEST);
 	}
+	else if (!strcmp_P(res->arg1, PSTR("deploy_nomove"))) {
+		state_set_mode(I2C_COBBOARD_MODE_HARVEST);
+		state_set_spickle(side, I2C_COBBOARD_SPK_DEPLOY |
+				  I2C_COBBOARD_SPK_NO_MOVE);
+	}
+	else if (!strcmp_P(res->arg1, PSTR("harvest_nomove"))) {
+		state_set_mode(I2C_COBBOARD_MODE_HARVEST);
+		state_set_spickle(side, I2C_COBBOARD_SPK_DEPLOY |
+				  I2C_COBBOARD_SPK_AUTOHARVEST |
+				  I2C_COBBOARD_SPK_NO_MOVE);
+	}
 }
 
 prog_char str_state2_arg0[] = "cobboard";
 parse_pgm_token_string_t cmd_state2_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_state2_result, arg0, str_state2_arg0);
-prog_char str_state2_arg1[] = "harvest#deploy#pack";
+prog_char str_state2_arg1[] = "harvest#deploy#pack#harvest_nomove#deploy_nomove";
 parse_pgm_token_string_t cmd_state2_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_state2_result, arg1, str_state2_arg1);
 prog_char str_state2_arg2[] = "left#right";
 parse_pgm_token_string_t cmd_state2_arg2 = TOKEN_STRING_INITIALIZER(struct cmd_state2_result, arg2, str_state2_arg2);

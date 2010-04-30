@@ -39,6 +39,9 @@ int8_t i2c_cobboard_set_mode(uint8_t mode);
 int8_t i2c_cobboard_pack(uint8_t side);
 int8_t i2c_cobboard_autoharvest(uint8_t side);
 int8_t i2c_cobboard_deploy(uint8_t side);
+int8_t i2c_cobboard_autoharvest_nomove(uint8_t side);
+int8_t i2c_cobboard_deploy_nomove(uint8_t side);
+
 int8_t i2c_ballboard_set_mode(uint8_t mode);
 
 #endif

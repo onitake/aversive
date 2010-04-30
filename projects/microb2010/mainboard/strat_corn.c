@@ -218,6 +218,7 @@ uint8_t line2line(uint8_t dir1, uint8_t num1,
 	strat_get_speed(&d_speed, &a_speed);
 
 	/* XXX 600 -> cste */
+	/* XXX does not work, do better */
 /* 	if (err == 0 && d_speed < 600 && */
 /* 	    mainboard.traj.state == RUNNING_CLITOID_LINE) */
 /* 		strat_set_speed(600, SPEED_ANGLE_FAST); */

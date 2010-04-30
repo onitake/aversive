@@ -96,7 +96,7 @@ static uint8_t state_no_cob_inside(void)
 		!sensor_get(S_COB_INSIDE_R);
 }
 
-static uint8_t is_deployed(uint8_t side)
+static uint8_t state_spicklemode_deployed(uint8_t side)
 {
 	if (side == I2C_LEFT_SIDE)
 		return lspickle & I2C_COBBOARD_SPK_DEPLOY;
@@ -104,7 +104,7 @@ static uint8_t is_deployed(uint8_t side)
 		return rspickle & I2C_COBBOARD_SPK_DEPLOY;
 }
 
-static uint8_t is_autoharvest(uint8_t side)
+static uint8_t state_spicklemode_autoharvest(uint8_t side)
 {
 	if (side == I2C_LEFT_SIDE)
 		return lspickle & I2C_COBBOARD_SPK_AUTOHARVEST;
@@ -112,14 +112,22 @@ static uint8_t is_autoharvest(uint8_t side)
 		return rspickle & I2C_COBBOARD_SPK_AUTOHARVEST;
 }
 
+static uint8_t state_spicklemode_nomove(uint8_t side)
+{
+	if (side == I2C_LEFT_SIDE)
+		return lspickle & I2C_COBBOARD_SPK_NO_MOVE;
+	else
+		return rspickle & I2C_COBBOARD_SPK_NO_MOVE;
+}
+
 /* pack/deploy spickles depending on mode */
 static void spickle_prepare(uint8_t side)
 {
-	if (cob_count >= 5)
-		spickle_pack(side);
-	else if (is_deployed(side) && !is_autoharvest(side))
-		spickle_deploy(side); /*spickle_mid(side);*/
-	else if (is_deployed(side) && is_autoharvest(side))
+	/* we do nothing in mode no out */
+	if (state_spicklemode_nomove(side))
+		return;
+
+	if (state_spicklemode_deployed(side))
 		spickle_deploy(side);
 	else
 		spickle_pack(side);
@@ -247,12 +255,15 @@ static void state_do_harvest(uint8_t side)
 	cobroller_off(side);
 	cob_count ++;
 
+	state_debug_wait_key_pressed();
+
 	/* last cob, nothing to do */
 	if (cob_count == 5)
 		return;
 
-	/* redeploy the spickle */
-	spickle_deploy(side);
+	/* redeploy the spickle if there is a black cob */
+	if (!state_spicklemode_nomove(side))
+		spickle_deploy(side);
 	state_debug_wait_key_pressed();
 
 	/* let the loaded cobs go */
@@ -326,11 +337,13 @@ void state_machine(void)
 
 		/* harvest */
 		if (cob_count < 5) {
-			if ((lspickle & I2C_COBBOARD_SPK_DEPLOY) &&
-			    (lspickle & I2C_COBBOARD_SPK_AUTOHARVEST))
+			if (state_spicklemode_deployed(I2C_LEFT_SIDE) &&
+			    state_spicklemode_autoharvest(I2C_LEFT_SIDE) &&
+			    !state_spicklemode_nomove(I2C_LEFT_SIDE))
 				state_do_harvest(I2C_LEFT_SIDE);
-			if ((rspickle & I2C_COBBOARD_SPK_DEPLOY) &&
-			    (rspickle & I2C_COBBOARD_SPK_AUTOHARVEST))
+			if (state_spicklemode_deployed(I2C_RIGHT_SIDE) &&
+			    state_spicklemode_autoharvest(I2C_RIGHT_SIDE) &&
+			    !state_spicklemode_nomove(I2C_RIGHT_SIDE))
 				state_do_harvest(I2C_RIGHT_SIDE);
 		}
 

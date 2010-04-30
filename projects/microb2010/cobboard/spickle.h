@@ -1,6 +1,6 @@
-/*  
+/*
  *  Copyright Droids Corporation (2010)
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -28,6 +28,9 @@ void spickle_set_pos(uint8_t side, int32_t pos_pack,
 		     int32_t pos_mid, int32_t pos_deployed);
 
 void spickle_dump_params(void);
+
+uint8_t spickle_is_packed(void);
+uint8_t spickle_is_deployed(void);
 
 void spickle_deploy(uint8_t side);
 void spickle_mid(uint8_t side);

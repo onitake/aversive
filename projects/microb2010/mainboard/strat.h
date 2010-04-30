@@ -162,5 +162,7 @@ void strat_dump_flags(void);
 void strat_goto_near(int16_t x, int16_t y, uint16_t dist);
 uint8_t strat_main(void);
 void strat_event(void *dummy);
+void strat_event_enable(void);
+void strat_event_disable(void);
 
 #endif

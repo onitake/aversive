@@ -108,6 +108,7 @@ struct i2c_req_cobboard_status {
 
 #define I2C_COBBOARD_SPK_DEPLOY  0x01 /* deploy the spickle */
 #define I2C_COBBOARD_SPK_AUTOHARVEST 0x02 /* auto harvest the cobs */
+#define I2C_COBBOARD_SPK_NO_MOVE 0x04 /* if enabled, don't change state */
 	uint8_t lspickle;
 	uint8_t rspickle;
 };

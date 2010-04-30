@@ -67,7 +67,7 @@
 #define COL_DISP_MARGIN 400 /* stop 40 cm in front of dispenser */
 #define COL_SCAN_PRE_MARGIN 250
 
-static uint8_t strat_running = 0;
+static volatile uint8_t strat_running = 0;
 struct strat_conf strat_conf;
 
 /*************************************************************/
@@ -96,6 +96,16 @@ void strat_conf_dump(const char *caller)
 
 	printf_P(PSTR("-- conf --\r\n"));
 
+}
+
+void strat_event_enable(void)
+{
+	strat_running = 1;
+}
+
+void strat_event_disable(void)
+{
+	strat_running = 0;
 }
 
 /* call it just before launching the strat */
@@ -173,11 +183,9 @@ void strat_event(void *dummy)
 
 	/* detect cob on left side */
 	if (corn_is_near(&lidx, I2C_LEFT_SIDE)) {
-		if (lcob != I2C_COB_NONE) {
+		if (lcob != I2C_COB_NONE)
 			corn_set_color(strat_db.corn_table[lidx], lcob);
-			DEBUG(E_USER_STRAT, "lcob %s %d",
-			      lcob == I2C_COB_WHITE ? "white" : "black", lidx);
-		}
+
 		if (strat_db.corn_table[lidx]->corn.color == I2C_COB_WHITE)
 			i2c_cobboard_autoharvest(I2C_LEFT_SIDE);
 		else
@@ -189,11 +197,9 @@ void strat_event(void *dummy)
 
 	/* detect cob on right side */
 	if (corn_is_near(&ridx, I2C_RIGHT_SIDE)) {
-		if (rcob != I2C_COB_NONE) {
+		if (rcob != I2C_COB_NONE)
 			corn_set_color(strat_db.corn_table[ridx], rcob);
-			DEBUG(E_USER_STRAT, "rcob %s %d",
-			      rcob == I2C_COB_WHITE ? "white" : "black", ridx);
-		}
+
 		if (strat_db.corn_table[ridx]->corn.color == I2C_COB_WHITE)
 			i2c_cobboard_autoharvest(I2C_RIGHT_SIDE);
 		else
@@ -216,12 +222,18 @@ static uint8_t strat_harvest(void)
 
 static uint8_t strat_eject(void)
 {
+	uint8_t err;
+
+	//XXX return vals
+	strat_set_speed(600, SPEED_ANGLE_SLOW);
+
 	trajectory_goto_xy_abs(&mainboard.traj, 2625, COLOR_Y(1847));
-	err = wait_traj_end(END_INTR|END_TRAJ);
+	err = wait_traj_end(TRAJ_FLAGS_NO_NEAR);
+	trajectory_a_abs(&mainboard.traj, COLOR_A(70));
+	err = wait_traj_end(TRAJ_FLAGS_NO_NEAR);
 
 	DEBUG(E_USER_STRAT, "%s():%d", __FUNCTION__, __LINE__);
 	strat_hardstop();
-	strat_set_speed(600, SPEED_ANGLE_FAST);
 
 	/* ball ejection */
 	trajectory_a_abs(&mainboard.traj, COLOR_A(90));
@@ -263,6 +275,7 @@ static uint8_t strat_beginning(void)
 				    TRAJ_FLAGS_STD);
 
 	strat_set_acc(ACC_DIST, ACC_ANGLE);
+	strat_set_speed(250, SPEED_ANGLE_SLOW);
 
 #if 1
  l1:

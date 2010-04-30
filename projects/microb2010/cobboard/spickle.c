@@ -137,7 +137,6 @@ void spickle_set_coefs(uint32_t k1, uint32_t k2)
 	spickle.k2 = k2;
 }
 
-
 void spickle_set_pos(uint8_t side, int32_t pos_packed,
 		     int32_t pos_mid, int32_t pos_deployed)
 {
@@ -157,6 +156,32 @@ void spickle_dump_params(void)
 		 spickle.pos_packed[I2C_RIGHT_SIDE],
 		 spickle.pos_mid[I2C_RIGHT_SIDE],
 		 spickle.pos_deployed[I2C_RIGHT_SIDE]);
+}
+
+static uint8_t spickle_is_at_pos(uint8_t side, int32_t pos)
+{
+	int32_t diff;
+	int32_t enc;
+	if (side == I2C_LEFT_SIDE)
+		enc = encoders_spi_get_value(LEFT_SPICKLE_ENCODER);
+	else
+		enc = encoders_spi_get_value(RIGHT_SPICKLE_ENCODER);
+	diff = pos - enc;
+	if (diff < 0)
+		diff = -diff;
+	if (diff < 500)
+		return 1;
+	return 0;
+}
+
+uint8_t spickle_is_packed(uint8_t side)
+{
+	return spickle_is_at_pos(side, spickle.pos_packed[side]);
+}
+
+uint8_t spickle_is_deployed(uint8_t side)
+{
+	return spickle_is_at_pos(side, spickle.pos_deployed[side]);
 }
 
 void spickle_deploy(uint8_t side)

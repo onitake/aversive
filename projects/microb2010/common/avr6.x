@@ -123,6 +123,18 @@ SECTIONS
     KEEP (*(.init9))
     *(.text.*) /* trucs de gcc ? */
     . = ALIGN(2048);
+    /* some libc stuff */
+    strc*(.text)
+    mem*(.text)
+    printf*(.text)
+    vfprintf*(.text)
+    sprintf*(.text)
+    snprintf*(.text)
+    malloc*(.text)
+    free*(.text)
+    fdevopen*(.text)
+    fputc*(.text)
+    . = ALIGN(2048);
     uart*(.text)
     pwm*(.text)
     parse*(.text)
@@ -150,18 +162,6 @@ SECTIONS
     i2c*(.text)
     spi*(.text)
     ax12*(.text)
-    . = ALIGN(2048);
-    /* some libc stuff */
-    str*(.text)
-    mem*(.text)
-    printf*(.text)
-    vfprintf*(.text)
-    sprintf*(.text)
-    snprintf*(.text)
-    malloc*(.text)
-    free*(.text)
-    fdevopen*(.text)
-    fputc*(.text)
     . = ALIGN(2048);
     *(.text)
     . = ALIGN(2);
