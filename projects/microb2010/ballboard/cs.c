@@ -122,8 +122,14 @@ void microb_cs_init(void)
 	pid_set_out_shift(&ballboard.roller.pid, 6);
 	pid_set_derivate_filter(&ballboard.roller.pid, 6);
 
+	/* QUADRAMP (used as a ramp filter) */
+	quadramp_init(&ballboard.roller.qr);
+	quadramp_set_1st_order_vars(&ballboard.roller.qr, 20, 20);
+	quadramp_set_2nd_order_vars(&ballboard.roller.qr, 0, 0);
+
 	/* CS */
 	cs_init(&ballboard.roller.cs);
+	cs_set_consign_filter(&ballboard.roller.cs, quadramp_do_filter, &ballboard.roller.qr);
 	cs_set_correct_filter(&ballboard.roller.cs, pid_do_filter, &ballboard.roller.pid);
 	cs_set_process_in(&ballboard.roller.cs, pwm_ng_set, ROLLER_PWM);
 	cs_set_process_out(&ballboard.roller.cs, encoders_spi_update_roller_speed, ROLLER_ENCODER);

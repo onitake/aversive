@@ -121,7 +121,6 @@ void strat_init(void)
 		DO_POS | DO_BD | DO_TIMER | DO_POWER;
 }
 
-
 /* call it after each strat */
 void strat_exit(void)
 {
@@ -209,6 +208,41 @@ void strat_event(void *dummy)
 	strat_limit_speed();
 }
 
+
+static uint8_t strat_harvest(void)
+{
+	return 0;
+}
+
+static uint8_t strat_eject(void)
+{
+	trajectory_goto_xy_abs(&mainboard.traj, 2625, COLOR_Y(1847));
+	err = wait_traj_end(END_INTR|END_TRAJ);
+
+	DEBUG(E_USER_STRAT, "%s():%d", __FUNCTION__, __LINE__);
+	strat_hardstop();
+	strat_set_speed(600, SPEED_ANGLE_FAST);
+
+	/* ball ejection */
+	trajectory_a_abs(&mainboard.traj, COLOR_A(90));
+	i2c_ballboard_set_mode(I2C_BALLBOARD_MODE_EJECT);
+	time_wait_ms(2000);
+
+	/* half turn */
+	i2c_cobboard_pack(I2C_LEFT_SIDE);
+	i2c_cobboard_pack(I2C_RIGHT_SIDE);
+	trajectory_a_rel(&mainboard.traj, COLOR_A(180));
+	err = wait_traj_end(END_INTR|END_TRAJ);
+
+	/* cob ejection */
+	trajectory_d_rel(&mainboard.traj, -100);
+	err = wait_traj_end(END_INTR|END_TRAJ);
+	i2c_cobboard_set_mode(I2C_COBBOARD_MODE_EJECT);
+	time_wait_ms(2000);
+
+	return 0;
+}
+
 static uint8_t strat_beginning(void)
 {
 	uint8_t err;
@@ -220,7 +254,6 @@ static uint8_t strat_beginning(void)
 	/* 250 */
 	strat_set_speed(250, SPEED_ANGLE_FAST);
 #endif
-
 
 	// strat_set_speed(600, 60); /* OK */
 	strat_set_speed(250, 28); /* OK */
@@ -256,11 +289,6 @@ static uint8_t strat_beginning(void)
 		goto l2;
 	}
 
-	WAIT_COND_OR_TRAJ_END(distance_from_robot(2625, COLOR_Y(1847)) < 100,
-			      TRAJ_FLAGS_STD);
-	trajectory_goto_xy_abs(&mainboard.traj, 2625, COLOR_Y(1847));
-	err = wait_traj_end(END_INTR|END_TRAJ);
-
 #else
 	strat_set_speed(600, SPEED_ANGLE_FAST);
 	err = line2line(LINE_UP, 0, LINE_R_DOWN, 3);
@@ -277,26 +305,7 @@ static uint8_t strat_beginning(void)
 	return END_TRAJ;
 #endif
 
-	DEBUG(E_USER_STRAT, "%s():%d", __FUNCTION__, __LINE__);
-	strat_hardstop();
-	strat_set_speed(600, SPEED_ANGLE_FAST);
-
-	/* ball ejection */
-	trajectory_a_abs(&mainboard.traj, COLOR_A(90));
-	i2c_ballboard_set_mode(I2C_BALLBOARD_MODE_EJECT);
-	time_wait_ms(2000);
-
-	/* half turn */
-	i2c_cobboard_pack(I2C_LEFT_SIDE);
-	i2c_cobboard_pack(I2C_RIGHT_SIDE);
-	trajectory_a_rel(&mainboard.traj, COLOR_A(180));
-	err = wait_traj_end(END_INTR|END_TRAJ);
-
-	/* cob ejection */
-	trajectory_d_rel(&mainboard.traj, -100);
-	err = wait_traj_end(END_INTR|END_TRAJ);
-	i2c_cobboard_set_mode(I2C_COBBOARD_MODE_EJECT);
-	time_wait_ms(2000);
+	strat_eject();
 
 	strat_set_speed(250, SPEED_ANGLE_FAST);
 
@@ -330,29 +339,7 @@ static uint8_t strat_beginning(void)
 
 	WAIT_COND_OR_TRAJ_END(distance_from_robot(2625, COLOR_Y(1847)) < 100,
 			      TRAJ_FLAGS_STD);
-	trajectory_goto_xy_abs(&mainboard.traj, 2625, COLOR_Y(1847));
-	err = wait_traj_end(END_INTR|END_TRAJ);
-
-	DEBUG(E_USER_STRAT, "%s():%d", __FUNCTION__, __LINE__);
-	strat_hardstop();
-	strat_set_speed(600, SPEED_ANGLE_FAST);
-
-	/* ball ejection */
-	trajectory_a_abs(&mainboard.traj, COLOR_A(90));
-	i2c_ballboard_set_mode(I2C_BALLBOARD_MODE_EJECT);
-	time_wait_ms(2000);
-
-	/* half turn */
-	i2c_cobboard_pack(I2C_LEFT_SIDE);
-	i2c_cobboard_pack(I2C_RIGHT_SIDE);
-	trajectory_a_rel(&mainboard.traj, COLOR_A(180));
-	err = wait_traj_end(END_INTR|END_TRAJ);
-
-	/* cob ejection */
-	trajectory_d_rel(&mainboard.traj, -100);
-	err = wait_traj_end(END_INTR|END_TRAJ);
-	i2c_cobboard_set_mode(I2C_COBBOARD_MODE_EJECT);
-	time_wait_ms(2000);
+	strat_eject();
 
 	return END_TRAJ;
 }
@@ -388,16 +375,6 @@ static uint8_t need_more_elements(void)
 			return 0;
 		return 1;
 	}
-}
-
-static uint8_t strat_harvest(void)
-{
-	return 0;
-}
-
-static uint8_t strat_eject(void)
-{
-	return 0;
 }
 
 uint8_t strat_main(void)

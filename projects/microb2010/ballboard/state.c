@@ -144,7 +144,14 @@ static void state_do_eject(void)
 /* main state machine */
 void state_machine(void)
 {
+	uint8_t mode = 0;
+
 	while (state_want_exit() == 0) {
+
+		if (state_mode != mode) {
+			mode = state_mode;
+			STMCH_DEBUG("%s(): mode=%x ", __FUNCTION__, mode);
+		}
 
 		switch (state_mode) {
 
