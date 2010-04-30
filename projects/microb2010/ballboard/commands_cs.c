@@ -1,6 +1,6 @@
 /*
  *  Copyright Droids Corporation (2008)
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -17,7 +17,7 @@
  *
  *  Revision : $Id: commands_cs.c,v 1.1 2009-03-29 18:44:54 zer0 Exp $
  *
- *  Olivier MATZ <zer0@droids-corp.org> 
+ *  Olivier MATZ <zer0@droids-corp.org>
  */
 
 #include <stdio.h>
@@ -79,7 +79,7 @@ struct cs_block *cs_from_name(const char *name)
 	}
 	return NULL;
 }
-		
+
 /**********************************************************/
 /* Gains for control system */
 
@@ -103,7 +103,7 @@ static void cmd_gain_parsed(void * parsed_result, void *show)
 		return;
 	}
 
-	if (!show) 
+	if (!show)
 		pid_set_gains(&csb->pid, res->p, res->i, res->d);
 
 	printf_P(PSTR("%s %s %d %d %d\r\n"),
@@ -126,11 +126,11 @@ parse_pgm_inst_t cmd_gain = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_gain,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_gain_arg0, 
-		(prog_void *)&cmd_csb_name_tok, 
-		(prog_void *)&cmd_gain_p, 
-		(prog_void *)&cmd_gain_i, 
-		(prog_void *)&cmd_gain_d, 
+		(prog_void *)&cmd_gain_arg0,
+		(prog_void *)&cmd_csb_name_tok,
+		(prog_void *)&cmd_gain_p,
+		(prog_void *)&cmd_gain_i,
+		(prog_void *)&cmd_gain_d,
 		NULL,
 	},
 };
@@ -151,8 +151,8 @@ parse_pgm_inst_t cmd_gain_show = {
 	.data = (void *)1,      /* 2nd arg of func */
 	.help_str = help_gain_show,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_gain_arg0, 
-		(prog_void *)&cmd_csb_name_tok, 
+		(prog_void *)&cmd_gain_arg0,
+		(prog_void *)&cmd_csb_name_tok,
 		(prog_void *)&cmd_gain_show_arg,
 		NULL,
 	},
@@ -171,7 +171,7 @@ struct cmd_speed_result {
 static void cmd_speed_parsed(void *parsed_result, void *show)
 {
 	struct cmd_speed_result * res = parsed_result;
-	
+
 	struct cs_block *csb;
 
 	csb = cs_from_name(res->cs.csname);
@@ -181,10 +181,10 @@ static void cmd_speed_parsed(void *parsed_result, void *show)
 	}
 
 #if notyet
-	if (!show) 
+	if (!show)
 		ramp_set_vars(&csb->ramp, res->s, res->s); /* set speed */
 
-	printf_P(PSTR("%s %lu\r\n"), 
+	printf_P(PSTR("%s %lu\r\n"),
 		 res->cs.csname,
 		 ext.r_b.var_pos);
 #else
@@ -202,9 +202,9 @@ parse_pgm_inst_t cmd_speed = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_speed,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_speed_arg0, 
-		(prog_void *)&cmd_csb_name_tok, 
-		(prog_void *)&cmd_speed_s, 
+		(prog_void *)&cmd_speed_arg0,
+		(prog_void *)&cmd_csb_name_tok,
+		(prog_void *)&cmd_speed_s,
 		NULL,
 	},
 };
@@ -224,8 +224,8 @@ parse_pgm_inst_t cmd_speed_show = {
 	.data = (void *)1,      /* 2nd arg of func */
 	.help_str = help_speed_show,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_speed_arg0, 
-		(prog_void *)&cmd_csb_name_tok, 
+		(prog_void *)&cmd_speed_arg0,
+		(prog_void *)&cmd_csb_name_tok,
 		(prog_void *)&cmd_speed_show_arg,
 		NULL,
 	},
@@ -252,10 +252,10 @@ static void cmd_derivate_filter_parsed(void *parsed_result, void *show)
 		return;
 	}
 
-	if (!show) 
+	if (!show)
 		pid_set_derivate_filter(&csb->pid, res->size);
 
-	printf_P(PSTR("%s %s %u\r\n"), 
+	printf_P(PSTR("%s %s %u\r\n"),
 		 res->cs.cmdname,
 		 res->cs.csname,
 		 pid_get_derivate_filter(&csb->pid));
@@ -271,9 +271,9 @@ parse_pgm_inst_t cmd_derivate_filter = {
 	.data = (void *)1,      /* 2nd arg of func */
 	.help_str = help_derivate_filter,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_derivate_filter_arg0, 
-		(prog_void *)&cmd_csb_name_tok, 
-		(prog_void *)&cmd_derivate_filter_size, 
+		(prog_void *)&cmd_derivate_filter_arg0,
+		(prog_void *)&cmd_csb_name_tok,
+		(prog_void *)&cmd_derivate_filter_size,
 		NULL,
 	},
 };
@@ -294,8 +294,8 @@ parse_pgm_inst_t cmd_derivate_filter_show = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_derivate_filter_show,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_derivate_filter_arg0, 
-		(prog_void *)&cmd_csb_name_tok, 
+		(prog_void *)&cmd_derivate_filter_arg0,
+		(prog_void *)&cmd_csb_name_tok,
 		(prog_void *)&cmd_derivate_filter_show_arg,
 		NULL,
 	},
@@ -336,9 +336,9 @@ parse_pgm_inst_t cmd_consign = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_consign,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_consign_arg0, 
-		(prog_void *)&cmd_csb_name_tok, 
-		(prog_void *)&cmd_consign_p, 
+		(prog_void *)&cmd_consign_arg0,
+		(prog_void *)&cmd_csb_name_tok,
+		(prog_void *)&cmd_consign_p,
 		NULL,
 	},
 };
@@ -359,7 +359,7 @@ struct cmd_maximum_result {
 static void cmd_maximum_parsed(void *parsed_result, void *show)
 {
 	struct cmd_maximum_result * res = parsed_result;
-	
+
 	struct cs_block *csb;
 
 	csb = cs_from_name(res->cs.csname);
@@ -371,7 +371,7 @@ static void cmd_maximum_parsed(void *parsed_result, void *show)
 	if (!show)
 		pid_set_maximums(&csb->pid, res->in, res->i, res->out);
 
-	printf_P(PSTR("maximum %s %lu %lu %lu\r\n"), 
+	printf_P(PSTR("maximum %s %lu %lu %lu\r\n"),
 		 res->cs.csname,
 		 pid_get_max_in(&csb->pid),
 		 pid_get_max_I(&csb->pid),
@@ -390,11 +390,11 @@ parse_pgm_inst_t cmd_maximum = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_maximum,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_maximum_arg0, 
-		(prog_void *)&cmd_csb_name_tok, 
-		(prog_void *)&cmd_maximum_in, 
-		(prog_void *)&cmd_maximum_i, 
-		(prog_void *)&cmd_maximum_out, 
+		(prog_void *)&cmd_maximum_arg0,
+		(prog_void *)&cmd_csb_name_tok,
+		(prog_void *)&cmd_maximum_in,
+		(prog_void *)&cmd_maximum_i,
+		(prog_void *)&cmd_maximum_out,
 		NULL,
 	},
 };
@@ -415,8 +415,8 @@ parse_pgm_inst_t cmd_maximum_show = {
 	.data = (void *)1,      /* 2nd arg of func */
 	.help_str = help_maximum_show,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_maximum_arg0, 
-		(prog_void *)&cmd_csb_name_tok, 
+		(prog_void *)&cmd_maximum_arg0,
+		(prog_void *)&cmd_csb_name_tok,
 		(prog_void *)&cmd_maximum_show_arg,
 		NULL,
 	},
@@ -500,9 +500,9 @@ parse_pgm_inst_t cmd_quadramp_show = {
 	.data = (void *)1,      /* 2nd arg of func */
 	.help_str = help_quadramp_show,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_quadramp_arg0, 
-		(prog_void *)&cmd_csb_name_tok, 
-		(prog_void *)&cmd_quadramp_show_arg, 
+		(prog_void *)&cmd_quadramp_arg0,
+		(prog_void *)&cmd_csb_name_tok,
+		(prog_void *)&cmd_quadramp_show_arg,
 		NULL,
 	},
 };
@@ -525,7 +525,7 @@ static void cmd_cs_status_parsed(void *parsed_result, void *data)
 	struct cs_block *csb;
 	uint8_t loop = 0;
 	uint8_t print_pid = 0, print_cs = 0;
-	
+
 	csb = cs_from_name(res->cs.csname);
 	if (csb == NULL) {
 		printf_P(PSTR("null csb\r\n"));
@@ -577,9 +577,9 @@ parse_pgm_inst_t cmd_cs_status = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_cs_status,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_cs_status_arg0, 
-		(prog_void *)&cmd_csb_name_tok, 
-		(prog_void *)&cmd_cs_status_arg, 
+		(prog_void *)&cmd_cs_status_arg0,
+		(prog_void *)&cmd_csb_name_tok,
+		(prog_void *)&cmd_cs_status_arg,
 		NULL,
 	},
 };
@@ -601,7 +601,7 @@ struct cmd_blocking_i_result {
 static void cmd_blocking_i_parsed(void *parsed_result, void *show)
 {
 	struct cmd_blocking_i_result * res = parsed_result;
-	
+
 	struct cs_block *csb;
 
 	csb = cs_from_name(res->cs.csname);
@@ -614,7 +614,7 @@ static void cmd_blocking_i_parsed(void *parsed_result, void *show)
 		bd_set_current_thresholds(&csb->bd, res->k1, res->k2,
 					  res->i, res->cpt);
 
-	printf_P(PSTR("%s %s %ld %ld %ld %d\r\n"), 
+	printf_P(PSTR("%s %s %ld %ld %ld %d\r\n"),
 		 res->cs.cmdname,
 		 res->cs.csname,
 		 csb->bd.k1,
@@ -636,11 +636,11 @@ parse_pgm_inst_t cmd_blocking_i = {
 	.data = NULL,      /* 2nd arg of func */
 	.help_str = help_blocking_i,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_blocking_i_arg0, 
-		(prog_void *)&cmd_csb_name_tok, 
-		(prog_void *)&cmd_blocking_i_k1, 
-		(prog_void *)&cmd_blocking_i_k2, 
-		(prog_void *)&cmd_blocking_i_i, 
+		(prog_void *)&cmd_blocking_i_arg0,
+		(prog_void *)&cmd_csb_name_tok,
+		(prog_void *)&cmd_blocking_i_k1,
+		(prog_void *)&cmd_blocking_i_k2,
+		(prog_void *)&cmd_blocking_i_i,
 		(prog_void *)&cmd_blocking_i_cpt,
 		NULL,
 	},
@@ -662,9 +662,9 @@ parse_pgm_inst_t cmd_blocking_i_show = {
 	.data = (void *)1,      /* 2nd arg of func */
 	.help_str = help_blocking_i_show,
 	.tokens = {        /* token list, NULL terminated */
-		(prog_void *)&cmd_blocking_i_arg0, 
-		(prog_void *)&cmd_csb_name_tok, 
-		(prog_void *)&cmd_blocking_i_show_arg, 
+		(prog_void *)&cmd_blocking_i_arg0,
+		(prog_void *)&cmd_csb_name_tok,
+		(prog_void *)&cmd_blocking_i_show_arg,
 		NULL,
 	},
 };
