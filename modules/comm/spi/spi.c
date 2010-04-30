@@ -74,7 +74,7 @@ int8_t spi_register_ss_line(volatile uint8_t *port, uint8_t bitnum)
 /*
  *	Set data order (default: MSB first)
  */
-inline void spi_set_data_order(uint8_t order)
+void spi_set_data_order(uint8_t order)
 {
 	if (order == SPI_LSB_FIRST)
 		SPCR |= _BV(DORD);
@@ -85,7 +85,7 @@ inline void spi_set_data_order(uint8_t order)
 /*
  *	Get data order
  */
-inline uint8_t spi_get_data_order(void)
+uint8_t spi_get_data_order(void)
 {
 	if (SPCR & _BV(DORD))
 		return SPI_LSB_FIRST;

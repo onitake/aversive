@@ -35,7 +35,7 @@
 static volatile uint8_t g_ss_number;
 static volatile spi_mode_t g_spi_mode;
 static volatile uint8_t g_slave_selected;
-/*static*/ volatile uint8_t g_spi_order;
+static volatile uint8_t g_spi_order;
 static volatile spi_format_t g_spi_format;
 static volatile spi_mode_t g_spi_mode;
 static volatile spi_clk_rate_t g_spi_clk_rate;
@@ -60,7 +60,7 @@ int8_t spi_register_ss_line(volatile uint8_t *port, uint8_t bitnum)
 /*
  *	Set data order (default: MSB first)
  */
-inline void spi_set_data_order(uint8_t order)
+void spi_set_data_order(uint8_t order)
 {
 	g_spi_order = order;
 }
@@ -68,7 +68,7 @@ inline void spi_set_data_order(uint8_t order)
 /*
  *	Get data order
  */
-inline uint8_t spi_get_data_order(void)
+uint8_t spi_get_data_order(void)
 {
 	return g_spi_order;
 }
