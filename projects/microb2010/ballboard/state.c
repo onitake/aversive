@@ -156,8 +156,8 @@ void state_machine(void)
 		switch (state_mode) {
 
 		case INIT:
-			state_mode = OFF;
 			state_init();
+			state_mode = OFF;
 			break;
 
 		case OFF:
