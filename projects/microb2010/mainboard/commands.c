@@ -84,6 +84,7 @@ extern parse_pgm_inst_t cmd_clitoid;
 extern parse_pgm_inst_t cmd_time_monitor;
 extern parse_pgm_inst_t cmd_strat_event;
 extern parse_pgm_inst_t cmd_test;
+extern parse_pgm_inst_t cmd_climb;
 
 /* commands_traj.c */
 extern parse_pgm_inst_t cmd_traj_speed;
@@ -176,6 +177,7 @@ parse_pgm_ctx_t main_ctx[] = {
 	(parse_pgm_inst_t *)&cmd_time_monitor,
 	(parse_pgm_inst_t *)&cmd_strat_event,
 	(parse_pgm_inst_t *)&cmd_test,
+	(parse_pgm_inst_t *)&cmd_climb,
 
 	/* commands_traj.c */
 	(parse_pgm_inst_t *)&cmd_traj_speed,

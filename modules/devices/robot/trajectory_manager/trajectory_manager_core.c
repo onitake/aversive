@@ -191,8 +191,6 @@ void trajectory_stop(struct trajectory *traj)
 				  UPDATE_A | UPDATE_D | RESET_D | RESET_A);
 }
 
-//#include <stackdump.h>
-
 /** set relative angle and distance consign to 0, and break any
  * deceleration ramp in quadramp filter */
 void trajectory_hardstop(struct trajectory *traj)
