@@ -235,7 +235,8 @@ static void do_boolean_sensors(void *dummy)
 	IRQ_UNLOCK(flags);
 }
 
-static volatile uint8_t lcob_seen = I2C_COB_NONE, rcob_seen = I2C_COB_NONE;
+static volatile uint8_t lcob_seen = I2C_COB_NONE;
+static volatile uint8_t rcob_seen = I2C_COB_NONE;
 
 uint8_t cob_detect_left(void)
 {
@@ -298,6 +299,12 @@ static void do_cob_detection(void)
 			else
 				lcob_seen = I2C_COB_BLACK;
 			IRQ_UNLOCK(flags);
+			if (l_cpt_on > l_cpt_off)
+				DEBUG(E_USER_SENSOR, "left white %d %d",
+				      l_cpt_on, l_cpt_off);
+			else
+				DEBUG(E_USER_SENSOR, "left black %d %d",
+				      l_cpt_on, l_cpt_off);
 		}
 	}
 
@@ -328,6 +335,13 @@ static void do_cob_detection(void)
 			else
 				rcob_seen = I2C_COB_BLACK;
 			IRQ_UNLOCK(flags);
+
+			if (r_cpt_on > r_cpt_off)
+				DEBUG(E_USER_SENSOR, "right white %d %d",
+				      r_cpt_on, r_cpt_off);
+			else
+				DEBUG(E_USER_SENSOR, "right black %d %d",
+				      r_cpt_on, r_cpt_off);
 		}
 	}
 
