@@ -40,6 +40,7 @@
 #include <rdline.h>
 
 #include "main.h"
+#include "state.h"
 #include "shovel.h"
 
 #define SHOVEL_DOWN 100
@@ -84,7 +85,10 @@ void shovel_mid(void)
 
 void shovel_up(void)
 {
-	quadramp_set_1st_order_vars(&cobboard.shovel.qr, 2000, 2500);
+	if (state_get_cob_count() <= 1)
+		quadramp_set_1st_order_vars(&cobboard.shovel.qr, 1000, 2500);
+	else
+		quadramp_set_1st_order_vars(&cobboard.shovel.qr, 2000, 2500);
 	quadramp_set_2nd_order_vars(&cobboard.shovel.qr, 80, 15);
 	cs_set_consign(&cobboard.shovel.cs, SHOVEL_UP);
 }
