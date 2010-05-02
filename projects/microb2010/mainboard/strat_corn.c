@@ -131,8 +131,8 @@ static uint8_t handle_spickles(void)
 #endif
 }
 
-uint8_t line2line(uint8_t dir1, uint8_t num1,
-		  uint8_t dir2, uint8_t num2)
+uint8_t line2line(uint8_t num1, uint8_t dir1,
+		  uint8_t num2, uint8_t dir2)
 {
 	double line1_a_rad, line1_a_deg, line2_a_rad;
 	double diff_a_deg, diff_a_deg_abs, beta_deg;
@@ -142,6 +142,7 @@ uint8_t line2line(uint8_t dir1, uint8_t num1,
 	point_t p;
 	uint8_t err;
 	uint16_t a_speed, d_speed;
+	int8_t ret;
 
 	/* convert to 2 points */
 	num2line(&l1, dir1, num1);
@@ -197,10 +198,13 @@ uint8_t line2line(uint8_t dir1, uint8_t num1,
 	}
 
 	/* XXX check return value !! */
-	trajectory_clitoid(&mainboard.traj, l1.p1.x, l1.p1.y,
-			   line1_a_deg, 150., diff_a_deg, beta_deg,
-			   radius, xy_norm(l1.p1.x, l1.p1.y,
-					   p.x, p.y));
+	ret = trajectory_clitoid(&mainboard.traj, l1.p1.x, l1.p1.y,
+				 line1_a_deg, 150., diff_a_deg, beta_deg,
+				 radius, xy_norm(l1.p1.x, l1.p1.y,
+						 p.x, p.y));
+	if (ret < 0)
+		DEBUG(E_USER_STRAT, "clitoid failed");
+
 	/* disabled */
 	if (0) {
 		err = 0;

@@ -870,6 +870,8 @@ static void cmd_ballboard_show_parsed(void * parsed_result, void * data)
 	printf_P(PSTR("mode = %x\r\n"), ballboard.mode);
 	printf_P(PSTR("status = %x\r\n"), ballboard.status);
 	printf_P(PSTR("ball_count = %d\r\n"), ballboard.ball_count);
+	printf_P(PSTR("lcob = %d\r\n"), ballboard.lcob);
+	printf_P(PSTR("rcob = %d\r\n"), ballboard.rcob);
 #endif
 }
 

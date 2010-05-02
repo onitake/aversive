@@ -153,6 +153,48 @@ int8_t ijcoord_to_xycoord(uint8_t i, uint8_t j, int16_t *x, int16_t *y)
 	return 0;
 }
 
+/* return the nearest waypoint that is not a corn: xp and yp contains
+ * the input and output, and ip, jp are only outputs. return 0 on
+ * success. */
+int8_t xycoord_to_ijcoord(int16_t *xp, int16_t *yp, uint8_t *ip, uint8_t *jp)
+{
+	int16_t x, y;
+	uint8_t i, j;
+
+	x = *xp;
+	y = *yp;
+
+	x -= OFFSET_CORN_X;
+	x += (STEP_CORN_X/2);
+	i = x / STEP_CORN_X;
+
+	y = COLOR_Y(y);
+	y -= OFFSET_CORN_Y;
+	if ((i & 1) == 1) {
+		j = y / STEP_CORN_Y;
+	}
+	else {
+		y += (STEP_CORN_Y/2);
+		y /= (STEP_CORN_Y*2);
+		j = (y * 2) + 1;
+	}
+
+	if (ijcoord_to_xycoord(i, j, &x, &y) < 0)
+		return -1;
+
+	if (strat_db.wp_table[i][j].type != WP_TYPE_WAYPOINT &&
+	    strat_db.wp_table[i][j].type != WP_TYPE_TOMATO)
+		return -1;
+
+	*xp = x;
+	*yp = y;
+	*ip = i;
+	*jp = j;
+
+	return 0;
+}
+
+
 /******** CORN */
 
 /* return the index of a corn given its i,j coords. */
@@ -192,31 +234,44 @@ int8_t corn_idx_to_xycoord(uint8_t idx, int16_t *x, int16_t *y)
 /* return the index of the closest corn at these coordinates. If the
  * corn is really too far (~20cm), return NULL. The x and y pointer are
  * updated with the real position of the corn */
-struct waypoint_db *xycoord_to_corn_idx(int16_t *x, int16_t *y)
+struct waypoint_db *xycoord_to_corn_idx(int16_t *xp, int16_t *yp)
 {
-	uint8_t idx = -1, n;
-	int16_t d, x_corn, y_corn;
-	int16_t x_corn_min = 0, y_corn_min = 0;
-	int16_t d_min = 0;
+	int16_t x, y;
+	uint8_t i, j;
+	double d;
 
-	/* XXX does it work when we are blue ? */
-	for (n = 0; n < CORN_NB; n ++) {
-		corn_idx_to_xycoord(n, &x_corn, &y_corn);
-		d = xy_norm(x_corn, y_corn, *x, *y);
-		if (d < CORN_MARGIN && (d_min == 0 || d < d_min)) {
-			d_min = d;
-			idx = n;
-			x_corn_min = x_corn;
-			y_corn_min = y_corn;
-		}
-	}
-	if (d_min == 0)
+	x = *xp;
+	y = *yp;
+
+	x -= OFFSET_CORN_X;
+	x += STEP_CORN_X;
+	x /= (STEP_CORN_X*2);
+
+	y = COLOR_Y(y);
+	y -= OFFSET_CORN_Y;
+	y += STEP_CORN_Y;
+	if ((x & 1) == 1)
+		y -= STEP_CORN_Y;
+	y /= (STEP_CORN_Y*2);
+
+	i = (x * 2);
+	j = (y * 2) + (x & 1);
+
+	if (ijcoord_to_xycoord(i, j, &x, &y) < 0)
 		return NULL;
 
-	*x = x_corn_min;
-	*y = y_corn_min;
+	if (strat_db.wp_table[i][j].type != WP_TYPE_CORN)
+		return NULL;
 
-	return strat_db.corn_table[idx];
+	d = xy_norm(*xp, *yp, x, y);
+
+	if (d > CORN_MARGIN)
+		return NULL;
+
+	*xp = x;
+	*yp = y;
+
+	return &strat_db.wp_table[i][j];
 }
 
 /* return true if 'idx' is in group */
@@ -286,10 +341,10 @@ void corn_set_color(struct waypoint_db *wp, uint8_t color)
 {
 	uint8_t symidx;
 
+	if (wp->corn.color != I2C_COB_UNKNOWN)
+		return;
 	wp->corn.color = color;
 	if (color == I2C_COB_UNKNOWN)
-		return;
-	if (wp->corn.color != I2C_COB_UNKNOWN)
 		return;
 	corn_deduct_other(wp->corn.idx, color);
 	symidx = corn_get_sym_idx(wp->corn.idx);
@@ -382,7 +437,7 @@ void strat_db_init(void)
 	int8_t idx;
 	int8_t i, j;
 
-	memset(&strat_db, 0, sizeof(strat_db));
+	memset(&strat_db.wp_table, 0, sizeof(strat_db.wp_table));
 
 	/* corn table */
 	for (i=0; i<CORN_NB; i++) {
@@ -409,10 +464,10 @@ void strat_db_init(void)
 			/* mark dangerous points */
 			if (i == 0 || i == (WAYPOINTS_NBX-1))
 				wp->dangerous = 1;
-			if ((i&1) == 0 && j == (WAYPOINTS_NBY-1))
+			if ((i & 1) == 0 && j == (WAYPOINTS_NBY-1))
 				wp->dangerous = 1;
 
-			/* too close of border, unreachable wp */
+			/* on border, unreachable wp */
 			if ((i & 1) == 1 && j == (WAYPOINTS_NBY-1)) {
 				wp->type = WP_TYPE_OBSTACLE;
 				continue;
@@ -437,8 +492,10 @@ void strat_db_init(void)
 			/* tomato */
 			idx = ijcoord_to_tomato_idx(i, j);
 			if (idx >= 0) {
+				printf("%d %d\n", i, j);
 				wp->type = WP_TYPE_TOMATO;
 				wp->present = 1;
+				wp->tomato.idx = idx;
 				continue;
 			}
 		}

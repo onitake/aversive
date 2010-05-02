@@ -20,21 +20,28 @@
  *  Olivier MATZ <zer0@droids-corp.org>
  */
 
-#define LINE_UP     0
-#define LINE_DOWN   1
-#define LINE_R_UP   2
-#define LINE_L_DOWN 3
-#define LINE_L_UP   4
-#define LINE_R_DOWN 5
+#ifndef _STRAT_AVOID_H_
+#define _STRAT_AVOID_H_
+#define MAX_CIRCUIT_WPLINE 15
 
-struct line_2pts {
-	point_t p1;
-	point_t p2;
+struct wp_coord {
+	uint8_t i:4;
+	uint8_t j:3;
+	uint8_t end:1;
 };
 
-int8_t corn_is_near(uint8_t *corn_idx, uint8_t side);
+struct wp_line {
+	uint8_t line_num:4;
+	uint8_t dir:4;
+};
 
-void num2line(struct line_2pts *l, uint8_t dir, uint8_t num);
+int8_t browse_circuits(uint8_t i, uint8_t j,
+		       const struct wp_coord **selected_circuit,
+		       int8_t *selected_face);
 
-uint8_t line2line(uint8_t num1, uint8_t dir1,
-		  uint8_t num2, uint8_t dir2);
+/* harvest on the best circuit */
+uint8_t strat_harvest_circuit(void);
+
+void test_strat_avoid(void);
+
+#endif

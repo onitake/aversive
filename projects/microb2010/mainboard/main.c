@@ -68,7 +68,9 @@
 #include "cs.h"
 #include "strat_base.h"
 #include "strat_db.h"
+#include "strat_avoid.h"
 #include "i2c_protocol.h"
+
 
 /* 0 means "programmed"
  * ---- with 16 Mhz quartz
@@ -297,6 +299,7 @@ int main(void)
  	gen.logs[0] = E_USER_STRAT;
  	gen.log_level = 5;
 	strat_db_init();
+	test_strat_avoid();
 
 	/* strat-related event */
 	scheduler_add_periodical_event_priority(strat_event, NULL,

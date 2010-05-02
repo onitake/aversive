@@ -61,6 +61,7 @@
 #include "strat_base.h"
 #include "strat_corn.h"
 #include "strat_utils.h"
+#include "strat_avoid.h"
 #include "sensor.h"
 #include "actuator.h"
 
@@ -85,7 +86,7 @@ void strat_preinit(void)
 	mainboard.flags =  DO_ENCODERS | DO_CS | DO_RS |
 		DO_POS | DO_BD | DO_POWER;
 
-	//i2c_cobboard_mode_init();
+	strat_db_init();
 	strat_conf_dump(__FUNCTION__);
 	strat_db_dump(__FUNCTION__);
 }
@@ -119,7 +120,6 @@ void strat_init(void)
 
 	/* we consider that the color is correctly set */
 	strat_running = 1;
-	strat_db_init();
 	strat_set_speed(SPEED_DIST_FAST, SPEED_ANGLE_FAST);
 	time_reset();
 	interrupt_traj_reset();
@@ -165,6 +165,7 @@ void strat_event(void *dummy)
 	if (strat_running == 0)
 		return;
 
+	/* read sensors from ballboard */
 	IRQ_LOCK(flags);
 	lcob = ballboard.lcob;
 	ballboard.lcob = I2C_COB_NONE;
@@ -172,6 +173,12 @@ void strat_event(void *dummy)
 	ballboard.rcob = I2C_COB_NONE;
 	IRQ_UNLOCK(flags);
 
+/* 	if (lcob != I2C_COB_NONE) */
+/* 		DEBUG(E_USER_STRAT, "XXX lcob %s", */
+/* 		      lcob == I2C_COB_WHITE ? "white" : "black"); */
+/* 	if (rcob != I2C_COB_NONE) */
+/* 		DEBUG(E_USER_STRAT, "XXX rcob %s", */
+/* 		      rcob == I2C_COB_WHITE ? "white" : "black"); */
 	/* XXX take opponent position into account */
 
 #ifdef HOST_VERSION
@@ -202,31 +209,47 @@ void strat_event(void *dummy)
 	}
 
 	/* control the cobboard mode for left spickle */
-	if (get_cob_count() >= 5 || want_pack) {
-		if (strat_db.corn_table[lidx]->corn.color != I2C_COB_WHITE &&
-		    strat_db.corn_table[lidx]->corn.color != I2C_COB_BLACK)
-			i2c_cobboard_pack(I2C_LEFT_SIDE);
+	if (lcob_near) {
+		if (get_cob_count() >= 5 || want_pack) {
+			if (strat_db.corn_table[lidx]->corn.color != I2C_COB_WHITE &&
+			    strat_db.corn_table[lidx]->corn.color != I2C_COB_BLACK)
+				i2c_cobboard_pack(I2C_LEFT_SIDE);
+		}
+		else {
+			if (strat_db.corn_table[lidx]->corn.color == I2C_COB_WHITE)
+				i2c_cobboard_autoharvest(I2C_LEFT_SIDE);
+			else if (strat_db.corn_table[lidx]->corn.color == I2C_COB_BLACK)
+				i2c_cobboard_deploy_nomove(I2C_LEFT_SIDE);
+			else
+				i2c_cobboard_deploy(I2C_LEFT_SIDE);
+		}
 	}
 	else {
-		if (strat_db.corn_table[lidx]->corn.color == I2C_COB_WHITE)
-			i2c_cobboard_autoharvest(I2C_LEFT_SIDE);
-		else if (strat_db.corn_table[lidx]->corn.color == I2C_COB_BLACK)
-			i2c_cobboard_deploy_nomove(I2C_LEFT_SIDE);
+		if (get_cob_count() >= 5 || want_pack)
+			i2c_cobboard_pack(I2C_LEFT_SIDE);
 		else
 			i2c_cobboard_deploy(I2C_LEFT_SIDE);
 	}
 
 	/* control the cobboard mode for right spickle */
-	if (get_cob_count() >= 5 || want_pack) {
-		if (strat_db.corn_table[lidx]->corn.color != I2C_COB_WHITE &&
-		    strat_db.corn_table[lidx]->corn.color != I2C_COB_BLACK)
-			i2c_cobboard_pack(I2C_RIGHT_SIDE);
+	if (rcob_near) {
+		if (get_cob_count() >= 5 || want_pack) {
+			if (strat_db.corn_table[ridx]->corn.color != I2C_COB_WHITE &&
+			    strat_db.corn_table[ridx]->corn.color != I2C_COB_BLACK)
+				i2c_cobboard_pack(I2C_RIGHT_SIDE);
+		}
+		else {
+			if (strat_db.corn_table[ridx]->corn.color == I2C_COB_WHITE)
+				i2c_cobboard_autoharvest(I2C_RIGHT_SIDE);
+			else if (strat_db.corn_table[ridx]->corn.color == I2C_COB_BLACK)
+				i2c_cobboard_deploy_nomove(I2C_RIGHT_SIDE);
+			else
+				i2c_cobboard_deploy(I2C_RIGHT_SIDE);
+		}
 	}
 	else {
-		if (strat_db.corn_table[lidx]->corn.color == I2C_COB_WHITE)
-			i2c_cobboard_autoharvest(I2C_RIGHT_SIDE);
-		else if (strat_db.corn_table[lidx]->corn.color == I2C_COB_BLACK)
-			i2c_cobboard_deploy_nomove(I2C_RIGHT_SIDE);
+		if (get_cob_count() >= 5 || want_pack)
+			i2c_cobboard_pack(I2C_RIGHT_SIDE);
 		else
 			i2c_cobboard_deploy(I2C_RIGHT_SIDE);
 	}
@@ -248,32 +271,37 @@ static uint8_t strat_eject(void)
 	//XXX return vals
 	strat_set_speed(600, SPEED_ANGLE_SLOW);
 
+	want_pack = 1;
 	trajectory_goto_xy_abs(&mainboard.traj, 2625, COLOR_Y(1847));
 	err = wait_traj_end(TRAJ_FLAGS_NO_NEAR);
+
+	/* ball ejection */
+	i2c_ballboard_set_mode(I2C_BALLBOARD_MODE_EJECT);
 	trajectory_a_abs(&mainboard.traj, COLOR_A(70));
 	err = wait_traj_end(TRAJ_FLAGS_NO_NEAR);
 
 	DEBUG(E_USER_STRAT, "%s():%d", __FUNCTION__, __LINE__);
 	strat_hardstop();
-
-	/* ball ejection */
-	trajectory_a_abs(&mainboard.traj, COLOR_A(90));
-	i2c_ballboard_set_mode(I2C_BALLBOARD_MODE_EJECT);
 	time_wait_ms(2000);
 
+
 	/* half turn */
+	strat_event_disable();
 	i2c_cobboard_pack(I2C_LEFT_SIDE);
 	i2c_cobboard_pack(I2C_RIGHT_SIDE);
 	trajectory_a_rel(&mainboard.traj, COLOR_A(180));
 	err = wait_traj_end(END_INTR|END_TRAJ);
 
 	/* cob ejection */
-	trajectory_d_rel(&mainboard.traj, -100);
+	trajectory_d_rel(&mainboard.traj, -70);
 	err = wait_traj_end(END_INTR|END_TRAJ);
-	strat_running = ;
+
 	i2c_cobboard_set_mode(I2C_COBBOARD_MODE_EJECT);
+	strat_db_dump(__FUNCTION__);
 	time_wait_ms(2000);
 
+	strat_event_enable();
+	want_pack = 0;
 	return 0;
 }
 
@@ -301,11 +329,11 @@ static uint8_t strat_beginning(void)
 
 #if 1
  l1:
-	DEBUG(E_USER_STRAT, "%s():%d", __FUNCTION__, __LINE__);
+	DEBUG(E_USER_STRAT, "%s():%d count=%d", __FUNCTION__, __LINE__, get_cob_count());
 	if (get_cob_count() >= 5)
 		strat_set_speed(600, SPEED_ANGLE_FAST);
 
-	err = line2line(LINE_UP, 0, LINE_R_DOWN, 2);
+	err = line2line(0, LINE_UP, 2, LINE_R_DOWN);
 	if (!TRAJ_SUCCESS(err)) {
 		strat_hardstop();
 		time_wait_ms(2000);
@@ -313,11 +341,11 @@ static uint8_t strat_beginning(void)
 	}
 
  l2:
-	DEBUG(E_USER_STRAT, "%s():%d", __FUNCTION__, __LINE__);
+	DEBUG(E_USER_STRAT, "%s():%d count=%d", __FUNCTION__, __LINE__, get_cob_count());
 	if (get_cob_count() >= 5)
 		strat_set_speed(600, SPEED_ANGLE_FAST);
 
-	err = line2line(LINE_R_DOWN, 2, LINE_R_UP, 2);
+	err = line2line(2, LINE_R_DOWN, 2, LINE_R_UP);
 	if (!TRAJ_SUCCESS(err)) {
 		strat_hardstop();
 		time_wait_ms(2000);
@@ -325,16 +353,22 @@ static uint8_t strat_beginning(void)
 	}
 
 #else
-	strat_set_speed(600, SPEED_ANGLE_FAST);
-	err = line2line(LINE_UP, 0, LINE_R_DOWN, 3);
-	err = line2line(LINE_R_DOWN, 3, LINE_R_UP, 2);
-	err = line2line(LINE_R_UP, 2, LINE_R_DOWN, 2);
-	err = line2line(LINE_R_DOWN, 2, LINE_R_UP, 3);
-	err = line2line(LINE_R_UP, 3, LINE_UP, 5);
-	err = line2line(LINE_UP, 5, LINE_L_DOWN, 2);
-	err = line2line(LINE_L_DOWN, 2, LINE_L_UP, 1);
-	err = line2line(LINE_L_UP, 1, LINE_L_DOWN, 1);
-	err = line2line(LINE_L_DOWN, 1, LINE_DOWN, 0);
+/* 	strat_set_speed(600, SPEED_ANGLE_FAST); */
+/* 	err = line2line(0, LINE_UP, 3, LINE_R_DOWN); */
+/* 	err = line2line(3, LINE_R_DOWN, 2, LINE_R_UP); */
+/* 	err = line2line(2, LINE_R_UP, 2, LINE_R_DOWN); */
+/* 	err = line2line(2, LINE_R_DOWN, 3, LINE_R_UP); */
+/* 	err = line2line(3, LINE_R_UP, 5, LINE_UP); */
+/* 	err = line2line(5, LINE_UP, 2, LINE_L_DOWN); */
+/* 	err = line2line(2, LINE_L_DOWN, 1, LINE_L_UP); */
+/* 	err = line2line(1, LINE_L_UP, 1, LINE_L_DOWN); */
+/* 	err = line2line(1, LINE_L_DOWN, 0, LINE_DOWN); */
+
+	strat_set_speed(300, SPEED_ANGLE_FAST);
+	err = line2line(0, LINE_UP, 0, LINE_R_UP);
+	err = line2line(0, LINE_R_UP, 1, LINE_DOWN);
+	err = line2line(1, LINE_DOWN, 1, LINE_L_DOWN);
+	err = line2line(1, LINE_L_DOWN, 0, LINE_DOWN);
 	wait_ms(500);
 	strat_hardstop();
 	return END_TRAJ;
@@ -344,12 +378,13 @@ static uint8_t strat_beginning(void)
 
 	strat_set_speed(250, SPEED_ANGLE_FAST);
 
+#if 0
  l4:
-	DEBUG(E_USER_STRAT, "%s():%d", __FUNCTION__, __LINE__);
+	DEBUG(E_USER_STRAT, "%s():%d count=%d", __FUNCTION__, __LINE__, get_cob_count());
 	if (get_cob_count() >= 5)
 		strat_set_speed(600, SPEED_ANGLE_FAST);
 
-	err = line2line(LINE_DOWN, 5, LINE_L_UP, 2);
+	err = line2line(5, LINE_DOWN, 2, LINE_L_UP);
 	if (!TRAJ_SUCCESS(err)) {
 		strat_hardstop();
 		time_wait_ms(2000);
@@ -357,20 +392,23 @@ static uint8_t strat_beginning(void)
 	}
 
  l5:
-	DEBUG(E_USER_STRAT, "%s():%d", __FUNCTION__, __LINE__);
+	DEBUG(E_USER_STRAT, "%s():%d count=%d", __FUNCTION__, __LINE__, get_cob_count());
 	if (get_cob_count() >= 5)
 		strat_set_speed(600, SPEED_ANGLE_FAST);
 
-	err = line2line(LINE_L_UP, 2, LINE_R_UP, 2);
+	err = line2line(2, LINE_L_UP, 2, LINE_R_UP);
 	if (!TRAJ_SUCCESS(err)) {
 		strat_hardstop();
 		time_wait_ms(2000);
 		goto l5;
 	}
 
-	DEBUG(E_USER_STRAT, "%s():%d", __FUNCTION__, __LINE__);
+	DEBUG(E_USER_STRAT, "%s():%d count=%d", __FUNCTION__, __LINE__, get_cob_count());
 	if (get_cob_count() >= 5)
 		strat_set_speed(600, SPEED_ANGLE_FAST);
+#else
+	strat_harvest_circuit();
+#endif
 
 	WAIT_COND_OR_TRAJ_END(distance_from_robot(2625, COLOR_Y(1847)) < 100,
 			      TRAJ_FLAGS_STD);

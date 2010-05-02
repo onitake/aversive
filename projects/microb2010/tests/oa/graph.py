@@ -166,6 +166,40 @@ def build_path(ptlist):
     x, y = zip(*poly.vertices)
     return x,y
 
+def nearest_corn(x, y):
+    OFFX=150
+    OFFY=222
+    STEPX=450
+    STEPY=500
+
+    x -= OFFX
+    x += STEPX/2
+    x /= STEPX
+
+    y -= OFFY
+    y += STEPY/2
+    if (x & 1) == 1:
+        y -= STEPY/2
+    y /= STEPY
+
+    i = (x * 2)
+    j = (y * 2) + (x & 1)
+    if i >= WAYPOINTS_NBX:
+        return None
+    if j >= WAYPOINTS_NBY:
+        return None
+
+    if (i & 1) == 0:
+        y = OFFSET_CORN_Y
+    else:
+        y = OFFSET_CORN_Y + STEP_CORN_Y/2
+    y += (j * STEP_CORN_Y)
+
+    x = OFFSET_CORN_X + (i * STEP_CORN_X)
+
+    return x, y
+
+
 def build_area(ax):
     # area
     x,y = build_poly([(0,0), (3000,0), (3000,2100), (0,2100)])
@@ -180,6 +214,8 @@ def build_area(ax):
     x,y = build_poly([(740,0), (740,500), (2260,500), (2260,0)])
     ax.plot(x, y, 'g--')
 
+    """
+    # courbes a 2 balles
     x,y = build_path([(375,0), (375,2050)])
     ax.plot(x, y, 'r-')
 
@@ -201,6 +237,21 @@ def build_area(ax):
                         cmap=matplotlib.cm.jet,
                         alpha=0.5, facecolor=(1.,0.,0.))
     ax.add_collection(p)
+
+    """
+
+    """
+    #courbes a 2 balles 50
+    for xx in range(0, 3000, 100):
+        print xx
+        for yy in range(0, 2100, 100):
+            pouet = nearest_corn(xx, yy)
+            if pouet == None:
+                continue
+            xxx, yyy = pouet
+            x,y = build_path([(xx,yy), (xxx,yyy)])
+            ax.plot(x, y, 'r-')
+    """
 
    # limit
     #x,y = build_poly([(250,250), (2750,250), (2750,1850), (250,1850)])
