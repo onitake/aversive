@@ -40,8 +40,9 @@ void scheduler_stats_dump(void)
 	printf_P(PSTR("del_event: %"PRIu32"\r\n"), sched_stats.del_event);
 	printf_P(PSTR("max_stacking: %"PRIu32"\r\n"), sched_stats.max_stacking);
 	for (i=0; i<SCHEDULER_NB_MAX_EVENT; i++) {
-		printf_P(PSTR("task_delayed[%d]: %"PRIu32"\r\n"), i,
-			 sched_stats.task_delayed[i]);
+		printf_P(PSTR("[%d] task_delayed: %"PRIu32", "
+			      "task_scheduled: %"PRIu32"\r\n"),
+			 i, sched_stats.task_delayed[i],sched_stats.task_scheduled[i]);
 	}
 #endif /* CONFIG_MODULE_SCHEDULER_STATS */
 }

@@ -1,6 +1,6 @@
-/*  
+/*
  *  Copyright Droids Corporation, Microb Technology, Eirbot (2005)
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -31,7 +31,7 @@ static volatile uint8_t priority_running=0;
 
 /** number of imbricated scheduler interruptions */
 static volatile uint8_t nb_stacking=0;
-	
+
 uint8_t scheduler_disable_save(void)
 {
 	uint8_t ret;
@@ -69,7 +69,7 @@ scheduler_interrupt(void)
 		SCHED_INC_STAT(max_stacking);
 		return;
 	}
-	
+
 	nb_stacking ++;
 	sei();
 
@@ -104,13 +104,13 @@ scheduler_interrupt(void)
 		/* decrement current time (we know it is >0 if it is
 		 * in SCHEDULER_EVENT_ACTIVE state */
 		g_tab_event[i].current_time --;
-		
+
 		/* don't need to schedule now */
 		if ( g_tab_event[i].current_time != 0 ) {
 			sei();
 			continue;
 		}
-		
+
 		/* time to schedule, but priority is too low,
 		 * delay it */
 		if (g_tab_event[i].priority <= priority_running) {
@@ -125,6 +125,7 @@ scheduler_interrupt(void)
 
 		/* schedule it */
 		g_tab_event[i].state = SCHEDULER_EVENT_SCHEDULED;
+		SCHED_INC_STAT2(task_scheduled, i);
 		sei();
 
 		/* insert it in the list (list is ordered).
@@ -147,7 +148,7 @@ scheduler_interrupt(void)
 		/* harder : find the good place in list */
 		SLIST_FOREACH(e, &event_list, next) {
 			next_e = SLIST_NEXT(e, next);
-			if (next_e == NULL || 
+			if (next_e == NULL ||
 			    g_tab_event[i].priority >= next_e->priority) {
 				SLIST_INSERT_AFTER(e, &g_tab_event[i], next);
 				break;
@@ -185,7 +186,7 @@ scheduler_interrupt(void)
 		if (e->state == SCHEDULER_EVENT_DELETING) {
 			e->state = SCHEDULER_EVENT_FREE;
 		}
-		
+
 		/* end of schedule, mark it as active */
 		if (e->state == SCHEDULER_EVENT_SCHEDULED) {
 			e->state = SCHEDULER_EVENT_ACTIVE;

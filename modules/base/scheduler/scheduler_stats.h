@@ -30,6 +30,7 @@ struct scheduler_stats {
 	uint32_t del_event;
 	uint32_t max_stacking;
 	uint32_t task_delayed[SCHEDULER_NB_MAX_EVENT];
+	uint32_t task_scheduled[SCHEDULER_NB_MAX_EVENT];
 };
 
 extern struct scheduler_stats sched_stats;
