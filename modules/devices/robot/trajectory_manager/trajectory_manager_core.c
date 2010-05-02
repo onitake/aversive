@@ -1055,7 +1055,8 @@ int8_t trajectory_clitoid(struct trajectory *traj,
 	if (calc_clitoid(traj, x, y, a_rad, alpha_deg, beta_deg, R_mm,
 			 Vd, traj->a_acc, d_inter_mm,
 			 &Aa, &Va, &remain) < 0) {
-		DEBUG(E_TRAJECTORY, "%s() calc_clitoid returned an error");
+		DEBUG(E_TRAJECTORY, "%s() calc_clitoid returned an error",
+		      __FUNCTION__);
 		return -1;
 	}
 
