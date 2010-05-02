@@ -80,6 +80,15 @@ int32_t encoders_right_cobroller_speed(void *number)
 }
 #endif
 
+#ifndef HOST_VERSION
+#define DEBUG_CPLD
+#endif
+
+#ifdef DEBUG_CPLD
+extern int16_t g_encoders_spi_previous[4];
+static int32_t ll_prev, rr_prev;
+#endif
+
 /* called every 5 ms */
 static void do_cs(void *dummy)
 {
@@ -89,10 +98,29 @@ static void do_cs(void *dummy)
 #ifdef HOST_VERSION
 	robotsim_update();
 #else
+#ifdef DEBUG_CPLD
+	int32_t ll, rr;
+#endif
 	/* read encoders */
 	if (mainboard.flags & DO_ENCODERS) {
 		encoders_spi_manage(NULL);
 	}
+#ifdef DEBUG_CPLD
+	ll = encoders_spi_get_value(LEFT_ENCODER);
+	rr = encoders_spi_get_value(RIGHT_ENCODER);
+	if ((ll - ll_prev > 3000) || (ll - ll_prev < -3000) ||
+	    (rr - rr_prev > 3000) || (rr - rr_prev < -3000)) {
+		printf_P(PSTR("/ %d %d %d %d\r\n"),
+			 g_encoders_spi_previous[0],
+			 g_encoders_spi_previous[1],
+			 g_encoders_spi_previous[2],
+			 g_encoders_spi_previous[3]);
+		BRAKE_ON();
+		while (1);
+	}
+	ll_prev = ll;
+	rr_prev = rr;
+#endif
 #endif
 
 	/* robot system, conversion to angle,distance */
@@ -337,8 +365,13 @@ void microb_cs_init(void)
 	mainboard.left_cobroller.on = 1;
 	mainboard.right_cobroller.on = 1;
 
+#ifdef DEBUG_CPLD
+	ll_prev = encoders_spi_get_value(LEFT_ENCODER);
+	rr_prev = encoders_spi_get_value(RIGHT_ENCODER);
+#endif
 
 	scheduler_add_periodical_event_priority(do_cs, NULL,
 						5000L / SCHEDULER_UNIT,
 						CS_PRIO);
+
 }
