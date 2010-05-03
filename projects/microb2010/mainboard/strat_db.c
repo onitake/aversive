@@ -173,10 +173,14 @@ int8_t xycoord_to_ijcoord(int16_t *xp, int16_t *yp, uint8_t *ip, uint8_t *jp)
 	if ((i & 1) == 1) {
 		j = y / STEP_CORN_Y;
 	}
+	else if ((i & 3) == 0) {
+		j = y / (STEP_CORN_Y*2);
+		j = j*2 + 1;
+	}
 	else {
-		y += (STEP_CORN_Y/2);
-		y /= (STEP_CORN_Y*2);
-		j = (y * 2) + 1;
+		y += (STEP_CORN_Y);
+		j = y / (STEP_CORN_Y*2);
+		j = j*2;
 	}
 
 	if (ijcoord_to_xycoord(i, j, &x, &y) < 0)
@@ -193,7 +197,6 @@ int8_t xycoord_to_ijcoord(int16_t *xp, int16_t *yp, uint8_t *ip, uint8_t *jp)
 
 	return 0;
 }
-
 
 /******** CORN */
 

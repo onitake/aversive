@@ -32,6 +32,7 @@
 #define I2C_RIGHT_SIDE   1
 #define I2C_AUTO_SIDE    2
 #define I2C_CENTER_SIDE  3
+#define I2C_NO_SIDE      4
 
 #define I2C_COLOR_YELLOW 0
 #define I2C_COLOR_BLUE   1

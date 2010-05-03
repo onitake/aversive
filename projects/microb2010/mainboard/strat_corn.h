@@ -32,9 +32,10 @@ struct line_2pts {
 	point_t p2;
 };
 
+/* there is a corn near */
 int8_t corn_is_near(uint8_t *corn_idx, uint8_t side);
 
-void num2line(struct line_2pts *l, uint8_t dir, uint8_t num);
-
-uint8_t line2line(uint8_t num1, uint8_t dir1,
-		  uint8_t num2, uint8_t dir2);
+/* go from line num1,dir1 to line num2,dir2. Uses trjectory flags
+ * specified as argument and return END_xxx condition */
+uint8_t line2line(uint8_t num1, uint8_t dir1, uint8_t num2,
+		  uint8_t dir2, uint8_t flags);

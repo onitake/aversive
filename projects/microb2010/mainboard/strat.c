@@ -188,8 +188,6 @@ void strat_event(void *dummy)
 		cobboard.cob_count = 5;
 	if (time_get_s() == 16)
 		cobboard.cob_count = 0;
-	if (time_get_s() == 25)
-		cobboard.cob_count = 5;
 #endif
 
 	/* detect cob on left side */
@@ -280,7 +278,7 @@ static uint8_t strat_eject(void)
 				    TRAJ_FLAGS_NO_NEAR);
 	if (err == 0) {
 		want_pack = 1;
-		strat_set_speed(600, SPEED_ANGLE_SLOW);
+		strat_set_speed(SPEED_CLITOID_FAST, SPEED_ANGLE_SLOW);
 		err = wait_traj_end(TRAJ_FLAGS_NO_NEAR);
 	}
 
@@ -328,14 +326,11 @@ static uint8_t strat_beginning(void)
 				    TRAJ_FLAGS_STD);
 
 	strat_set_acc(ACC_DIST, ACC_ANGLE);
-	strat_set_speed(250, SPEED_ANGLE_SLOW);
+	strat_set_speed(SPEED_CLITOID_SLOW, SPEED_ANGLE_SLOW);
 
  l1:
 	DEBUG(E_USER_STRAT, "%s():%d count=%d", __FUNCTION__, __LINE__, get_cob_count());
-	if (get_cob_count() >= 5)
-		strat_set_speed(600, SPEED_ANGLE_FAST);
-
-	err = line2line(0, LINE_UP, 2, LINE_R_DOWN);
+	err = line2line(0, LINE_UP, 2, LINE_R_DOWN, TRAJ_FLAGS_NO_NEAR);
 	if (!TRAJ_SUCCESS(err)) {
 		strat_hardstop();
 		time_wait_ms(2000);
@@ -344,10 +339,7 @@ static uint8_t strat_beginning(void)
 
  l2:
 	DEBUG(E_USER_STRAT, "%s():%d count=%d", __FUNCTION__, __LINE__, get_cob_count());
-	if (get_cob_count() >= 5)
-		strat_set_speed(600, SPEED_ANGLE_FAST);
-
-	err = line2line(2, LINE_R_DOWN, 2, LINE_R_UP);
+	err = line2line(2, LINE_R_DOWN, 2, LINE_R_UP, TRAJ_FLAGS_NO_NEAR);
 	if (!TRAJ_SUCCESS(err)) {
 		strat_hardstop();
 		time_wait_ms(2000);
@@ -357,7 +349,7 @@ static uint8_t strat_beginning(void)
 	strat_eject();
 
 	while (1) {
-		strat_set_speed(250, SPEED_ANGLE_SLOW);
+		strat_set_speed(SPEED_CLITOID_SLOW, SPEED_ANGLE_SLOW);
 		strat_harvest_circuit();
 		strat_eject();
 	}

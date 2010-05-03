@@ -130,6 +130,7 @@ static inline uint8_t opposite_position(uint8_t pos)
 	return pos;
 }
 
+#if 0
 static uint8_t cc;
 uint8_t xget_cob_count(void)
 {
@@ -147,35 +148,38 @@ uint8_t xtime_get_s(void)
 {
 	return ts;
 }
+#else
+#define xget_cob_count() get_cob_count()
+#define xget_ball_count() get_ball_count()
+#define xtime_get_s() time_get_s()
+#endif
 
-
-/* get the neighbour of the point at specified position, return -1 if
+/* get the neighbour of the point at specified dir, return -1 if
  * there is no neighbor */
-static int8_t get_neigh(uint8_t i, uint8_t j,
-			uint8_t *ni, uint8_t *nj,
-			uint8_t position)
+int8_t wp_get_neigh(uint8_t i, uint8_t j, uint8_t *ni, uint8_t *nj,
+		 uint8_t dir)
 {
-	switch (position) {
+	switch (dir) {
 	case LINE_UP:
 		j++;
 		break;
 	case LINE_R_UP:
-		if (!(i & 1)) j++;
+		if ((i & 1)) j++;
 		i++;
 		break;
 	case LINE_R_DOWN:
-		if (i & 1) j--;
+		if (!(i & 1)) j--;
 		i++;
 		break;
 	case LINE_DOWN:
 		j--;
 		break;
 	case LINE_L_DOWN:
-		if (i & 1) j--;
+		if (!(i & 1)) j--;
 		i--;
 		break;
 	case LINE_L_UP:
-		if (!(i & 1)) j++;
+		if ((i & 1)) j++;
 		i--;
 		break;
 	default:
@@ -246,6 +250,40 @@ static uint8_t get_dir(uint8_t prev_i, uint8_t prev_j,
 
 	/* invalid value */
 	return 0xFF;
+}
+
+/* return true if a waypoint belongs to a line */
+uint8_t wp_belongs_to_line(uint8_t i, uint8_t j, uint8_t linenum, uint8_t dir)
+{
+	uint8_t ln;
+	ln = get_line_num(i, j, dir);
+	if (ln == linenum)
+		return 1;
+	return 0;
+}
+
+/* count the number of non-black corns which are neighbors of
+ * specified cob */
+uint8_t corn_count_neigh(uint8_t i, uint8_t j)
+{
+	uint8_t dir, n = 0;
+	uint8_t ni, nj;
+
+	for (dir = LINE_UP; dir <= LINE_R_DOWN; dir++) {
+		if (wp_get_neigh(i, j, &ni, &nj, dir) < 0)
+			continue;
+
+		//printf("i,j=%d,%d dir=%d, ni,nj=%d,%d\r\n",
+		//       i, j, dir, ni, nj);
+
+		/* is there a corn cob ? */
+		if (strat_db.wp_table[ni][nj].type == WP_TYPE_CORN &&
+		    strat_db.wp_table[ni][nj].present &&
+		    strat_db.wp_table[ni][nj].corn.color != I2C_COB_BLACK)
+			n ++;
+	}
+
+	return n;
 }
 
 
@@ -421,7 +459,7 @@ int8_t browse_one_circuit(const struct wp_coord *circuit,
 
 		/* browse all neighbours to see if there is cobs */
 		for (pos = LINE_UP; pos <= LINE_R_DOWN; pos++) {
-			if (get_neigh(i, j, &ni, &nj, pos) < 0)
+			if (wp_get_neigh(i, j, &ni, &nj, pos) < 0)
 				continue;
 
 			/* is there a corn cob ? */
@@ -522,16 +560,14 @@ uint8_t strat_harvest_circuit(void)
 	prev_dir = circuit_wpline[0].dir;
 	for (idx = 1; idx < len; idx ++) {
 	retry:
-		if (get_cob_count() >= 5)
-			strat_set_speed(600, SPEED_ANGLE_FAST);
-
 		linenum = circuit_wpline[idx].line_num;
 		dir = circuit_wpline[idx].dir;
 
 		/* XXX basic opponent management */
 		DEBUG(E_USER_STRAT, "%s(): line %d dir %d -> line %d dir %d",
 		      __FUNCTION__, prev_linenum, prev_dir, linenum, dir);
-		err = line2line(prev_linenum, prev_dir, linenum, dir);
+		err = line2line(prev_linenum, prev_dir, linenum, dir,
+				TRAJ_FLAGS_NO_NEAR);
 		if (!TRAJ_SUCCESS(err)) {
 			strat_hardstop();
 			time_wait_ms(2000);
@@ -547,6 +583,10 @@ uint8_t strat_harvest_circuit(void)
 
 void test_strat_avoid(void)
 {
+
+	//corn_count_neigh(1, 3);
+
+
 #if 0
 	uint8_t i, j;
 	const struct wp_coord *selected_circuit;

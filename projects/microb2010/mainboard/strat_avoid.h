@@ -42,6 +42,18 @@ int8_t browse_circuits(uint8_t i, uint8_t j,
 /* harvest on the best circuit */
 uint8_t strat_harvest_circuit(void);
 
+/* get the neighbour of the point at specified dir, return -1 if
+ * there is no neighbor */
+int8_t wp_get_neigh(uint8_t i, uint8_t j, uint8_t *ni, uint8_t *nj,
+		 uint8_t dir);
+
+/* count the number of non-black corns which are neighbors of
+ * specified cob */
+uint8_t corn_count_neigh(uint8_t i, uint8_t j);
+
+/* return true if a waypoint belongs to a line */
+uint8_t wp_belongs_to_line(uint8_t i, uint8_t j, uint8_t linenum, uint8_t dir);
+
 void test_strat_avoid(void);
 
 #endif

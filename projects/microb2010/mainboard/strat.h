@@ -142,6 +142,10 @@
 #define SPEED_DIST_VERY_SLOW 400.
 #define SPEED_ANGLE_VERY_SLOW 400.
 
+#define SPEED_CLITOID_SLOW 250.
+#define SPEED_CLITOID_FAST 500.
+
+
 /* strat infos structures */
 struct strat_conf {
 	uint8_t dump_enabled;
