@@ -262,7 +262,7 @@ int8_t get_path(const struct wp_coord *circuit,
 	int8_t skipfirst=0;
 	int8_t path_len = 0;
 
-	printf("face: %d\n", faceA);
+	printf_P(PSTR("face: %d\r\n"), faceA);
 	if ( !faceA && circuit->i == 11 && circuit->j == 6)
 		skipfirst=1;
 
@@ -341,7 +341,7 @@ int16_t get_score(uint32_t wcorn_retrieved, uint32_t ucorn_retrieved,
 		mask <<= 1UL;
 	}
 
-	printf("get score: cob %d \n", n);
+	printf_P(PSTR("get score: cob %d \r\n"), n);
 	/* score with tomato */
 	n = xget_ball_count();
 	mask = 1;
@@ -355,7 +355,7 @@ int16_t get_score(uint32_t wcorn_retrieved, uint32_t ucorn_retrieved,
 		mask <<= 1UL;
 	}
 
-	printf("get score: ball %d \n", n);
+	printf_P(PSTR("get score: ball %d \r\n"), n);
 	/* malus for long circuits */
 	score -= (len * 20);
 
@@ -481,7 +481,7 @@ static void dump_circuit_wp(struct wp_line *circuit_wpline, int8_t len)
 	if (len <= 0)
 		return;
 	for (i = 0; i < len; i ++) {
-		printf(PSTR("linenum %d dir %d\r\n"), circuit_wpline[i].line_num,
+		printf_P(PSTR("linenum %d dir %d\r\n"), circuit_wpline[i].line_num,
 		       circuit_wpline[i].dir);
 	}
 
@@ -547,6 +547,7 @@ uint8_t strat_harvest_circuit(void)
 
 void test_strat_avoid(void)
 {
+#if 0
 	uint8_t i, j;
 	const struct wp_coord *selected_circuit;
 	int8_t selected_face;
@@ -554,84 +555,84 @@ void test_strat_avoid(void)
 	int8_t ret;
 
 	i = 1; j = 1;
-	printf("========= i=%d, j=%d\r\n", i, j);
+	printf_P(PSTR("========= i=%d, j=%d\r\n"), i, j);
 
 	ts = 0; bc = 0; cc = 0;
-	printf("=== time=%"PRIu32", ball=%d, corn=%d\r\n", ts, bc, cc);
+	printf_P(PSTR("=== time=%"PRIu32", ball=%d, corn=%d\r\n"), ts, bc, cc);
 	browse_circuits(i, j, &selected_circuit, &selected_face);
 	ret = get_path(selected_circuit, i, j, selected_face, circuit_wpline);
 	dump_circuit_wp(circuit_wpline, ret);
 
 	ts = 0; bc = 3; cc = 0;
-	printf("=== time=%"PRIu32", ball=%d, corn=%d\r\n", ts, bc, cc);
+	printf_P(PSTR("=== time=%"PRIu32", ball=%d, corn=%d\r\n"), ts, bc, cc);
 	browse_circuits(i, j, &selected_circuit, &selected_face);
 	ret = get_path(selected_circuit, i, j, selected_face, circuit_wpline);
 	dump_circuit_wp(circuit_wpline, ret);
 
 	ts = 0; bc = 4; cc = 0;
-	printf("=== time=%"PRIu32", ball=%d, corn=%d\r\n", ts, bc, cc);
+	printf_P(PSTR("=== time=%"PRIu32", ball=%d, corn=%d\r\n"), ts, bc, cc);
 	browse_circuits(i, j, &selected_circuit, &selected_face);
 	ret = get_path(selected_circuit, i, j, selected_face, circuit_wpline);
 	dump_circuit_wp(circuit_wpline, ret);
 
 	ts = 0; bc = 3; cc = 5;
-	printf("=== time=%"PRIu32", ball=%d, corn=%d\r\n", ts, bc, cc);
+	printf_P(PSTR("=== time=%"PRIu32", ball=%d, corn=%d\r\n"), ts, bc, cc);
 	browse_circuits(i, j, &selected_circuit, &selected_face);
 	ret = get_path(selected_circuit, i, j, selected_face, circuit_wpline);
 	dump_circuit_wp(circuit_wpline, ret);
 
 	ts = 0; bc = 4; cc = 5;
-	printf("=== time=%"PRIu32", ball=%d, corn=%d\r\n", ts, bc, cc);
+	printf_P(PSTR("=== time=%"PRIu32", ball=%d, corn=%d\r\n"), ts, bc, cc);
 	browse_circuits(i, j, &selected_circuit, &selected_face);
 	ret = get_path(selected_circuit, i, j, selected_face, circuit_wpline);
 	dump_circuit_wp(circuit_wpline, ret);
 
 	ts = 80; bc = 0; cc = 0;
-	printf("=== time=%"PRIu32", ball=%d, corn=%d\r\n", ts, bc, cc);
+	printf_P(PSTR("=== time=%"PRIu32", ball=%d, corn=%d\r\n"), ts, bc, cc);
 	browse_circuits(i, j, &selected_circuit, &selected_face);
 	ret = get_path(selected_circuit, i, j, selected_face, circuit_wpline);
 	dump_circuit_wp(circuit_wpline, ret);
 
 	i = 4; j = 3;
-	printf("========= i=%d, j=%d\r\n", i, j);
+	printf_P(PSTR("========= i=%d, j=%d\r\n"), i, j);
 
 	ts = 0; bc = 0; cc = 0;
-	printf("=== time=%"PRIu32", ball=%d, corn=%d\r\n", ts, bc, cc);
+	printf_P(PSTR("=== time=%"PRIu32", ball=%d, corn=%d\r\n"), ts, bc, cc);
 	browse_circuits(i, j, &selected_circuit, &selected_face);
 	ret = get_path(selected_circuit, i, j, selected_face, circuit_wpline);
 	dump_circuit_wp(circuit_wpline, ret);
 
 	ts = 0; bc = 3; cc = 0;
-	printf("=== time=%"PRIu32", ball=%d, corn=%d\r\n", ts, bc, cc);
+	printf_P(PSTR("=== time=%"PRIu32", ball=%d, corn=%d\r\n"), ts, bc, cc);
 	browse_circuits(i, j, &selected_circuit, &selected_face);
 	ret = get_path(selected_circuit, i, j, selected_face, circuit_wpline);
 	dump_circuit_wp(circuit_wpline, ret);
 
 	ts = 80; bc = 0; cc = 0;
-	printf("=== time=%"PRIu32", ball=%d, corn=%d\r\n", ts, bc, cc);
+	printf_P(PSTR("=== time=%"PRIu32", ball=%d, corn=%d\r\n"), ts, bc, cc);
 	browse_circuits(i, j, &selected_circuit, &selected_face);
 	ret = get_path(selected_circuit, i, j, selected_face, circuit_wpline);
 	dump_circuit_wp(circuit_wpline, ret);
 
 	i = 11; j = 6;
-	printf("========= i=%d, j=%d\r\n", i, j);
+	printf_P(PSTR("========= i=%d, j=%d\r\n"), i, j);
 
 	ts = 0; bc = 0; cc = 0;
-	printf("=== time=%"PRIu32", ball=%d, corn=%d\r\n", ts, bc, cc);
+	printf_P(PSTR("=== time=%"PRIu32", ball=%d, corn=%d\r\n"), ts, bc, cc);
 	browse_circuits(i, j, &selected_circuit, &selected_face);
 	ret = get_path(selected_circuit, i, j, selected_face, circuit_wpline);
 	dump_circuit_wp(circuit_wpline, ret);
 
 	ts = 0; bc = 3; cc = 0;
-	printf("=== time=%"PRIu32", ball=%d, corn=%d\r\n", ts, bc, cc);
+	printf_P(PSTR("=== time=%"PRIu32", ball=%d, corn=%d\r\n"), ts, bc, cc);
 	browse_circuits(i, j, &selected_circuit, &selected_face);
 	ret = get_path(selected_circuit, i, j, selected_face, circuit_wpline);
 	dump_circuit_wp(circuit_wpline, ret);
 
 	ts = 80; bc = 0; cc = 0;
-	printf("=== time=%"PRIu32", ball=%d, corn=%d\r\n", ts, bc, cc);
+	printf_P(PSTR("=== time=%"PRIu32", ball=%d, corn=%d\r\n"), ts, bc, cc);
 	browse_circuits(i, j, &selected_circuit, &selected_face);
 	ret = get_path(selected_circuit, i, j, selected_face, circuit_wpline);
 	dump_circuit_wp(circuit_wpline, ret);
-
+#endif
 }

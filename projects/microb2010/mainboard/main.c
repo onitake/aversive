@@ -298,8 +298,6 @@ int main(void)
 	/* strat */
  	gen.logs[0] = E_USER_STRAT;
  	gen.log_level = 5;
-	strat_db_init();
-	test_strat_avoid();
 
 	/* strat-related event */
 	scheduler_add_periodical_event_priority(strat_event, NULL,
@@ -314,6 +312,9 @@ int main(void)
 #endif /* !HOST_VERSION */
 
 	sei();
+
+	strat_db_init();
+	test_strat_avoid();
 
 	printf_P(PSTR("\r\n"));
 	printf_P(PSTR("Respect et robustesse.\r\n"));

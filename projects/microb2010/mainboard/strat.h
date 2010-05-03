@@ -151,6 +151,8 @@ struct strat_conf {
 };
 
 extern struct strat_conf strat_conf;
+extern volatile uint8_t strat_lpack60;
+extern volatile uint8_t strat_rpack60;
 
 /* in strat.c */
 void strat_conf_dump(const char *caller);

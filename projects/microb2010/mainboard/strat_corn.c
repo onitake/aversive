@@ -98,39 +98,14 @@ int8_t corn_is_near(uint8_t *corn_idx, uint8_t side)
 }
 
 /*
- * - send the correct commands to the spickles
- * - return 1 if we need to stop (cobboard is stucked)
-*/
-static uint8_t handle_spickles(void)
+ * return true if clitoid started
+ */
+static uint8_t clitoid_started(void)
 {
-	return 0;
-#if 0
-	int8_t corn_idx;
-
-	if (!corn_is_near(&corn_idx, I2C_LEFT_SIDE))
-		i2c_cobboard_mode_deploy(I2C_LEFT_SIDE);
-	else {
-		if (corn_table[corn_idx] == TYPE_WHITE_CORN)
-			i2c_cobboard_mode_harvest(I2C_LEFT_SIDE);
-		else
-			i2c_cobboard_mode_pack(I2C_LEFT_SIDE);
-	}
-/* 	printf("%d %d\n", corn_idx, corn_table[corn_idx]); */
-/* 	time_wait_ms(100); */
-
-	if (!corn_is_near(&corn_idx, I2C_RIGHT_SIDE))
-		i2c_cobboard_mode_deploy(I2C_RIGHT_SIDE);
-	else {
-		if (corn_table[corn_idx] == TYPE_WHITE_CORN)
-			i2c_cobboard_mode_harvest(I2C_RIGHT_SIDE);
-		else
-			i2c_cobboard_mode_pack(I2C_RIGHT_SIDE);
-	}
-
-	return 0;
-#endif
+	return trajectory_get_state(&mainboard.traj) == RUNNING_CLITOID_CURVE;
 }
 
+/* XXX passer les flags de traj */
 uint8_t line2line(uint8_t num1, uint8_t dir1,
 		  uint8_t num2, uint8_t dir2)
 {
@@ -141,7 +116,6 @@ uint8_t line2line(uint8_t num1, uint8_t dir1,
 	line_t ll1, ll2;
 	point_t p;
 	uint8_t err;
-	uint16_t a_speed, d_speed;
 	int8_t ret;
 
 	/* convert to 2 points */
@@ -175,13 +149,15 @@ uint8_t line2line(uint8_t num1, uint8_t dir1,
 /* 	printf_P(PSTR("diff_a_deg=%2.2f\r\n"), diff_a_deg_abs); */
 /* 	printf_P(PSTR("inter=%2.2f,%2.2f\r\n"), p.x, p.y); */
 
+	/* small angle, 60 deg */
 	if (diff_a_deg_abs < 70.) {
-		radius = 200;
+		radius = 150;
 		if (diff_a_deg > 0)
-			beta_deg = 40;
+			beta_deg = 0;
 		else
-			beta_deg = -40;
+			beta_deg = 0;
 	}
+	/* double 90 deg for half turn -- not used */
 	else if (diff_a_deg_abs < 100.) {
 		radius = 100;
 		if (diff_a_deg > 0)
@@ -189,12 +165,13 @@ uint8_t line2line(uint8_t num1, uint8_t dir1,
 		else
 			beta_deg = -40;
 	}
+	/* hard turn, 120 deg */
 	else {
-		radius = 120;
+		radius = 75;
 		if (diff_a_deg > 0)
-			beta_deg = 60;
+			beta_deg = 0;
 		else
-			beta_deg = -60;
+			beta_deg = 0;
 	}
 
 	/* XXX check return value !! */
@@ -205,22 +182,24 @@ uint8_t line2line(uint8_t num1, uint8_t dir1,
 	if (ret < 0)
 		DEBUG(E_USER_STRAT, "clitoid failed");
 
-	/* disabled */
-	if (0) {
-		err = 0;
-		while (err == 0) {
-			err = WAIT_COND_OR_TRAJ_END(handle_spickles(), 0xFF);
-			if (err == 0) {
-				/* cobboard is stucked */
-				trajectory_hardstop(&mainboard.traj);
-				return err; /* XXX do something */
-			}
-			err = test_traj_end(0xFF);
-		}
-	}
+	/* XXX what to do if cobboard is stucked */
 
-	err = WAIT_COND_OR_TRAJ_END(get_cob_count() == 5, 0xFF);
-	strat_get_speed(&d_speed, &a_speed);
+	err = WAIT_COND_OR_TRAJ_END(clitoid_started(), 0xFF);
+	DEBUG(E_USER_STRAT, "clitoid started err=%d diff_a_deg_abs=%2.2f diff_a_deg=%2.2f",
+	      err, diff_a_deg_abs, diff_a_deg);
+
+	/* when clitoid starts and angle is 60 deg, pack external
+	 * spickle */
+	if (diff_a_deg_abs < 70. && err == 0) {
+		if (diff_a_deg > 0)
+			strat_rpack60 = 1;
+		else
+			strat_lpack60 = 1;
+	}
+	if (err == 0)
+		err = wait_traj_end(0xFF);
+
+	DEBUG(E_USER_STRAT, "clitoid finished");
 
 	/* XXX 600 -> cste */
 	/* XXX does not work, do better */
@@ -228,8 +207,8 @@ uint8_t line2line(uint8_t num1, uint8_t dir1,
 /* 	    mainboard.traj.state == RUNNING_CLITOID_LINE) */
 /* 		strat_set_speed(600, SPEED_ANGLE_FAST); */
 
-	err = wait_traj_end(0xFF);
-
+	strat_rpack60 = 0;
+	strat_lpack60 = 0;
 	return err;
 }
 

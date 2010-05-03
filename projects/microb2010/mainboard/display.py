@@ -278,12 +278,14 @@ def set_robot():
     robot.axis = axis
     robot.size = (250, 320, ROBOT_HEIGHT)
 
+    robot_lspickle = 2 # XXX
     lspickle.pos = (tmp_x + (robot_lspickle*60) * math.cos((tmp_a+90)*math.pi/180),
                     tmp_y + (robot_lspickle*60) * math.sin((tmp_a+90)*math.pi/180),
                     ROBOT_HEIGHT/2)
     lspickle.axis = axis
     lspickle.size = (20, 320, 5)
 
+    robot_rspickle = 2 # XXX
     rspickle.pos = (tmp_x + (robot_rspickle*60) * math.cos((tmp_a-90)*math.pi/180),
                     tmp_y + (robot_rspickle*60) * math.sin((tmp_a-90)*math.pi/180),
                     ROBOT_HEIGHT/2)

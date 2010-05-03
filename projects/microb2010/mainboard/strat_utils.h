@@ -31,7 +31,7 @@ struct xy_point {
 	({								\
 		uint8_t __err = 0;					\
 		while ( (! (cond)) && (__err == 0)) {			\
-			__err = test_traj_end(TRAJ_FLAGS_NO_NEAR);	\
+			__err = test_traj_end(mask);			\
 		}							\
 		__err;							\
 	})								\
