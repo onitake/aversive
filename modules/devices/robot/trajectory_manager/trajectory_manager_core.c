@@ -318,8 +318,12 @@ uint8_t trajectory_distance_finished(struct trajectory *traj)
  * distance. */
 uint8_t trajectory_finished(struct trajectory *traj)
 {
-	return trajectory_angle_finished(traj) &&
+	uint8_t flags, ret;
+	IRQ_LOCK(flags);
+	ret = trajectory_angle_finished(traj) &&
 		trajectory_distance_finished(traj);
+	IRQ_UNLOCK(flags);
+	return ret;
 }
 
 /** return true if traj is nearly finished */

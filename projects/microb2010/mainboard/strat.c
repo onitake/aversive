@@ -320,13 +320,6 @@ static uint8_t strat_beginning(void)
 	uint8_t err;
 
 	strat_set_acc(ACC_DIST, ACC_ANGLE);
-#ifdef HOST_VERSION
-	strat_set_speed(600, SPEED_ANGLE_FAST);
-#else
-	/* 250 */
-	strat_set_speed(250, SPEED_ANGLE_FAST);
-#endif
-
 	strat_set_speed(600, 60); /* OK */
 	//strat_set_speed(250, 28); /* OK */
 
@@ -364,7 +357,7 @@ static uint8_t strat_beginning(void)
 	strat_eject();
 
 	while (1) {
-		strat_set_speed(250, SPEED_ANGLE_FAST);
+		strat_set_speed(250, SPEED_ANGLE_SLOW);
 		strat_harvest_circuit();
 		strat_eject();
 	}
