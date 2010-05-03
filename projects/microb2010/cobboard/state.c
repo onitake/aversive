@@ -338,12 +338,10 @@ void state_machine(void)
 		/* harvest */
 		if (cob_count < 5) {
 			if (state_spicklemode_deployed(I2C_LEFT_SIDE) &&
-			    state_spicklemode_autoharvest(I2C_LEFT_SIDE) &&
-			    !state_spicklemode_nomove(I2C_LEFT_SIDE))
+			    state_spicklemode_autoharvest(I2C_LEFT_SIDE))
 				state_do_harvest(I2C_LEFT_SIDE);
 			if (state_spicklemode_deployed(I2C_RIGHT_SIDE) &&
-			    state_spicklemode_autoharvest(I2C_RIGHT_SIDE) &&
-			    !state_spicklemode_nomove(I2C_RIGHT_SIDE))
+			    state_spicklemode_autoharvest(I2C_RIGHT_SIDE))
 				state_do_harvest(I2C_RIGHT_SIDE);
 		}
 
