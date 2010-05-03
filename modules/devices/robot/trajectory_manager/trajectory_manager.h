@@ -149,6 +149,11 @@ void trajectory_set_windows(struct trajectory *traj, double d_win,
  */
 void trajectory_set_circle_coef(struct trajectory *traj, double coef);
 
+/**
+ * return trajectory state
+ */
+enum trajectory_state trajectory_get_state(struct trajectory *traj);
+
 /** return true if the position consign is equal to the filtered
  * position consign (after quadramp filter), for angle and
  * distance. */

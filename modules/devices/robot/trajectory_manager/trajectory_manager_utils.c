@@ -155,6 +155,11 @@ uint8_t is_robot_in_angle_window(struct trajectory *traj, double a_win_rad)
 	return ABS(a) < a_win_rad;
 }
 
+enum trajectory_state trajectory_get_state(struct trajectory *traj)
+{
+	return traj->state;
+}
+
 /* distance unit conversions */
 
 double pos_mm2imp(struct trajectory *traj, double pos)
