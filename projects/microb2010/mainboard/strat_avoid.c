@@ -88,6 +88,171 @@ const struct wp_coord butterfly_tab[] = {
 	{ .i = 8, .j = 5, },
 	{ .i = 7, .j = 4, },
 	{ .i = 6, .j = 4, },
+	{ .i = 5, .j = 3, },
+	{ .i = 4, .j = 4, },
+	{ .i = 3, .j = 2, },
+	{ .i = 2, .j = 2, },
+	{ .i = 1, .j = 1, },
+	{ .i = 1, .j = 2, },
+	{ .i = 1, .j = 3, },
+	{ .i = 1, .j = 4, },
+	{ .i = 1, .j = 5, },
+	{ .i = 1, .j = 6, },
+	{ .i = 2, .j = 6, },
+	{ .i = 3, .j = 5, },
+	{ .i = 4, .j = 5, },
+	{ .i = 5, .j = 4, },
+	{ .i = 6, .j = 4, },
+	{ .i = 7, .j = 3, },
+	{ .i = 8, .j = 3, },
+	{ .i = 9, .j = 2, },
+	{ .i = 10, .j = 2, },
+	{ .i = 11, .j = 1, },
+	{ .i = 11, .j = 2, },
+	{ .i = 11, .j = 3, },
+	{ .i = 11, .j = 4, },
+	{ .i = 11, .j = 5, },
+	{ .i = 11, .j = 6, },
+};
+
+const struct circuit butterfly_circuit = {
+	.name = "butterfly",
+	.len = sizeof(butterfly_tab)/sizeof(struct wp_coord),
+	.path = butterfly_tab,
+};
+
+const struct wp_coord losange_tab[] = {
+	{ .i = 11, .j = 6, },
+	{ .i = 10, .j = 6, },
+	{ .i = 9, .j = 5, },
+	{ .i = 9, .j = 4, },
+	{ .i = 9, .j = 3, },
+	{ .i = 10, .j = 4, },
+	{ .i = 11, .j = 4, },
+	{ .i = 11, .j = 5, },
+	{ .i = 11, .j = 6, },
+};
+
+const struct circuit losange_circuit = {
+	.name = "losange",
+	.len = sizeof(losange_tab)/sizeof(struct wp_coord),
+	.path = losange_tab,
+};
+
+const struct wp_coord triangle_tab[] = {
+	{ .i = 11, .j = 6, },
+	{ .i = 10, .j = 6, },
+	{ .i = 9, .j = 5, },
+	{ .i = 8, .j = 5, },
+	{ .i = 7, .j = 4, },
+	{ .i = 6, .j = 4, },
+	{ .i = 7, .j = 3, },
+	{ .i = 8, .j = 3, },
+	{ .i = 9, .j = 2, },
+	{ .i = 10, .j = 2, },
+	{ .i = 11, .j = 1, },
+	{ .i = 11, .j = 2, },
+	{ .i = 11, .j = 3, },
+	{ .i = 11, .j = 4, },
+	{ .i = 11, .j = 5, },
+	{ .i = 11, .j = 6, },
+};
+
+const struct circuit triangle_circuit = {
+	.name = "triangle",
+	.len = sizeof(triangle_tab)/sizeof(struct wp_coord),
+	.path = triangle_tab,
+};
+
+const struct wp_coord answer_d_tab[] = {
+	{ .i = 11, .j = 6, },
+	{ .i = 11, .j = 5, },
+	{ .i = 11, .j = 4, },
+	{ .i = 11, .j = 3, },
+	{ .i = 11, .j = 2, },
+	{ .i = 11, .j = 1, },
+	{ .i = 10, .j = 2, },
+	{ .i = 9, .j = 2, },
+	{ .i = 8, .j = 3, },
+	{ .i = 9, .j = 3, },
+	{ .i = 10, .j = 4, },
+	{ .i = 11, .j = 4, },
+	{ .i = 11, .j = 5, },
+	{ .i = 11, .j = 6, },
+};
+
+const struct circuit answer_d_circuit = {
+	.name = "answer_d",
+	.len = sizeof(answer_d_tab)/sizeof(struct wp_coord),
+	.path = answer_d_tab,
+};
+
+const struct wp_coord h_lambda_tab[] = {
+	{ .i = 11, .j = 6, },
+	{ .i = 10, .j = 6, },
+	{ .i = 9, .j = 5, },
+	{ .i = 8, .j = 5, },
+	{ .i = 7, .j = 4, },
+	{ .i = 6, .j = 4, },
+	{ .i = 5, .j = 3, },
+	{ .i = 5, .j = 4, },
+	{ .i = 5, .j = 5, },
+	{ .i = 5, .j = 6, },
+	{ .i = 6, .j = 6, },
+	{ .i = 7, .j = 5, },
+	{ .i = 8, .j = 5, },
+	{ .i = 9, .j = 5, },
+	{ .i = 10, .j = 6, },
+	{ .i = 11, .j = 6, },
+};
+
+const struct circuit h_lambda_circuit = {
+	.name = "h_lambda",
+	.len = sizeof(h_lambda_tab)/sizeof(struct wp_coord),
+	.path = h_lambda_tab,
+};
+
+const struct wp_coord asym_butterfly_tab[] = {
+	{ .i = 11, .j = 6, },
+	{ .i = 10, .j = 6, },
+	{ .i = 9, .j = 5, },
+	{ .i = 8, .j = 5, },
+	{ .i = 7, .j = 4, },
+	{ .i = 6, .j = 4, },
+	{ .i = 5, .j = 3, },
+	{ .i = 4, .j = 3, },
+	{ .i = 3, .j = 2, },
+	{ .i = 3, .j = 3, },
+	{ .i = 3, .j = 4, },
+	{ .i = 3, .j = 5, },
+	{ .i = 4, .j = 5, },
+	{ .i = 5, .j = 4, },
+	{ .i = 6, .j = 4, },
+	{ .i = 7, .j = 3, },
+	{ .i = 8, .j = 3, },
+	{ .i = 9, .j = 2, },
+	{ .i = 10, .j = 2, },
+	{ .i = 11, .j = 1, },
+	{ .i = 11, .j = 2, },
+	{ .i = 11, .j = 3, },
+	{ .i = 11, .j = 4, },
+	{ .i = 11, .j = 5, },
+	{ .i = 11, .j = 6, },
+};
+
+const struct circuit asym_butterfly_circuit = {
+	.name = "asym_butterfly",
+	.len = sizeof(asym_butterfly_tab)/sizeof(struct wp_coord),
+	.path = asym_butterfly_tab,
+};
+
+const struct wp_coord big_h_lambda_tab[] = {
+	{ .i = 11, .j = 6, },
+	{ .i = 10, .j = 6, },
+	{ .i = 9, .j = 5, },
+	{ .i = 8, .j = 5, },
+	{ .i = 7, .j = 4, },
+	{ .i = 6, .j = 4, },
 	{ .i = 5, .j = 4, },
 	{ .i = 4, .j = 5, },
 	{ .i = 3, .j = 5, },
@@ -103,46 +268,28 @@ const struct wp_coord butterfly_tab[] = {
 	{ .i = 4, .j = 3, },
 	{ .i = 5, .j = 3, },
 	{ .i = 6, .j = 4, },
-	{ .i = 7, .j = 3, },
-	{ .i = 8, .j = 3, },
-	{ .i = 9, .j = 2, },
-	{ .i = 10, .j = 2, },
-	{ .i = 11, .j = 1, },
-	{ .i = 11, .j = 2, },
-	{ .i = 11, .j = 3, },
-	{ .i = 11, .j = 4, },
-	{ .i = 11, .j = 5, },
-	{ .i = 11, .j = 6, },
-};
-
-const struct circuit butterfly = {
-	.name = "butterfly",
-	.len = sizeof(butterfly_tab)/sizeof(struct wp_coord),
-	.path = butterfly_tab,
-};
-
-const struct wp_coord small_tab[] = {
-	{ .i = 11, .j = 6, },
-	{ .i = 10, .j = 6, },
+	{ .i = 7, .j = 4, },
+	{ .i = 8, .j = 5, },
 	{ .i = 9, .j = 5, },
-	{ .i = 9, .j = 4, },
-	{ .i = 9, .j = 3, },
-	{ .i = 10, .j = 4, },
-	{ .i = 11, .j = 4, },
-	{ .i = 11, .j = 5, },
+	{ .i = 10, .j = 6, },
 	{ .i = 11, .j = 6, },
 };
 
-const struct circuit small = {
-	.name = "small",
-	.len = sizeof(small)/sizeof(struct wp_coord),
-	.path = small_tab,
+const struct circuit big_h_lambda_circuit = {
+	.name = "big_h_lambda",
+	.len = sizeof(big_h_lambda_tab)/sizeof(struct wp_coord),
+	.path = big_h_lambda_tab,
 };
 
 /* list of all possible circuits */
 const struct circuit *circuits[] = {
-	&butterfly,
-	&small,
+	&butterfly_circuit,
+	&losange_circuit,
+	&triangle_circuit,
+	&answer_d_circuit,
+	&h_lambda_circuit,
+	&asym_butterfly_circuit,
+	&big_h_lambda_circuit,
 	NULL,
 };
 

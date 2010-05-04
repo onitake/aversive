@@ -155,17 +155,32 @@ void strat_exit(void)
 #endif
 }
 
-/* called periodically (10ms) */
-void strat_event(void *dummy)
+/* mark tomato as not present */
+static void check_tomato(void)
+{
+	int16_t x, y;
+	uint8_t i, j;
+
+	x = position_get_x_s16(&mainboard.pos);
+	y = position_get_y_s16(&mainboard.pos);
+
+	if (xycoord_to_ijcoord(&x, &y, &i, &j) < 0)
+		return;
+
+	if (strat_db.wp_table[i][j].type != WP_TYPE_TOMATO)
+		return;
+
+	strat_db.wp_table[i][j].present = 0;
+}
+
+/* mark corn as not present and give correct commands to the cobboard
+ * for spickles */
+static void check_corn(void)
 {
 	uint8_t flags;
 	int8_t lcob_near, rcob_near;
 	uint8_t lcob, rcob;
 	uint8_t lidx, ridx;
-
-	/* ignore when strat is not running */
-	if (strat_running == 0)
-		return;
 
 	/* read sensors from ballboard */
 	IRQ_LOCK(flags);
@@ -255,9 +270,19 @@ void strat_event(void *dummy)
 		else
 			i2c_cobboard_deploy(I2C_RIGHT_SIDE);
 	}
+}
 
+/* called periodically (10ms) */
+void strat_event(void *dummy)
+{
+	/* ignore when strat is not running */
+	if (strat_running == 0)
+		return;
+
+	check_tomato();
+	check_corn();
 	/* limit speed when opponent is near */
-	strat_limit_speed();
+	//strat_limit_speed();
 }
 
 
