@@ -373,12 +373,36 @@ class Interp(cmd.Cmd):
         filename = os.path.join(MICROB_PATH, "../ballboard/main.bin")
         self.bootloader(filename, 3)
 
+    def do_centrifugal(self, args):
+        try:
+            sa, sd, aa, ad = [int(x) for x in shlex.shlex(args)]
+        except:
+            print "args: speed_a, speed_d, acc_a, acc_d"
+            return
+        print sa, sd, aa, ad
+        time.sleep(10)
+        self.ser.write("traj_speed angle %d\n"%(sa))
+        time.sleep(0.1)
+        self.ser.write("traj_speed distance %d\n"%(sd))
+        time.sleep(0.1)
+        self.ser.write("traj_acc angle %d\n"%(aa))
+        time.sleep(0.1)
+        self.ser.write("traj_acc distance %d\n"%(ad))
+        time.sleep(0.1)
+        self.ser.write("goto da_rel 800 180\n")
+        time.sleep(3)
+        self.ser.flushInput()
+        self.ser.write("position show\n")
+        time.sleep(1)
+        print self.ser.read()
+
     def do_toto(self, args):
-        for i in range(10):
-            time.sleep(1)
-            self.ser.write("pwm s3(3C) 200\n")
-            time.sleep(1)
-            self.ser.write("pwm s3(3C) 250\n")
+        print args
+        time.sleep(1)
+        self.ser.write("position set 0 0 0\n")
+        time.sleep(1)
+        self.ser.write("pwm s3(3C) 250\n")
+
 
 if __name__ == "__main__":
     try:
