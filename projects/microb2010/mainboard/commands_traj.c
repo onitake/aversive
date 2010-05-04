@@ -442,6 +442,63 @@ parse_pgm_inst_t cmd_track_show = {
 	},
 };
 
+/**********************************************************/
+/* centrifugal configuration */
+
+/* this structure is filled when cmd_centrifugal is parsed successfully */
+struct cmd_centrifugal_result {
+	fixed_string_t arg0;
+	fixed_string_t arg1;
+	float val;
+};
+
+/* function called when cmd_centrifugal is parsed successfully */
+static void cmd_centrifugal_parsed(void * parsed_result, void * data)
+{
+	struct cmd_centrifugal_result * res = parsed_result;
+
+	if (!strcmp_P(res->arg1, PSTR("set"))) {
+		position_set_centrifugal_coef(&mainboard.pos, res->val);
+	}
+	printf_P(PSTR("centrifugal set %f\r\n"), mainboard.pos.centrifugal_coef);
+}
+
+prog_char str_centrifugal_arg0[] = "centrifugal";
+parse_pgm_token_string_t cmd_centrifugal_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_centrifugal_result, arg0, str_centrifugal_arg0);
+prog_char str_centrifugal_arg1[] = "set";
+parse_pgm_token_string_t cmd_centrifugal_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_centrifugal_result, arg1, str_centrifugal_arg1);
+parse_pgm_token_num_t cmd_centrifugal_val = TOKEN_NUM_INITIALIZER(struct cmd_centrifugal_result, val, FLOAT);
+
+prog_char help_centrifugal[] = "Set centrifugal coef";
+parse_pgm_inst_t cmd_centrifugal = {
+	.f = cmd_centrifugal_parsed,  /* function to call */
+	.data = NULL,      /* 2nd arg of func */
+	.help_str = help_centrifugal,
+	.tokens = {        /* token list, NULL terminated */
+		(prog_void *)&cmd_centrifugal_arg0,
+		(prog_void *)&cmd_centrifugal_arg1,
+		(prog_void *)&cmd_centrifugal_val,
+		NULL,
+	},
+};
+
+/* show */
+
+prog_char str_centrifugal_show_arg[] = "show";
+parse_pgm_token_string_t cmd_centrifugal_show_arg = TOKEN_STRING_INITIALIZER(struct cmd_centrifugal_result, arg1, str_centrifugal_show_arg);
+
+prog_char help_centrifugal_show[] = "Show centrifugal";
+parse_pgm_inst_t cmd_centrifugal_show = {
+	.f = cmd_centrifugal_parsed,  /* function to call */
+	.data = NULL,      /* 2nd arg of func */
+	.help_str = help_centrifugal_show,
+	.tokens = {        /* token list, NULL terminated */
+		(prog_void *)&cmd_centrifugal_arg0,
+		(prog_void *)&cmd_centrifugal_show_arg,
+		NULL,
+	},
+};
+
 
 
 /**********************************************************/

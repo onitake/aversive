@@ -83,8 +83,9 @@ extern parse_pgm_inst_t cmd_servo_balls;
 extern parse_pgm_inst_t cmd_clitoid;
 extern parse_pgm_inst_t cmd_time_monitor;
 extern parse_pgm_inst_t cmd_strat_event;
-extern parse_pgm_inst_t cmd_test;
 extern parse_pgm_inst_t cmd_climb;
+extern parse_pgm_inst_t cmd_sleep;
+extern parse_pgm_inst_t cmd_test;
 
 /* commands_traj.c */
 extern parse_pgm_inst_t cmd_traj_speed;
@@ -99,6 +100,8 @@ extern parse_pgm_inst_t cmd_rs_gains;
 extern parse_pgm_inst_t cmd_rs_gains_show;
 extern parse_pgm_inst_t cmd_track;
 extern parse_pgm_inst_t cmd_track_show;
+extern parse_pgm_inst_t cmd_centrifugal;
+extern parse_pgm_inst_t cmd_centrifugal_show;
 extern parse_pgm_inst_t cmd_pt_list;
 extern parse_pgm_inst_t cmd_pt_list_append;
 extern parse_pgm_inst_t cmd_pt_list_del;
@@ -176,8 +179,9 @@ parse_pgm_ctx_t main_ctx[] = {
 	(parse_pgm_inst_t *)&cmd_clitoid,
 	(parse_pgm_inst_t *)&cmd_time_monitor,
 	(parse_pgm_inst_t *)&cmd_strat_event,
-	(parse_pgm_inst_t *)&cmd_test,
 	(parse_pgm_inst_t *)&cmd_climb,
+	(parse_pgm_inst_t *)&cmd_sleep,
+	(parse_pgm_inst_t *)&cmd_test,
 
 	/* commands_traj.c */
 	(parse_pgm_inst_t *)&cmd_traj_speed,
@@ -192,6 +196,8 @@ parse_pgm_ctx_t main_ctx[] = {
 	(parse_pgm_inst_t *)&cmd_rs_gains_show,
 	(parse_pgm_inst_t *)&cmd_track,
 	(parse_pgm_inst_t *)&cmd_track_show,
+	(parse_pgm_inst_t *)&cmd_centrifugal,
+	(parse_pgm_inst_t *)&cmd_centrifugal_show,
 	(parse_pgm_inst_t *)&cmd_pt_list,
 	(parse_pgm_inst_t *)&cmd_pt_list_append,
 	(parse_pgm_inst_t *)&cmd_pt_list_del,

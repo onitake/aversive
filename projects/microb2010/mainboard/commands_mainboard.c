@@ -1213,6 +1213,39 @@ parse_pgm_inst_t cmd_strat_event = {
 };
 
 /**********************************************************/
+/* Sleep */
+
+/* this structure is filled when cmd_sleep is parsed successfully */
+struct cmd_sleep_result {
+	fixed_string_t arg0;
+	uint32_t ms;
+};
+
+/* function called when cmd_sleep is parsed successfully */
+static void cmd_sleep_parsed(void *parsed_result, void *data)
+{
+	struct cmd_sleep_result *res = parsed_result;
+	time_wait_ms(res->ms);
+}
+
+prog_char str_sleep_arg0[] = "sleep";
+parse_pgm_token_string_t cmd_sleep_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_sleep_result, arg0, str_sleep_arg0);
+parse_pgm_token_num_t cmd_sleep_ms = TOKEN_NUM_INITIALIZER(struct cmd_sleep_result, ms, UINT32);
+
+prog_char help_sleep[] = "Sleep during some miliseconds";
+parse_pgm_inst_t cmd_sleep = {
+	.f = cmd_sleep_parsed,  /* function to call */
+	.data = NULL,      /* 2nd arg of func */
+	.help_str = help_sleep,
+	.tokens = {        /* token list, NULL terminated */
+		(prog_void *)&cmd_sleep_arg0,
+		(prog_void *)&cmd_sleep_ms,
+		NULL,
+	},
+};
+
+
+/**********************************************************/
 /* Test */
 
 /* this structure is filled when cmd_test is parsed successfully */
