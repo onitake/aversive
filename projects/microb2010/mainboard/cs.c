@@ -252,7 +252,7 @@ void microb_cs_init(void)
 	position_init(&mainboard.pos);
 	position_set_physical_params(&mainboard.pos, VIRTUAL_TRACK_MM, DIST_IMP_MM);
 	position_set_related_robot_system(&mainboard.pos, &mainboard.rs);
-	//	position_set_centrifugal_coef(&mainboard.pos, 0.000016);
+	position_set_centrifugal_coef(&mainboard.pos, 0.000025);
 	position_use_ext(&mainboard.pos);
 
 	/* TRAJECTORY MANAGER */
