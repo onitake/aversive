@@ -71,6 +71,15 @@ void bd_reset(struct blocking_detection * bd)
 	IRQ_UNLOCK(flags);
 }
 
+static inline  uint8_t same_sign(int32_t a, int32_t b)
+{
+	if (a >= 0 && b >= 0)
+		return 1;
+	if (a < 0 && b < 0)
+		return 1;
+	return 0;
+}
+
 /** function to be called periodically */
 void bd_manage_from_speed_cmd(struct blocking_detection * bd,
 			      int32_t speed, int32_t cmd)
@@ -87,7 +96,7 @@ void bd_manage_from_speed_cmd(struct blocking_detection * bd,
 	 * has the same sign than i */
 	if ((uint32_t)ABS(i) > bd->i_thres &&
 	    (bd->speed_thres == 0 || ABS(speed) < bd->speed_thres) &&
-	    (i * cmd > 0)) {
+	    same_sign(i, cmd)) {
 		if (bd->cpt == bd->cpt_thres - 1)
 			WARNING(E_BLOCKING_DETECTION_MANAGER,
 				"BLOCKING cmd=%ld, speed=%ld i=%ld",
