@@ -73,14 +73,15 @@ static void do_cs(void *dummy)
 			cs_manage(&ballboard.forkrot.cs);
 	}
 	if ((ballboard.flags & DO_BD) && (ballboard.flags & DO_POWER)) {
-		bd_manage_from_cs(&ballboard.roller.bd, &ballboard.roller.cs);
 		bd_manage_from_cs(&ballboard.forktrans.bd, &ballboard.forktrans.cs);
 		bd_manage_from_cs(&ballboard.forkrot.bd, &ballboard.forkrot.cs);
+		bd_manage_from_speed_cmd(&ballboard.roller.bd,
+					 cs_get_filtered_feedback(&ballboard.roller.cs),
+					 cs_get_out(&ballboard.roller.cs));
 
 		/* urgent case: stop power on blocking */
 		if (ballboard.flags & DO_ERRBLOCKING) {
-			if (bd_get(&ballboard.roller.bd) ||
-			    bd_get(&ballboard.forktrans.bd) ||
+			if (bd_get(&ballboard.forktrans.bd) ||
 			    bd_get(&ballboard.forkrot.bd)) {
 				printf_P(PSTR("MOTOR BLOCKED STOP ALL\r\n"));
 				ballboard.flags &= ~(DO_POWER | DO_ERRBLOCKING);
@@ -137,8 +138,9 @@ void microb_cs_init(void)
 
 	/* Blocking detection */
 	bd_init(&ballboard.roller.bd);
-	bd_set_speed_threshold(&ballboard.roller.bd, 150);
-	bd_set_current_thresholds(&ballboard.roller.bd, 500, 8000, 1000000, 200);
+#define ROLLER_SPEED_THRES (ROLLER_SPEED * 0.75)
+	bd_set_speed_threshold(&ballboard.roller.bd, ROLLER_SPEED_THRES);
+	bd_set_current_thresholds(&ballboard.roller.bd, 500, 1500, 1000000, 20);
 
 	/* ---- CS forktrans */
 	/* PID */

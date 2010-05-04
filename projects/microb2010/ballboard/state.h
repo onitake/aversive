@@ -26,7 +26,7 @@
 int8_t state_set_mode(uint8_t mode);
 
 /* get current state */
-uint8_t state_get_mode(void);
+uint8_t state_get_status(void);
 
 uint8_t state_get_ball_count(void);
 

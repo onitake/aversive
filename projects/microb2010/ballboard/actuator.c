@@ -40,11 +40,12 @@
 
 #include <rdline.h>
 
+#include "actuator.h"
 #include "main.h"
 
-#define ROLLER_ON      -1200
+#define ROLLER_ON      -ROLLER_SPEED
 #define ROLLER_OFF     0
-#define ROLLER_REVERSE 1200
+#define ROLLER_REVERSE ROLLER_SPEED
 
 #define FORKROT_DEPLOYED -50000
 #define FORKROT_PACKED   0

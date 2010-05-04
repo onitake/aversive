@@ -1,6 +1,6 @@
 /*
- *  Copyright Droids Corporation (2007)
- * 
+ *  Copyright Droids Corporation (2010)
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -74,7 +74,7 @@ void i2c_send_status(void)
 	struct i2c_ans_ballboard_status ans;
 	i2c_flush();
 	ans.hdr.cmd =  I2C_ANS_BALLBOARD_STATUS;
-	ans.status = 0x55; /* XXX */
+	ans.status = state_get_status();
 	ans.ball_count = state_get_ball_count();
 	ans.lcob = cob_detect_left();
 	ans.rcob = cob_detect_right();

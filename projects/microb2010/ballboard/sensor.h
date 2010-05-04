@@ -28,8 +28,8 @@
 #define ADC_MAX       4
 
 /* synchronize with sensor.c */
-#define S_CAP1         0
-#define S_CAP2         1
+#define S_HIGH_BARRIER 0
+#define S_LOW_BARRIER  1
 #define S_CAP3         2
 #define S_CAP4         3
 #define S_R_IR         4

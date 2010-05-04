@@ -19,6 +19,8 @@
  *
  */
 
+#define ROLLER_SPEED 1200
+
 void roller_on(void);
 void roller_off(void);
 void roller_reverse(void);

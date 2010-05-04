@@ -133,7 +133,7 @@ extern struct ballboard ballboard;
 /* start the bootloader */
 void bootloader(void);
 
-#define wait_cond_or_timeout(cond, timeout)                   \
+#define WAIT_COND_OR_TIMEOUT(cond, timeout)                   \
 ({                                                            \
         microseconds __us = time_get_us2();                   \
         uint8_t __ret = 1;                                    \
