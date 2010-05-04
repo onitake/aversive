@@ -294,7 +294,14 @@ static uint8_t strat_eject(void)
 
 	DEBUG(E_USER_STRAT, "%s():%d", __FUNCTION__, __LINE__);
 	strat_hardstop();
+#ifdef HOST_VERSION
 	time_wait_ms(2000);
+#else
+	WAIT_COND_OR_TIMEOUT(ballboard.status == I2C_BALLBOARD_STATUS_F_BUSY,
+			     2000);
+	WAIT_COND_OR_TIMEOUT(ballboard.status == I2C_BALLBOARD_STATUS_F_READY,
+			     2000);
+#endif
 
 	/* half turn */
 	trajectory_a_rel(&mainboard.traj, COLOR_A(180));
