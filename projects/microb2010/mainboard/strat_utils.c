@@ -319,6 +319,14 @@ uint8_t opponent_is_behind(void)
 	return 0;
 }
 
+int16_t distance_from_opponent(int16_t x, int16_t y)
+{
+	int16_t oppx, oppy;
+	if (get_opponent_xy(&oppx, &oppy) < 0)
+		return -1;
+	return distance_between(x, y, oppx, oppy);
+}
+
 uint8_t get_ball_count(void)
 {
 	return ballboard.ball_count;

@@ -168,13 +168,21 @@ static uint8_t clitoid_select_speed(uint8_t num1, uint8_t dir1,
 		return 1;
 	}
 
-/* 	if (time_get_s() > 39) */
-/* 		DEBUG(E_USER_STRAT, "i,j = (%d %d), count=%d", i, j, corn_count_neigh(i, j)); */
+/* 	if (time_get_s() > 32) */
+/* 		DEBUG(E_USER_STRAT, "i,j = (%d %d), count=%d", i, j, */
+/* 		      corn_count_neigh(i, j)); */
 
 	if (corn_count_neigh(i, j) == 2)
 		return 1;
 
+	/* we are on intersection, let's go slow... but as we enter in
+	 * the curve-part of the clitoid, we should not go there */
 	if (wp_belongs_to_line(i, j, num2, dir2))
+		return 0;
+
+	/* we can ge fast if it's a 60deg angle and if we checked the
+	 * current point */
+	if (is_60deg(dir1, dir2))
 		return 0;
 
 	/* get next point */
@@ -184,7 +192,7 @@ static uint8_t clitoid_select_speed(uint8_t num1, uint8_t dir1,
 		return 1;
 	}
 
-	/* if (i2, j2) belongs to next line, check corn in opposition */
+	/* if (i2, j2) belongs to next line, check corns */
 	if (wp_belongs_to_line(i2, j2, num2, dir2)) {
 		if (corn_count_neigh(i2, j2) > 0)
 			return 1;
@@ -199,7 +207,7 @@ static uint8_t clitoid_select_speed(uint8_t num1, uint8_t dir1,
 		return 1;
 	}
 
-	/* if (i3, j3) belongs to next line, check corn in opposition */
+	/* if (i3, j3) belongs to next line, check corns */
 	if (wp_belongs_to_line(i3, j3, num2, dir2)) {
 		if (corn_count_neigh(i2, j2) > 0 ||
 		    corn_count_neigh(i3, j3) > 0)
@@ -316,11 +324,11 @@ static int8_t strat_calc_clitoid(uint8_t num1, uint8_t dir1,
 
 	clitoid_slow = clitoid_select_speed(num1, dir1, num2, dir2);
 	if (clitoid_slow) {
-		DEBUG(E_USER_STRAT, "slow clito\n");
+		DEBUG(E_USER_STRAT, "slow clito");
 		strat_set_speed(SPEED_CLITOID_SLOW, SPEED_ANGLE_SLOW);
 	}
 	else {
-		DEBUG(E_USER_STRAT, "fast clito\n");
+		DEBUG(E_USER_STRAT, "fast clito");
 		strat_set_speed(SPEED_CLITOID_FAST, SPEED_ANGLE_SLOW);
 	}
 

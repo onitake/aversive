@@ -21,11 +21,11 @@
  */
 
 #define LINE_UP     0
-#define LINE_DOWN   1
-#define LINE_R_UP   2
-#define LINE_L_DOWN 3
-#define LINE_L_UP   4
-#define LINE_R_DOWN 5
+#define LINE_L_UP   1
+#define LINE_L_DOWN 2
+#define LINE_DOWN   3
+#define LINE_R_DOWN 4
+#define LINE_R_UP   5
 
 struct line_2pts {
 	point_t p1;

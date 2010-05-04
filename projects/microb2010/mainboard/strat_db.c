@@ -495,7 +495,6 @@ void strat_db_init(void)
 			/* tomato */
 			idx = ijcoord_to_tomato_idx(i, j);
 			if (idx >= 0) {
-				printf("%d %d\n", i, j);
 				wp->type = WP_TYPE_TOMATO;
 				wp->present = 1;
 				wp->tomato.idx = idx;
