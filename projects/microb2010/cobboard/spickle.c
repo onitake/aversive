@@ -42,13 +42,16 @@
 
 #include "sensor.h"
 #include "../common/i2c_commands.h"
+#include "state.h"
 #include "main.h"
 #include "actuator.h"
 
 struct spickle_params {
 	/* current limit (common to left and right) */
-	int32_t k1;
-	int32_t k2;
+	int32_t sk1;
+	int32_t sk2;
+	int32_t wk1;
+	int32_t wk2;
 
 	/* cs blocks */
 	struct cs_block * const csb[2];
@@ -60,8 +63,10 @@ struct spickle_params {
 };
 
 static struct spickle_params spickle = {
-	.k1 = 1000,
-	.k2 = 20,
+	.sk1 = 1000,
+	.sk2 = 20,
+	.wk1 = 200,
+	.wk2 = 20,
 	.csb = {
 		&cobboard.left_spickle,
 		&cobboard.right_spickle,
@@ -99,24 +104,41 @@ void spickle_set(void *mot, int32_t cmd)
 {
 	static int32_t oldpos_left, oldpos_right;
 	int32_t oldpos, pos, maxcmd, speed;
+	int32_t k1, k2;
 
 	if (mot == LEFT_SPICKLE_PWM) {
 		pos = encoders_spi_get_value(LEFT_SPICKLE_ENCODER);
 		oldpos = oldpos_left;
+		if (state_spicklemode_weak(I2C_LEFT_SIDE)) {
+			k1 = spickle.wk1;
+			k2 = spickle.wk2;
+		}
+		else {
+			k1 = spickle.sk1;
+			k2 = spickle.sk2;
+		}
 	}
 	else {
 		pos = encoders_spi_get_value(RIGHT_SPICKLE_ENCODER);
 		oldpos = oldpos_right;
+		if (state_spicklemode_weak(I2C_RIGHT_SIDE)) {
+			k1 = spickle.wk1;
+			k2 = spickle.wk2;
+		}
+		else {
+			k1 = spickle.sk1;
+			k2 = spickle.sk2;
+		}
 	}
 
 	speed = pos - oldpos;
 	if (speed > 0 && cmd < 0)
-		maxcmd = spickle.k1;
+		maxcmd = k1;
 	else if (speed < 0 && cmd > 0)
-		maxcmd = spickle.k1;
+		maxcmd = k1;
 	else {
 		speed = ABS(speed);
-		maxcmd = spickle.k1 + spickle.k2 * speed;
+		maxcmd = k1 + k2 * speed;
 	}
 	if (cmd > maxcmd)
 		cmd = maxcmd;
@@ -131,10 +153,16 @@ void spickle_set(void *mot, int32_t cmd)
 		oldpos_right = pos;
 }
 
-void spickle_set_coefs(uint32_t k1, uint32_t k2)
+void spickle_set_wcoefs(uint32_t k1, uint32_t k2)
 {
-	spickle.k1 = k1;
-	spickle.k2 = k2;
+	spickle.wk1 = k1;
+	spickle.wk2 = k2;
+}
+
+void spickle_set_scoefs(uint32_t k1, uint32_t k2)
+{
+	spickle.sk1 = k1;
+	spickle.sk2 = k2;
 }
 
 void spickle_set_pos(uint8_t side, int32_t pos_packed,
@@ -147,7 +175,8 @@ void spickle_set_pos(uint8_t side, int32_t pos_packed,
 
 void spickle_dump_params(void)
 {
-	printf_P(PSTR("coef %ld %ld\r\n"), spickle.k1, spickle.k2);
+	printf_P(PSTR("strong_coef %ld %ld\r\n"), spickle.sk1, spickle.sk2);
+	printf_P(PSTR("weak_coef %ld %ld\r\n"), spickle.wk1, spickle.wk2);
 	printf_P(PSTR("left pos %ld %ld\r\n"),
 		 spickle.pos_packed[I2C_LEFT_SIDE],
 		 spickle.pos_mid[I2C_LEFT_SIDE],

@@ -244,6 +244,10 @@ static void cmd_state2_parsed(void *parsed_result,
 		state_set_mode(I2C_COBBOARD_MODE_HARVEST);
 		state_set_spickle(side, 0);
 	}
+	else if (!strcmp_P(res->arg1, PSTR("weak_pack"))) {
+		state_set_mode(I2C_COBBOARD_MODE_HARVEST);
+		state_set_spickle(side, I2C_COBBOARD_SPK_WEAK);
+	}
 	else if (!strcmp_P(res->arg1, PSTR("deploy"))) {
 		state_set_mode(I2C_COBBOARD_MODE_HARVEST);
 		state_set_spickle(side, I2C_COBBOARD_SPK_DEPLOY);
@@ -268,7 +272,7 @@ static void cmd_state2_parsed(void *parsed_result,
 
 prog_char str_state2_arg0[] = "cobboard";
 parse_pgm_token_string_t cmd_state2_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_state2_result, arg0, str_state2_arg0);
-prog_char str_state2_arg1[] = "harvest#deploy#pack#harvest_nomove#deploy_nomove";
+prog_char str_state2_arg1[] = "harvest#deploy#pack#weak_pack#harvest_nomove#deploy_nomove";
 parse_pgm_token_string_t cmd_state2_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_state2_result, arg1, str_state2_arg1);
 prog_char str_state2_arg2[] = "left#right";
 parse_pgm_token_string_t cmd_state2_arg2 = TOKEN_STRING_INITIALIZER(struct cmd_state2_result, arg2, str_state2_arg2);
@@ -710,8 +714,11 @@ static void cmd_spickle_params2_parsed(void *parsed_result,
 {
 	struct cmd_spickle_params2_result * res = parsed_result;
 
-	if (!strcmp_P(res->arg1, PSTR("coef"))) {
-		spickle_set_coefs(res->arg2, res->arg3);
+	if (!strcmp_P(res->arg1, PSTR("wcoef"))) {
+		spickle_set_wcoefs(res->arg2, res->arg3);
+	}
+	else if (!strcmp_P(res->arg1, PSTR("scoef"))) {
+		spickle_set_scoefs(res->arg2, res->arg3);
 	}
 
 	/* else show */
@@ -721,7 +728,7 @@ static void cmd_spickle_params2_parsed(void *parsed_result,
 prog_char str_spickle_params2_arg0[] = "spickle_params2";
 parse_pgm_token_string_t cmd_spickle_params2_arg0 =
 	TOKEN_STRING_INITIALIZER(struct cmd_spickle_params2_result, arg0, str_spickle_params2_arg0);
-prog_char str_spickle_params2_arg1[] = "coef";
+prog_char str_spickle_params2_arg1[] = "wcoef#scoef";
 parse_pgm_token_string_t cmd_spickle_params2_arg1 =
 	TOKEN_STRING_INITIALIZER(struct cmd_spickle_params2_result, arg1, str_spickle_params2_arg1);
 parse_pgm_token_num_t cmd_spickle_params2_arg2 =

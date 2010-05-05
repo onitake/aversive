@@ -23,7 +23,8 @@
 #define _SPICKLE_H_
 
 void spickle_set(void *dummy, int32_t cmd);
-void spickle_set_coefs(uint32_t k1, uint32_t k2);
+void spickle_set_scoefs(uint32_t k1, uint32_t k2);
+void spickle_set_wcoefs(uint32_t k1, uint32_t k2);
 void spickle_set_pos(uint8_t side, int32_t pos_pack,
 		     int32_t pos_mid, int32_t pos_deployed);
 

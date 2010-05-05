@@ -29,6 +29,7 @@ void state_set_spickle(uint8_t side, uint8_t flags);
 /* get current state */
 uint8_t state_get_mode(void);
 uint8_t state_get_status(void);
+uint8_t state_spicklemode_weak(uint8_t side);
 
 void state_set_i2c_ignore(uint8_t val);
 uint8_t state_get_i2c_ignore(void);

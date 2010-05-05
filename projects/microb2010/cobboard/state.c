@@ -120,6 +120,14 @@ static uint8_t state_spicklemode_nomove(uint8_t side)
 		return rspickle & I2C_COBBOARD_SPK_NO_MOVE;
 }
 
+uint8_t state_spicklemode_weak(uint8_t side)
+{
+	if (side == I2C_LEFT_SIDE)
+		return lspickle & I2C_COBBOARD_SPK_WEAK;
+	else
+		return rspickle & I2C_COBBOARD_SPK_WEAK;
+}
+
 /* pack/deploy spickles depending on mode */
 static void spickle_prepare(uint8_t side)
 {
