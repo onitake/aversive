@@ -833,7 +833,7 @@ static void auto_position(void)
 			COLOR_A(-90));
 	strat_hardstop();
 
-	trajectory_d_rel(&mainboard.traj, -70);
+	trajectory_d_rel(&mainboard.traj, -180);
 	err = wait_traj_end(END_INTR|END_TRAJ);
 	if (err == END_INTR)
 		goto intr;
@@ -853,13 +853,13 @@ static void auto_position(void)
 			180);
 	strat_hardstop();
 
-	trajectory_d_rel(&mainboard.traj, -80);
+	trajectory_d_rel(&mainboard.traj, -170);
 	err = wait_traj_end(END_INTR|END_TRAJ);
 	if (err == END_INTR)
 		goto intr;
 	time_wait_ms(250);
 
-	trajectory_a_rel(&mainboard.traj, COLOR_A(-135));
+	trajectory_a_rel(&mainboard.traj, COLOR_A(-110));
 	err = wait_traj_end(END_INTR|END_TRAJ);
 	if (err == END_INTR)
 		goto intr;

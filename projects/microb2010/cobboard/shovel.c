@@ -44,7 +44,7 @@
 #include "shovel.h"
 
 #define SHOVEL_DOWN 100
-#define SHOVEL_MID  5250
+#define SHOVEL_MID  4500
 #define SHOVEL_UP   11000
 
 /* init spickle position at beginning */

@@ -350,9 +350,10 @@ static uint8_t strat_beginning(void)
 	uint8_t err;
 
 	strat_set_acc(ACC_DIST, ACC_ANGLE);
-	strat_set_speed(400, 150); /* OK */
+	strat_set_speed(600, 60); /* OK */
+	//strat_set_speed(250, 28); /* OK */
 
-	trajectory_d_a_rel(&mainboard.traj, 800, COLOR_A(45));
+	trajectory_d_a_rel(&mainboard.traj, 1000, COLOR_A(20));
 	err = WAIT_COND_OR_TRAJ_END(trajectory_angle_finished(&mainboard.traj),
 				    TRAJ_FLAGS_STD);
 
