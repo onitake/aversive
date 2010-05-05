@@ -116,8 +116,8 @@ void strat_event_disable(void)
 void strat_init(void)
 {
 #ifdef HOST_VERSION
-	position_set(&mainboard.pos, 298.16,
-		     COLOR_Y(308.78), COLOR_A(70.00));
+	position_set(&mainboard.pos, 258.,
+		     COLOR_Y(246.), COLOR_A(45.));
 #endif
 
 	/* we consider that the color is correctly set */
@@ -350,10 +350,9 @@ static uint8_t strat_beginning(void)
 	uint8_t err;
 
 	strat_set_acc(ACC_DIST, ACC_ANGLE);
-	strat_set_speed(600, 60); /* OK */
-	//strat_set_speed(250, 28); /* OK */
+	strat_set_speed(400, 150); /* OK */
 
-	trajectory_d_a_rel(&mainboard.traj, 1000, COLOR_A(20));
+	trajectory_d_a_rel(&mainboard.traj, 800, COLOR_A(45));
 	err = WAIT_COND_OR_TRAJ_END(trajectory_angle_finished(&mainboard.traj),
 				    TRAJ_FLAGS_STD);
 

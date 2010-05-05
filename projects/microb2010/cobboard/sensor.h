@@ -28,9 +28,9 @@
 #define ADC_MAX       4
 
 /* synchronize with sensor.c */
-#define S_COB_INSIDE_L  0
+#define S_COB_INSIDE_R  0
 #define S_CAP2          1
-#define S_COB_INSIDE_R  2
+#define S_COB_INSIDE_L  2
 #define S_CAP4          3
 #define S_LCOB          4
 #define S_CAP6          5

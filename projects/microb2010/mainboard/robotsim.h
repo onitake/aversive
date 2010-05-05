@@ -25,4 +25,4 @@ void robotsim_pwm(void *arg, int32_t val);
 int32_t robotsim_encoder_get(void *arg);
 int robotsim_init(void);
 void robotsim_dump(void);
-int8_t robotsim_i2c_cobboard_set_mode(uint8_t mode);
+int8_t robotsim_i2c_cobboard_set_spickles(uint8_t side, uint8_t flags);

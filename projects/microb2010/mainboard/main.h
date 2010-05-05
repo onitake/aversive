@@ -76,11 +76,11 @@
 #define MATCH_TIME 89
 
 /* decrease track to decrease angle */
-#define EXT_TRACK_MM 304.61875
+#define EXT_TRACK_MM 304.9
 #define VIRTUAL_TRACK_MM EXT_TRACK_MM
 
-#define ROBOT_HALF_LENGTH_FRONT 130
-#define ROBOT_HALF_LENGTH_REAR 120
+#define ROBOT_HALF_LENGTH_FRONT 180
+#define ROBOT_HALF_LENGTH_REAR 70
 #define ROBOT_WIDTH 320
 
 /* it is a 1024 imps -> 4096 because we see 1/4 period

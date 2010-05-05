@@ -111,16 +111,25 @@ robotsim_i2c_ballboard_set_mode(struct i2c_cmd_ballboard_set_mode *cmd)
 }
 
 int8_t
-robotsim_i2c_cobboard_set_mode(uint8_t mode)
+robotsim_i2c_cobboard_set_spickles(uint8_t side, uint8_t flags)
 {
 	char buf[BUFSIZ];
 	int len;
 
-	if (cobboard.mode == mode)
-		return 0;
+	if (side == I2C_LEFT_SIDE) {
+		if (cobboard.lspickle == flags)
+			return 0;
+		else
+			cobboard.lspickle = flags;
+	}
+	if (side == I2C_RIGHT_SIDE) {
+		if (cobboard.rspickle == flags)
+			return 0;
+		else
+			cobboard.rspickle = flags;
+	}
 
-	cobboard.mode = mode;
-	len = snprintf(buf, sizeof(buf), "cobboard=%d\n", mode);
+	len = snprintf(buf, sizeof(buf), "cobboard=%d,%d\n", side, flags);
 	hostsim_lock();
 	write(fdw, buf, len);
 	hostsim_unlock();
@@ -218,8 +227,8 @@ void robotsim_update(void)
 		((local_r_pwm * 1000 * FILTER2)/1000);
 
 	/* basic collision detection */
-	a2 = atan2(ROBOT_WIDTH/2, ROBOT_HALF_LENGTH_REAR);
-	d = norm(ROBOT_WIDTH/2, ROBOT_HALF_LENGTH_REAR);
+	a2 = atan2(ROBOT_WIDTH/2, ROBOT_HALF_LENGTH_FRONT);
+	d = norm(ROBOT_WIDTH/2, ROBOT_HALF_LENGTH_FRONT);
 
 	xfl = x + cos(a+a2) * d;
 	yfl = y + sin(a+a2) * d;

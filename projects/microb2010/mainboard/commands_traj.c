@@ -823,6 +823,7 @@ static void auto_position(void)
 	interrupt_traj_reset();
 	strat_get_speed(&old_spdd, &old_spda);
 	strat_set_speed(AUTOPOS_SPEED_FAST, AUTOPOS_SPEED_FAST);
+	strat_set_acc(3, 3);
 
 	err = strat_calib(300, END_INTR|END_TRAJ|END_BLOCKING);
 	if (err == END_INTR)
@@ -832,16 +833,18 @@ static void auto_position(void)
 			COLOR_A(-90));
 	strat_hardstop();
 
-	trajectory_d_rel(&mainboard.traj, -180);
+	trajectory_d_rel(&mainboard.traj, -70);
 	err = wait_traj_end(END_INTR|END_TRAJ);
 	if (err == END_INTR)
 		goto intr;
 
+	time_wait_ms(250);
 	trajectory_a_rel(&mainboard.traj, COLOR_A(-90));
 	err = wait_traj_end(END_INTR|END_TRAJ);
 	if (err == END_INTR)
 		goto intr;
 
+	time_wait_ms(250);
 	err = strat_calib(300, END_INTR|END_TRAJ|END_BLOCKING);
 	if (err == END_INTR)
 		goto intr;
@@ -850,17 +853,17 @@ static void auto_position(void)
 			180);
 	strat_hardstop();
 
-	trajectory_d_rel(&mainboard.traj, -170);
+	trajectory_d_rel(&mainboard.traj, -80);
 	err = wait_traj_end(END_INTR|END_TRAJ);
 	if (err == END_INTR)
 		goto intr;
-	wait_ms(100);
+	time_wait_ms(250);
 
-	trajectory_a_rel(&mainboard.traj, COLOR_A(-110));
+	trajectory_a_rel(&mainboard.traj, COLOR_A(-135));
 	err = wait_traj_end(END_INTR|END_TRAJ);
 	if (err == END_INTR)
 		goto intr;
-	wait_ms(100);
+	time_wait_ms(250);
 
 	strat_set_speed(old_spdd, old_spda);
 	return;

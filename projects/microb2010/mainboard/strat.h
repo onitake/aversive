@@ -142,8 +142,8 @@
 #define SPEED_DIST_VERY_SLOW 400.
 #define SPEED_ANGLE_VERY_SLOW 400.
 
-#define SPEED_CLITOID_SLOW 250.
-#define SPEED_CLITOID_FAST 500.
+#define SPEED_CLITOID_SLOW 100. ///250.
+#define SPEED_CLITOID_FAST 100. ///500.
 
 
 /* strat infos structures */

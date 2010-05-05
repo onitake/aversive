@@ -10,6 +10,9 @@ AREA_Y = 2100.
 ROBOT_HEIGHT=5 # 350
 CORN_HEIGHT=5  # 150
 
+ROBOT_WIDTH=320
+ROBOT_LENGTH=360
+
 area = [ (0.0, 0.0, -0.2), (3000.0, 2100.0, 0.2) ]
 areasize = reduce(lambda x,y:tuple([abs(x[i])+abs(y[i]) for i in range(len(x))]) , area)
 area_box = box(size=areasize, color=(0.0, 1.0, 0.0))
@@ -276,21 +279,21 @@ def set_robot():
             0)
 
     robot.axis = axis
-    robot.size = (250, 320, ROBOT_HEIGHT)
+    robot.size = (ROBOT_LENGTH, ROBOT_WIDTH, ROBOT_HEIGHT)
 
     robot_lspickle = 2 # XXX
     lspickle.pos = (tmp_x + (robot_lspickle*60) * math.cos((tmp_a+90)*math.pi/180),
                     tmp_y + (robot_lspickle*60) * math.sin((tmp_a+90)*math.pi/180),
                     ROBOT_HEIGHT/2)
     lspickle.axis = axis
-    lspickle.size = (20, 320, 5)
+    lspickle.size = (20, ROBOT_WIDTH, 5)
 
     robot_rspickle = 2 # XXX
     rspickle.pos = (tmp_x + (robot_rspickle*60) * math.cos((tmp_a-90)*math.pi/180),
                     tmp_y + (robot_rspickle*60) * math.sin((tmp_a-90)*math.pi/180),
                     ROBOT_HEIGHT/2)
     rspickle.axis = axis
-    rspickle.size = (20, 320, 5)
+    rspickle.size = (20, ROBOT_WIDTH, 5)
 
     # save position
     save_pos.append((robot.pos.x, robot.pos.y, tmp_a))
@@ -351,21 +354,21 @@ while True:
 
             # parse cobboard
             if not m:
-                m = re.match("cobboard=%s"%(INT), l)
+                m = re.match("cobboard=%s,%s"%(INT,INT), l)
                 if m:
-                    mode = int(m.groups()[0])
-                    if (mode & 0x01) == 0:
-                        robot_lspickle = 0
-                    elif (mode & 0x02) == 0:
-                        robot_lspickle = 1
+                    print "cobboard: %x,%x"%(int(m.groups()[0]),int(m.groups()[1]))
+                    side = int(m.groups()[0])
+                    flags = int(m.groups()[1])
+                    if side == 0:
+                        if (flags & 0x01) == 0:
+                            robot_lspickle = 1
+                        else:
+                            robot_lspickle = 2
                     else:
-                        robot_lspickle = 2
-                    if (mode & 0x04) == 0:
-                        robot_rspickle = 0
-                    elif (mode & 0x08) == 0:
-                        robot_rspickle = 1
-                    else:
-                        robot_rspickle = 2
+                        if (flags & 0x01) == 0:
+                            robot_rspickle = 1
+                        else:
+                            robot_rspickle = 2
 
             if scene.kb.keys == 0:
                 continue

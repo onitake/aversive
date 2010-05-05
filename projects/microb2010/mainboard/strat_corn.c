@@ -315,7 +315,7 @@ static int8_t strat_calc_clitoid(uint8_t num1, uint8_t dir1,
 	}
 	/* hard turn, 120 deg */
 	else {
-		radius = 75;
+		radius = 120;//75;
 		if (diff_a_deg > 0)
 			beta_deg = 0;
 		else
@@ -380,12 +380,6 @@ uint8_t line2line(uint8_t num1, uint8_t dir1, uint8_t num2,
 	}
 
 	DEBUG(E_USER_STRAT, "clitoid finished");
-
-	/* XXX 600 -> cste */
-	/* XXX does not work, do better */
-/* 	if (err == 0 && d_speed < 600 && */
-/* 	    mainboard.traj.state == RUNNING_CLITOID_LINE) */
-/* 		strat_set_speed(600, SPEED_ANGLE_FAST); */
 
 	strat_rpack60 = 0;
 	strat_lpack60 = 0;

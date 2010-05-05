@@ -80,15 +80,6 @@ int32_t encoders_right_cobroller_speed(void *number)
 }
 #endif
 
-#ifndef HOST_VERSION
-#define DEBUG_CPLD
-#endif
-
-#ifdef DEBUG_CPLD
-extern int16_t g_encoders_spi_previous[4];
-static int32_t ll_prev, rr_prev;
-#endif
-
 /* called every 5 ms */
 static void do_cs(void *dummy)
 {
@@ -98,29 +89,10 @@ static void do_cs(void *dummy)
 #ifdef HOST_VERSION
 	robotsim_update();
 #else
-#ifdef DEBUG_CPLD
-	int32_t ll, rr;
-#endif
 	/* read encoders */
 	if (mainboard.flags & DO_ENCODERS) {
 		encoders_spi_manage(NULL);
 	}
-#ifdef DEBUG_CPLD
-	ll = encoders_spi_get_value(LEFT_ENCODER);
-	rr = encoders_spi_get_value(RIGHT_ENCODER);
-	if ((ll - ll_prev > 3000) || (ll - ll_prev < -3000) ||
-	    (rr - rr_prev > 3000) || (rr - rr_prev < -3000)) {
-		printf_P(PSTR("/ %d %d %d %d\r\n"),
-			 g_encoders_spi_previous[0],
-			 g_encoders_spi_previous[1],
-			 g_encoders_spi_previous[2],
-			 g_encoders_spi_previous[3]);
-		BRAKE_ON();
-		while (1);
-	}
-	ll_prev = ll;
-	rr_prev = rr;
-#endif
 #endif
 
 	/* robot system, conversion to angle,distance */
@@ -161,11 +133,11 @@ static void do_cs(void *dummy)
 		bd_manage_from_cs(&mainboard.left_cobroller.bd, &mainboard.left_cobroller.cs);
 		bd_manage_from_cs(&mainboard.right_cobroller.bd, &mainboard.right_cobroller.cs);
 		if (mainboard.flags & DO_ERRBLOCKING) {
-			if (bd_get(&mainboard.left_cobroller.bd) ||
-			    bd_get(&mainboard.left_cobroller.bd)) {
-				printf_P(PSTR("MOTOR BLOCKED STOP ALL\r\n"));
-				mainboard.flags &= ~(DO_POWER | DO_ERRBLOCKING);
-			}
+/* 			if (bd_get(&mainboard.left_cobroller.bd) || */
+/* 			    bd_get(&mainboard.left_cobroller.bd)) { */
+/* 				printf_P(PSTR("MOTOR BLOCKED STOP ALL\r\n")); */
+/* 				mainboard.flags &= ~(DO_POWER | DO_ERRBLOCKING); */
+/* 			} */
 		}
 #endif
 	}
@@ -193,7 +165,6 @@ static void do_cs(void *dummy)
 
 #ifdef HOST_VERSION
 	if ((cpt & 7) == 0) {
-		//		dump_cs("dist", &mainboard.distance.cs);
 		robotsim_dump();
 	}
 #endif
@@ -252,7 +223,7 @@ void microb_cs_init(void)
 	position_init(&mainboard.pos);
 	position_set_physical_params(&mainboard.pos, VIRTUAL_TRACK_MM, DIST_IMP_MM);
 	position_set_related_robot_system(&mainboard.pos, &mainboard.rs);
-	position_set_centrifugal_coef(&mainboard.pos, 0.000025);
+	//position_set_centrifugal_coef(&mainboard.pos, 0.000025);
 	position_use_ext(&mainboard.pos);
 
 	/* TRAJECTORY MANAGER */
@@ -364,11 +335,6 @@ void microb_cs_init(void)
 	mainboard.distance.on = 1;
 	mainboard.left_cobroller.on = 1;
 	mainboard.right_cobroller.on = 1;
-
-#ifdef DEBUG_CPLD
-	ll_prev = encoders_spi_get_value(LEFT_ENCODER);
-	rr_prev = encoders_spi_get_value(RIGHT_ENCODER);
-#endif
 
 	scheduler_add_periodical_event_priority(do_cs, NULL,
 						5000L / SCHEDULER_UNIT,

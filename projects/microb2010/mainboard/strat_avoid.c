@@ -898,6 +898,11 @@ uint8_t strat_harvest_circuit(void)
 	return END_TRAJ; // XXX
 }
 
+uint8_t strat_unblock(void)
+{
+	return END_TRAJ;
+}
+
 void test_strat_avoid(void)
 {
 #ifdef TEST_STRAT_AVOID
