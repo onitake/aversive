@@ -11,7 +11,7 @@ ROBOT_HEIGHT=5 # 350
 CORN_HEIGHT=5  # 150
 
 ROBOT_WIDTH=320
-ROBOT_LENGTH=360
+ROBOT_LENGTH=250
 
 area = [ (0.0, 0.0, -0.2), (3000.0, 2100.0, 0.2) ]
 areasize = reduce(lambda x,y:tuple([abs(x[i])+abs(y[i]) for i in range(len(x))]) , area)
@@ -63,8 +63,10 @@ sq2 = square(500)
 robot_x = 0.
 robot_y = 0.
 robot_a = 0.
-robot_lspickle = 0
-robot_rspickle = 0
+robot_lspickle_deployed = 0
+robot_rspickle_deployed = 0
+robot_lspickle_autoharvest = 0
+robot_rspickle_autoharvest = 0
 robot_trail = curve()
 robot_trail_list = []
 max_trail = 500
@@ -281,19 +283,25 @@ def set_robot():
     robot.axis = axis
     robot.size = (ROBOT_LENGTH, ROBOT_WIDTH, ROBOT_HEIGHT)
 
-    robot_lspickle = 2 # XXX
-    lspickle.pos = (tmp_x + (robot_lspickle*60) * math.cos((tmp_a+90)*math.pi/180),
-                    tmp_y + (robot_lspickle*60) * math.sin((tmp_a+90)*math.pi/180),
+    lspickle.pos = (tmp_x + (robot_lspickle_deployed*60) * math.cos((tmp_a+90)*math.pi/180),
+                    tmp_y + (robot_lspickle_deployed*60) * math.sin((tmp_a+90)*math.pi/180),
                     ROBOT_HEIGHT/2)
     lspickle.axis = axis
     lspickle.size = (20, ROBOT_WIDTH, 5)
+    if robot_lspickle_autoharvest:
+        lspickle.color = (1, 0, 0)
+    else:
+        lspickle.color = (0.4, 0.4, 0.4)
 
-    robot_rspickle = 2 # XXX
-    rspickle.pos = (tmp_x + (robot_rspickle*60) * math.cos((tmp_a-90)*math.pi/180),
-                    tmp_y + (robot_rspickle*60) * math.sin((tmp_a-90)*math.pi/180),
+    rspickle.pos = (tmp_x + (robot_rspickle_deployed*60) * math.cos((tmp_a-90)*math.pi/180),
+                    tmp_y + (robot_rspickle_deployed*60) * math.sin((tmp_a-90)*math.pi/180),
                     ROBOT_HEIGHT/2)
     rspickle.axis = axis
     rspickle.size = (20, ROBOT_WIDTH, 5)
+    if robot_rspickle_autoharvest:
+        rspickle.color = (1, 0, 0)
+    else:
+        rspickle.color = (0.4, 0.4, 0.4)
 
     # save position
     save_pos.append((robot.pos.x, robot.pos.y, tmp_a))
@@ -360,15 +368,11 @@ while True:
                     side = int(m.groups()[0])
                     flags = int(m.groups()[1])
                     if side == 0:
-                        if (flags & 0x01) == 0:
-                            robot_lspickle = 1
-                        else:
-                            robot_lspickle = 2
+                        robot_lspickle_deployed = ((flags & 1) * 2)
+                        robot_lspickle_autoharvest = ((flags & 2) != 0)
                     else:
-                        if (flags & 0x01) == 0:
-                            robot_rspickle = 1
-                        else:
-                            robot_rspickle = 2
+                        robot_rspickle_deployed = ((flags & 1) * 2)
+                        robot_rspickle_autoharvest = ((flags & 2) != 0)
 
             if scene.kb.keys == 0:
                 continue

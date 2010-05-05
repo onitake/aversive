@@ -79,6 +79,8 @@ extern parse_pgm_inst_t cmd_spickle_params_show;
 extern parse_pgm_inst_t cmd_spickle_params2;
 extern parse_pgm_inst_t cmd_spickle_params2_show;
 extern parse_pgm_inst_t cmd_shovel;
+extern parse_pgm_inst_t cmd_shovel_current;
+extern parse_pgm_inst_t cmd_shovel_current_show;
 extern parse_pgm_inst_t cmd_test;
 
 
@@ -140,6 +142,8 @@ parse_pgm_ctx_t main_ctx[] = {
 	(parse_pgm_inst_t *)&cmd_spickle_params2,
 	(parse_pgm_inst_t *)&cmd_spickle_params2_show,
 	(parse_pgm_inst_t *)&cmd_shovel,
+	(parse_pgm_inst_t *)&cmd_shovel_current,
+	(parse_pgm_inst_t *)&cmd_shovel_current_show,
 	(parse_pgm_inst_t *)&cmd_test,
 
 	NULL,

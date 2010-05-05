@@ -403,7 +403,8 @@ int8_t i2c_led_control(uint8_t addr, uint8_t led, uint8_t state)
 int8_t i2c_cobboard_set_mode(uint8_t mode)
 {
 #ifdef HOST_VERSION
-	return robotsim_i2c_cobboard_set_mode(mode);
+	cobboard.mode = mode;
+	return 0;
 #else
 	struct i2c_cmd_cobboard_set_mode buf;
 	buf.hdr.cmd = I2C_CMD_COBBOARD_SET_MODE;
@@ -414,11 +415,15 @@ int8_t i2c_cobboard_set_mode(uint8_t mode)
 
 static int8_t i2c_cobboard_set_spickle(uint8_t side, uint8_t flags)
 {
+#ifdef HOST_VERSION
+	return robotsim_i2c_cobboard_set_spickles(side, flags);
+#else
 	if (side == I2C_LEFT_SIDE)
 		cobboard.lspickle = flags;
 	else
 		cobboard.rspickle = flags;
 	return 0;
+#endif
 }
 
 int8_t i2c_cobboard_pack(uint8_t side)

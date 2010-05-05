@@ -46,6 +46,7 @@
 #include "main.h"
 #include "actuator.h"
 #include "spickle.h"
+#include "shovel.h"
 
 /* called every 5 ms */
 static void do_cs(__attribute__((unused)) void *dummy)
@@ -173,7 +174,7 @@ void microb_cs_init(void)
 	cs_init(&cobboard.shovel.cs);
 	cs_set_consign_filter(&cobboard.shovel.cs, quadramp_do_filter, &cobboard.shovel.qr);
 	cs_set_correct_filter(&cobboard.shovel.cs, pid_do_filter, &cobboard.shovel.pid);
-	cs_set_process_in(&cobboard.shovel.cs, pwm_ng_set, SHOVEL_PWM);
+	cs_set_process_in(&cobboard.shovel.cs, shovel_set, SHOVEL_PWM);
 	cs_set_process_out(&cobboard.shovel.cs, encoders_spi_get_value, SHOVEL_ENCODER);
 	cs_set_consign(&cobboard.shovel.cs, 0);
 

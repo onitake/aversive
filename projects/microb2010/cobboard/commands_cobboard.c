@@ -760,6 +760,79 @@ parse_pgm_inst_t cmd_spickle_params2_show = {
 };
 
 /**********************************************************/
+/* Set Shovel Params */
+
+/* this structure is filled when cmd_shovel_current is parsed successfully */
+struct cmd_shovel_current_result {
+	fixed_string_t arg0;
+	fixed_string_t arg1;
+	int32_t arg2;
+	int32_t arg3;
+};
+
+/* function called when cmd_shovel_current is parsed successfully */
+static void cmd_shovel_current_parsed(void *parsed_result,
+				      __attribute__((unused)) void *data)
+{
+	struct cmd_shovel_current_result * res = parsed_result;
+	uint8_t enable;
+	int32_t k1, k2;
+
+	if (!strcmp_P(res->arg1, PSTR("set")))
+		shovel_set_current_limit_coefs(res->arg2, res->arg3);
+	else if (!strcmp_P(res->arg1, PSTR("on")))
+		shovel_current_limit_enable(1);
+	else if (!strcmp_P(res->arg1, PSTR("off")))
+		shovel_current_limit_enable(0);
+
+	/* else show */
+	enable = shovel_get_current_limit_coefs(&k1, &k2);
+	printf_P(PSTR("enabled=%d k1=%"PRIi32" k2=%"PRIi32"\r\n"),
+		 enable, k1, k2);
+}
+
+prog_char str_shovel_current_arg0[] = "shovel_current";
+parse_pgm_token_string_t cmd_shovel_current_arg0 =
+	TOKEN_STRING_INITIALIZER(struct cmd_shovel_current_result, arg0, str_shovel_current_arg0);
+prog_char str_shovel_current_arg1[] = "set";
+parse_pgm_token_string_t cmd_shovel_current_arg1 =
+	TOKEN_STRING_INITIALIZER(struct cmd_shovel_current_result, arg1, str_shovel_current_arg1);
+parse_pgm_token_num_t cmd_shovel_current_arg2 =
+	TOKEN_NUM_INITIALIZER(struct cmd_shovel_current_result, arg2, INT32);
+parse_pgm_token_num_t cmd_shovel_current_arg3 =
+	TOKEN_NUM_INITIALIZER(struct cmd_shovel_current_result, arg3, INT32);
+
+prog_char help_shovel_current[] = "Set shovel_current values";
+parse_pgm_inst_t cmd_shovel_current = {
+	.f = cmd_shovel_current_parsed,  /* function to call */
+	.data = NULL,      /* 2nd arg of func */
+	.help_str = help_shovel_current,
+	.tokens = {        /* token list, NULL terminated */
+		(prog_void *)&cmd_shovel_current_arg0,
+		(prog_void *)&cmd_shovel_current_arg1,
+		(prog_void *)&cmd_shovel_current_arg2,
+		(prog_void *)&cmd_shovel_current_arg3,
+		NULL,
+	},
+};
+
+prog_char str_shovel_current_arg1_show[] = "show#on#off";
+parse_pgm_token_string_t cmd_shovel_current_arg1_show =
+	TOKEN_STRING_INITIALIZER(struct cmd_shovel_current_result, arg1, str_shovel_current_arg1_show);
+
+prog_char help_shovel_current_show[] = "show shovel params";
+parse_pgm_inst_t cmd_shovel_current_show = {
+	.f = cmd_shovel_current_parsed,  /* function to call */
+	.data = NULL,      /* 2nd arg of func */
+	.help_str = help_shovel_current_show,
+	.tokens = {        /* token list, NULL terminated */
+		(prog_void *)&cmd_shovel_current_arg0,
+		(prog_void *)&cmd_shovel_current_arg1_show,
+		NULL,
+	},
+};
+
+/**********************************************************/
 /* Test */
 
 /* this structure is filled when cmd_test is parsed successfully */

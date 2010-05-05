@@ -47,6 +47,10 @@
 #define SHOVEL_MID  4500
 #define SHOVEL_UP   11000
 
+static int32_t shovel_k1 = 1000;
+static int32_t shovel_k2 = 20;
+static uint8_t shovel_current_limit = 1;
+
 /* init spickle position at beginning */
 static void shovel_autopos(void)
 {
@@ -67,6 +71,51 @@ static uint8_t shovel_is_at_pos(int32_t pos)
 	if (diff < 500)
 		return 1;
 	return 0;
+}
+
+void shovel_set_current_limit_coefs(int32_t k1, int32_t k2)
+{
+	shovel_k1 = k1;
+	shovel_k2 = k2;
+}
+
+uint8_t shovel_get_current_limit_coefs(int32_t *k1, int32_t *k2)
+{
+	*k1 = shovel_k1;
+	*k2 = shovel_k2;
+	return shovel_current_limit;
+}
+
+void shovel_current_limit_enable(uint8_t enable)
+{
+	shovel_current_limit = enable;
+}
+
+/* Set CS command for shovel. Called by CS manager. */
+void shovel_set(void *mot, int32_t cmd)
+{
+	static int32_t oldpos;
+	int32_t pos, maxcmd, speed;
+
+	pos = encoders_spi_get_value(SHOVEL_ENCODER);
+	if (shovel_current_limit) {
+		speed = pos - oldpos;
+		if (speed > 0 && cmd < 0)
+			maxcmd = shovel_k1;
+		else if (speed < 0 && cmd > 0)
+			maxcmd = shovel_k1;
+		else {
+			speed = ABS(speed);
+			maxcmd = shovel_k1 + shovel_k2 * speed;
+		}
+		if (cmd > maxcmd)
+			cmd = maxcmd;
+		else if (cmd < -maxcmd)
+			cmd = -maxcmd;
+	}
+
+	pwm_ng_set(mot, cmd);
+	oldpos = pos;
 }
 
 void shovel_down(void)

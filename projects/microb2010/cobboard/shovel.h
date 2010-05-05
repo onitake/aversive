@@ -24,6 +24,11 @@
 
 void shovel_init(void);
 
+void shovel_set_current_limit_coefs(int32_t k1, int32_t k2);
+uint8_t shovel_get_current_limit_coefs(int32_t *k1, int32_t *k2);
+void shovel_current_limit_enable(uint8_t enable);
+void shovel_set(void *mot, int32_t cmd);
+
 void shovel_down(void);
 void shovel_mid(void);
 void shovel_up(void);
