@@ -511,22 +511,27 @@ static void cmd_interact_parsed(void * parsed_result, void * data)
 			}
 		}
 		else {
+#ifdef HOST_VERSION
+#define PWM_INTERACT 300
+#else
+#define PWM_INTERACT 1200
+#endif
 			switch(cmd) {
 			case KEY_UP_ARR:
-				pwm_set_and_save(LEFT_PWM, 1200);
-				pwm_set_and_save(RIGHT_PWM, 1200);
+				pwm_set_and_save(LEFT_PWM, PWM_INTERACT);
+				pwm_set_and_save(RIGHT_PWM, PWM_INTERACT);
 				break;
 			case KEY_LEFT_ARR:
-				pwm_set_and_save(LEFT_PWM, -1200);
-				pwm_set_and_save(RIGHT_PWM, 1200);
+				pwm_set_and_save(LEFT_PWM, -PWM_INTERACT);
+				pwm_set_and_save(RIGHT_PWM, PWM_INTERACT);
 				break;
 			case KEY_DOWN_ARR:
-				pwm_set_and_save(LEFT_PWM, -1200);
-				pwm_set_and_save(RIGHT_PWM, -1200);
+				pwm_set_and_save(LEFT_PWM, -PWM_INTERACT);
+				pwm_set_and_save(RIGHT_PWM, -PWM_INTERACT);
 				break;
 			case KEY_RIGHT_ARR:
-				pwm_set_and_save(LEFT_PWM, 1200);
-				pwm_set_and_save(RIGHT_PWM, -1200);
+				pwm_set_and_save(LEFT_PWM, PWM_INTERACT);
+				pwm_set_and_save(RIGHT_PWM, -PWM_INTERACT);
 				break;
 			}
 		}
