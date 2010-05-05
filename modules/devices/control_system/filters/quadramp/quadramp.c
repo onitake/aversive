@@ -67,7 +67,7 @@ void quadramp_set_1st_order_vars(struct quadramp_filter *q,
 
 uint8_t quadramp_is_finished(struct quadramp_filter *q)
 {
-	return (q->previous_out == q->previous_in &&
+	return ((int32_t)q->previous_out == q->previous_in &&
 		q->previous_var == 0);
 }
 
@@ -88,13 +88,22 @@ int32_t quadramp_do_filter(void * data, int32_t in)
 	double var_2nd_ord_pos = q->var_2nd_ord_pos;
 	double var_2nd_ord_neg = -q->var_2nd_ord_neg;
 	double previous_var, d_float;
-	int32_t previous_out;
+	double previous_out;
 
 	previous_var = q->previous_var;
 	previous_out = q->previous_out;
 
-	d = in - previous_out ;
-	d_float = d;
+	d_float = (double)in - previous_out ;
+
+	/* d is very small, we can jump to dest */
+	if (fabs(d_float) < 2.) {
+		q->previous_var = 0;
+		q->previous_out = in;
+		q->previous_in = in;
+		return in;
+	}
+
+	d = (int32_t)d_float;
 
 	/* Deceleration ramp */
 	if (d > 0 && var_2nd_ord_neg) {
@@ -173,7 +182,7 @@ int32_t quadramp_do_filter(void * data, int32_t in)
 		previous_var = var_1st_ord_neg ;
 	}
 	else {
-		pos_target = previous_out + d ;
+		pos_target = in;
 		previous_var = d_float ;
 	}
 

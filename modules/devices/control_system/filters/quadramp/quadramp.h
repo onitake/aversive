@@ -32,7 +32,7 @@ struct quadramp_filter
 	double var_1st_ord_neg;
 
 	double previous_var;
-	int32_t previous_out;
+	double previous_out;
 	int32_t previous_in;
 };
 
