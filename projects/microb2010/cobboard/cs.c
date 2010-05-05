@@ -1,7 +1,7 @@
-/*  
+/*
  *  Copyright Droids Corporation
  *  Olivier Matz <zer0@droids-corp.org>
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -47,8 +47,6 @@
 #include "actuator.h"
 #include "spickle.h"
 
-#define DEBUG_CPLD
-
 /* called every 5 ms */
 static void do_cs(__attribute__((unused)) void *dummy)
 {
@@ -56,11 +54,7 @@ static void do_cs(__attribute__((unused)) void *dummy)
 	if (cobboard.flags & DO_ENCODERS) {
 		encoders_spi_manage(NULL);
 	}
-#ifdef DEBUG_CPLD
-	cobboard.left_spickle.prev = cobboard.left_spickle.cs.filtered_feedback_value;
-	cobboard.right_spickle.prev = cobboard.right_spickle.cs.filtered_feedback_value;
-	cobboard.shovel.prev = cobboard.shovel.cs.filtered_feedback_value;
-#endif
+
 	/* control system */
 	if (cobboard.flags & DO_CS) {
 		if (cobboard.left_spickle.on)
@@ -70,30 +64,6 @@ static void do_cs(__attribute__((unused)) void *dummy)
 		if (cobboard.shovel.on)
 			cs_manage(&cobboard.shovel.cs);
 	}
-#ifdef DEBUG_CPLD
-	{
-		extern int16_t g_encoders_spi_previous[4];
-		int32_t ls, rs, sh;
-
-		ls = (cobboard.left_spickle.prev - cobboard.left_spickle.cs.filtered_feedback_value);
-		rs = (cobboard.right_spickle.prev - cobboard.right_spickle.cs.filtered_feedback_value);
-		sh = (cobboard.shovel.prev - cobboard.shovel.cs.filtered_feedback_value);
-		if (ls < -3000 || ls > 3000 ||
-		    rs < -3000 || rs > 3000 ||
-		    sh < -3000 || sh > 3000) {
-			printf_P(PSTR("left_spickle %ld "), ls);
-			printf_P(PSTR("right_spickle %ld "), rs);
-			printf_P(PSTR("shovel %ld "), sh);
-			printf_P(PSTR("/ %d %d %d %d\r\n"),
-				 g_encoders_spi_previous[0],
-				 g_encoders_spi_previous[1],
-				 g_encoders_spi_previous[2],
-				 g_encoders_spi_previous[3]);
-			BRAKE_ON();
-			while (1);
-		}
-	}
-#endif
 
 	if ((cobboard.flags & DO_BD) && (cobboard.flags & DO_POWER)) {
 		bd_manage_from_cs(&cobboard.left_spickle.bd, &cobboard.left_spickle.cs);
@@ -102,12 +72,12 @@ static void do_cs(__attribute__((unused)) void *dummy)
 
 		/* urgent case: stop power on blocking */
 		if (cobboard.flags & DO_ERRBLOCKING) {
-			if (/* bd_get(&cobboard.left_spickle.bd) || */
-			    /* bd_get(&cobboard.right_spickle.bd) || */
-			    bd_get(&cobboard.shovel.bd)) {
-				printf_P(PSTR("MOTOR BLOCKED STOP ALL\r\n"));
-				cobboard.flags &= ~(DO_POWER | DO_ERRBLOCKING);
-			}
+/* 			if (bd_get(&cobboard.left_spickle.bd) || */
+/* 			    bd_get(&cobboard.right_spickle.bd) || */
+/* 			    bd_get(&cobboard.shovel.bd)) { */
+/* 				printf_P(PSTR("MOTOR BLOCKED STOP ALL\r\n")); */
+/* 				cobboard.flags &= ~(DO_POWER | DO_ERRBLOCKING); */
+/* 			} */
 		}
 	}
 	if (cobboard.flags & DO_POWER)
