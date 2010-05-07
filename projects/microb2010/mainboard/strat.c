@@ -116,8 +116,8 @@ void strat_event_disable(void)
 void strat_init(void)
 {
 #ifdef HOST_VERSION
-	position_set(&mainboard.pos, 258.,
-		     COLOR_Y(246.), COLOR_A(45.));
+	position_set(&mainboard.pos, 298.16,
+		     COLOR_Y(308.78), COLOR_A(70.00));
 #endif
 
 	/* we consider that the color is correctly set */
@@ -286,23 +286,25 @@ void strat_event(void *dummy)
 }
 
 
-static uint8_t strat_harvest(void)
-{
-	return 0;
-}
-
 /* must be called from a terminal line */
 static uint8_t strat_eject(void)
 {
 	uint8_t err;
+
+	/* XXX MUST be a on the line !! */
 	//XXX return vals
+
+	DEBUG(E_USER_STRAT, "%s()", __FUNCTION__);
 
 	/* go to eject point */
 	trajectory_goto_xy_abs(&mainboard.traj, 2625, COLOR_Y(1847));
 	err = WAIT_COND_OR_TRAJ_END(get_cob_count() >= 5,
 				    TRAJ_FLAGS_NO_NEAR);
+	if (err != 0 && !TRAJ_SUCCESS(err))
+		return err;
+
+	strat_want_pack = 1;
 	if (err == 0) {
-		strat_want_pack = 1;
 		strat_set_speed(SPEED_CLITOID_FAST, SPEED_ANGLE_SLOW);
 		err = wait_traj_end(TRAJ_FLAGS_NO_NEAR);
 	}
@@ -316,6 +318,8 @@ static uint8_t strat_eject(void)
 	i2c_ballboard_set_mode(I2C_BALLBOARD_MODE_EJECT);
 	trajectory_a_abs(&mainboard.traj, COLOR_A(70));
 	err = wait_traj_end(TRAJ_FLAGS_NO_NEAR);
+	if (!TRAJ_SUCCESS(err))
+		goto fail;
 
 	DEBUG(E_USER_STRAT, "%s():%d", __FUNCTION__, __LINE__);
 	strat_hardstop();
@@ -331,18 +335,25 @@ static uint8_t strat_eject(void)
 	/* half turn */
 	trajectory_a_rel(&mainboard.traj, COLOR_A(180));
 	err = wait_traj_end(END_INTR|END_TRAJ);
+	if (!TRAJ_SUCCESS(err))
+		goto fail;
 
 	/* cob ejection */
 	trajectory_d_rel(&mainboard.traj, -70);
 	err = wait_traj_end(END_INTR|END_TRAJ);
+	if (!TRAJ_SUCCESS(err))
+		goto fail;
 
 	i2c_cobboard_set_mode(I2C_COBBOARD_MODE_EJECT);
 	strat_db_dump(__FUNCTION__);
 	time_wait_ms(2000);
 
+	err = END_TRAJ;
+
+ fail:
 	strat_event_enable();
 	strat_want_pack = 0;
-	return 0;
+	return err;
 }
 
 static uint8_t strat_beginning(void)
@@ -351,7 +362,6 @@ static uint8_t strat_beginning(void)
 
 	strat_set_acc(ACC_DIST, ACC_ANGLE);
 	strat_set_speed(600, 60); /* OK */
-	//strat_set_speed(250, 28); /* OK */
 
 	trajectory_d_a_rel(&mainboard.traj, 1000, COLOR_A(20));
 	err = WAIT_COND_OR_TRAJ_END(trajectory_angle_finished(&mainboard.traj),
@@ -360,30 +370,13 @@ static uint8_t strat_beginning(void)
 	strat_set_acc(ACC_DIST, ACC_ANGLE);
 	strat_set_speed(SPEED_CLITOID_SLOW, SPEED_ANGLE_SLOW);
 
- l1:
-	DEBUG(E_USER_STRAT, "%s():%d count=%d", __FUNCTION__, __LINE__, get_cob_count());
 	err = line2line(0, LINE_UP, 2, LINE_R_DOWN, TRAJ_FLAGS_NO_NEAR);
-	if (!TRAJ_SUCCESS(err)) {
-		strat_hardstop();
-		time_wait_ms(2000);
-		goto l1;
-	}
+	if (!TRAJ_SUCCESS(err))
+		return err;
 
- l2:
-	DEBUG(E_USER_STRAT, "%s():%d count=%d", __FUNCTION__, __LINE__, get_cob_count());
 	err = line2line(2, LINE_R_DOWN, 2, LINE_R_UP, TRAJ_FLAGS_NO_NEAR);
 	if (!TRAJ_SUCCESS(err)) {
-		strat_hardstop();
-		time_wait_ms(2000);
-		goto l2;
-	}
-
-	strat_eject();
-
-	while (1) {
-		strat_set_speed(SPEED_CLITOID_SLOW, SPEED_ANGLE_SLOW);
-		strat_harvest_circuit();
-		strat_eject();
+		return err;
 	}
 
 	return END_TRAJ;
@@ -399,6 +392,7 @@ static uint8_t strat_beginning(void)
 	} while (0)
 
 
+#if 0
 /* return true if we need to grab some more elements */
 static uint8_t need_more_elements(void)
 {
@@ -421,6 +415,7 @@ static uint8_t need_more_elements(void)
 		return 1;
 	}
 }
+#endif
 
 uint8_t strat_main(void)
 {
@@ -428,26 +423,44 @@ uint8_t strat_main(void)
 
 	/* harvest the first cobs + balls */
 	err = strat_beginning();
+	if (!TRAJ_SUCCESS(err))
+		strat_unblock();
+	else
+		err = strat_eject();
 
 	while (1) {
+
+		/**********************/
+		/* harvest on circuit */
+		/**********************/
+
+		DEBUG(E_USER_STRAT, "start main loop");
+
+		err = strat_harvest_circuit();
+		if (err == END_TIMER) {
+			DEBUG(E_USER_STRAT, "End of time");
+			strat_exit();
+			break;
+		}
+		if (!TRAJ_SUCCESS(err)) {
+			strat_unblock();
+			continue;
+		}
+
+		/***********************/
+		/* eject game elements */
+		/***********************/
+
+		err = strat_eject();
 		/* end of time exit ! */
 		if (err == END_TIMER) {
 			DEBUG(E_USER_STRAT, "End of time");
 			strat_exit();
 			break;
 		}
-
-		if (need_more_elements() == 0) {
-			/* we have enough elements, go to eject */
-			err = strat_eject();
-			if (!TRAJ_SUCCESS(err))
-				continue;
-		}
-		else {
-			/* harvest */
-			err = strat_harvest();
-			if (!TRAJ_SUCCESS(err))
-				continue;
+		if (!TRAJ_SUCCESS(err)) {
+			strat_unblock();
+			continue;
 		}
 	}
 
