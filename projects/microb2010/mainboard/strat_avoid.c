@@ -89,7 +89,7 @@ const struct wp_coord butterfly_tab[] = {
 	{ .i = 7, .j = 4, },
 	{ .i = 6, .j = 4, },
 	{ .i = 5, .j = 3, },
-	{ .i = 4, .j = 4, },
+	{ .i = 4, .j = 3, },
 	{ .i = 3, .j = 2, },
 	{ .i = 2, .j = 2, },
 	{ .i = 1, .j = 1, },
@@ -281,6 +281,40 @@ const struct circuit big_h_lambda_circuit = {
 	.path = big_h_lambda_tab,
 };
 
+const struct wp_coord letter_v_tab[] = {
+	{ .i = 11, .j = 6, },
+	{ .i = 10, .j = 6, },
+	{ .i = 9, .j = 5, },
+	{ .i = 8, .j = 5, },
+	{ .i = 7, .j = 4, },
+	{ .i = 6, .j = 4, },
+	{ .i = 5, .j = 4, },
+	{ .i = 4, .j = 5, },
+	{ .i = 3, .j = 5, },
+	{ .i = 2, .j = 6, },
+	{ .i = 1, .j = 6, },
+	{ .i = 1, .j = 5, },
+	{ .i = 1, .j = 4, },
+	{ .i = 2, .j = 4, },
+	{ .i = 3, .j = 3, },
+	{ .i = 4, .j = 3, },
+	{ .i = 5, .j = 2, },
+	{ .i = 6, .j = 2, },
+	{ .i = 7, .j = 2, },
+	{ .i = 8, .j = 3, },
+	{ .i = 9, .j = 3, },
+	{ .i = 10, .j = 4, },
+	{ .i = 11, .j = 4, },
+	{ .i = 11, .j = 5, },
+	{ .i = 11, .j = 6, },
+};
+
+const struct circuit letter_v_circuit = {
+	.name = "letter_v",
+	.len = sizeof(letter_v_tab)/sizeof(struct wp_coord),
+	.path = letter_v_tab,
+};
+
 /* list of all possible circuits */
 const struct circuit *circuits[] = {
 	&butterfly_circuit,
@@ -290,6 +324,7 @@ const struct circuit *circuits[] = {
 	&h_lambda_circuit,
 	&asym_butterfly_circuit,
 	&big_h_lambda_circuit,
+	&letter_v_circuit,
 	NULL,
 };
 
@@ -516,7 +551,7 @@ static int8_t get_path(const struct circuit *circuit,
 		start = end + circuit->len - 1;
 	}
 
-	DPR("face: %s %d\r\n", circuit->name, faceA);
+	DPR("%s(): %s face=%d\r\n", __FUNCTION__, circuit->name, faceA);
 
 	/* check that the point is present in the circuit */
 	for (curcircuit = start; curcircuit != end; curcircuit += step) {
@@ -545,6 +580,8 @@ static int8_t get_path(const struct circuit *circuit,
 			linenum = get_line_num(prev_i, prev_j, dir);
 			circuit_wpline[path_len].line_num = linenum;
 			circuit_wpline[path_len].dir = dir;
+			DPR("%s(): %d %d -> %d %d / len=%d num=%d dir=%d\r\n",
+			    __FUNCTION__, prev_i, prev_j, i, j, path_len, linenum, dir);
 			path_len++;
 		}
 	}
@@ -660,7 +697,7 @@ static int8_t evaluate_one_face(const struct circuit *circuit,
 	uint8_t ni = 0, nj = 0;
 	uint8_t dir, color, idx;
 	int8_t step = faceA ? 1 : -1;
-	int16_t x, y, d;
+	int16_t x, y, d, prev_d = 0;
 	int16_t oppx, oppy;
 
 	*score = 0x8000; /* -int_max */
@@ -690,13 +727,15 @@ static int8_t evaluate_one_face(const struct circuit *circuit,
 	/* get opponent coords */
 	if (get_opponent_xy(&oppx, &oppy) < 0)
 		oppx = I2C_OPPONENT_NOT_THERE;
+	else
+		DPR("%s() opponent: %d, %d\r\n", __FUNCTION__, oppx, oppy);
 
 	/* silent the compiler */
 	prev_i = 0xff;
 	prev_j = 0xff;
 
 	/* browse all points and calculate the score */
-	for (curcircuit = start;
+	for (; /* start at starti,startj */
 	     curcircuit != end;
 	     curcircuit += step, len ++, prev_i = i, prev_j = j) {
 		i = curcircuit->i;
@@ -706,8 +745,11 @@ static int8_t evaluate_one_face(const struct circuit *circuit,
 		ijcoord_to_xycoord(i, j, &x, &y);
 		if (oppx != I2C_OPPONENT_NOT_THERE) {
 			d = distance_between(oppx, oppy, x, y);
-			if (d < 600)
+			DPR("%s(): opp at %d mm (ij=%d,%d opp=%d,%d pos=%d,%d)\r\n",
+			    __FUNCTION__, d, i, j, oppx, oppy, x, y);
+			if (d < 600 && d < prev_d)
 				opponent_on_path = 1;
+			prev_d = d;
 		}
 
 		/* don't try to look cobs/tomato for first point */
@@ -785,9 +827,9 @@ static int8_t evaluate_one_circuit(const struct circuit *circuit,
 }
 
 /* i,j starting position */
-int8_t find_best_circuit(uint8_t i, uint8_t j,
-		       const struct circuit **selected_circuit,
-		       int8_t *selected_face)
+static int8_t find_best_circuit(uint8_t i, uint8_t j,
+				const struct circuit **selected_circuit,
+				int8_t *selected_face)
 {
 	const struct circuit **circuit;
 	int16_t scoreA, scoreB;
@@ -805,12 +847,12 @@ int8_t find_best_circuit(uint8_t i, uint8_t j,
 		if (scoreA > selected_score) {
 			*selected_circuit = *circuit;
 			selected_score = scoreA;
-			*selected_face = 0;
+			*selected_face = 1;
 		}
 		if (scoreB > selected_score) {
 			*selected_circuit = *circuit;
 			selected_score = scoreB;
-			*selected_face = 1;
+			*selected_face = 0;
 		}
 	}
 
@@ -822,6 +864,36 @@ int8_t find_best_circuit(uint8_t i, uint8_t j,
 		      (*selected_face) ? "faceA":"faceB");
 	return found;
 }
+
+static void test_all_circuits(void)
+{
+	const struct circuit **circuit;
+	const struct wp_coord *cur;
+	const struct wp_coord *start;
+	const struct wp_coord *end;
+	uint8_t prev_i, prev_j, i, j, dir;
+
+	for (circuit = &circuits[0]; *circuit; circuit++) {
+		start = &(*circuit)->path[0];
+		end = start + (*circuit)->len - 1;
+
+		prev_i = start->i;
+		prev_j = start->j;
+		start ++;
+
+		for (cur = start; cur != end;
+		     cur ++, prev_i = i, prev_j = j) {
+
+			i = cur->i;
+			j = cur->j;
+
+			dir = get_dir(prev_i, prev_j, i, j);
+			if (dir == 0xFF)
+				printf_P("Bad circuit %s %d %d\r\n", (*circuit)->name, i, j);
+		}
+	}
+}
+
 
 static void dump_circuit_wp(struct wp_line *circuit_wpline, int8_t len)
 {
@@ -849,6 +921,8 @@ uint8_t strat_harvest_circuit(void)
 	uint8_t dir, prev_dir;
 	uint8_t err;
 
+	strat_set_speed(SPEED_CLITOID_SLOW, SPEED_ANGLE_SLOW);
+
 	x = position_get_x_s16(&mainboard.pos);
 	y = position_get_y_s16(&mainboard.pos);
 
@@ -875,36 +949,70 @@ uint8_t strat_harvest_circuit(void)
 
 	prev_linenum = circuit_wpline[0].line_num;
 	prev_dir = circuit_wpline[0].dir;
+
+	/* do all lines of circuit */
 	for (idx = 1; idx < len; idx ++) {
-	retry:
 		linenum = circuit_wpline[idx].line_num;
 		dir = circuit_wpline[idx].dir;
 
-		/* XXX basic opponent management */
 		DEBUG(E_USER_STRAT, "%s(): line %d dir %d -> line %d dir %d",
 		      __FUNCTION__, prev_linenum, prev_dir, linenum, dir);
 		err = line2line(prev_linenum, prev_dir, linenum, dir,
 				TRAJ_FLAGS_NO_NEAR);
-		if (!TRAJ_SUCCESS(err)) {
-			strat_hardstop();
-			time_wait_ms(2000);
-			goto retry;
-		}
+		if (!TRAJ_SUCCESS(err))
+			return err;
 
 		prev_linenum = linenum;
 		prev_dir = dir;
 	}
 
-	return END_TRAJ; // XXX
+	return END_TRAJ;
 }
 
+/* try to unblock in any situation */
 uint8_t strat_unblock(void)
 {
+	int16_t x, y;
+	uint8_t i, j;
+	uint16_t old_dspeed, old_aspeed;
+	uint8_t err;
+
+	DEBUG(E_USER_STRAT, "%s()", __FUNCTION__);
+
+	strat_want_pack = 1;
+	strat_get_speed(&old_dspeed, &old_aspeed);
+
+	strat_hardstop();
+	strat_set_speed(SPEED_DIST_SLOW, SPEED_ANGLE_SLOW);
+	x = position_get_x_s16(&mainboard.pos);
+	y = position_get_y_s16(&mainboard.pos);
+	if (xycoord_to_ijcoord(&x, &y, &i, &j) < 0) {
+		/* aie... go to center... but it's really a bad
+		 * idea */
+		x = CENTER_X;
+		y = CENTER_Y;
+	}
+
+	/* XXX if opponent is too close, go back, or wait ? */
+
+	/* go to nearest waypoint */
+	trajectory_goto_xy_abs(&mainboard.traj, x, y);
+	err = wait_traj_end(TRAJ_FLAGS_NO_NEAR);
+	if (err == END_TIMER)
+		return err;
+
+	if (!TRAJ_SUCCESS(err))
+		return err;
+
+	strat_set_speed(old_dspeed, old_aspeed);
+	strat_want_pack = 0;
 	return END_TRAJ;
 }
 
 void test_strat_avoid(void)
 {
+	test_all_circuits();
+
 #ifdef TEST_STRAT_AVOID
 	uint8_t i, j;
 	const struct circuit *selected_circuit;

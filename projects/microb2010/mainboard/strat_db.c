@@ -149,7 +149,10 @@ int8_t ijcoord_to_xycoord(uint8_t i, uint8_t j, int16_t *x, int16_t *y)
 	if (i >= WAYPOINTS_NBX && j >= WAYPOINTS_NBY)
 		return -1;
 	*x = (OFFSET_CORN_X + i*STEP_CORN_X);
-	*y = COLOR_Y(OFFSET_CORN_Y + j*STEP_CORN_Y);
+	if (i&1)
+		*y = COLOR_Y(OFFSET_CORN_Y + j*STEP_CORN_Y + STEP_CORN_Y/2);
+	else
+		*y = COLOR_Y(OFFSET_CORN_Y + j*STEP_CORN_Y);
 	return 0;
 }
 

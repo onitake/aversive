@@ -39,6 +39,9 @@ int8_t browse_circuits(uint8_t i, uint8_t j,
 		       const struct wp_coord **selected_circuit,
 		       int8_t *selected_face);
 
+/* try to unblock in any situation */
+uint8_t strat_unblock(void);
+
 /* harvest on the best circuit */
 uint8_t strat_harvest_circuit(void);
 

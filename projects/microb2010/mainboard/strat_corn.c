@@ -315,7 +315,7 @@ static int8_t strat_calc_clitoid(uint8_t num1, uint8_t dir1,
 	}
 	/* hard turn, 120 deg */
 	else {
-		radius = 120;//75;
+		radius = 75;
 		if (diff_a_deg > 0)
 			beta_deg = 0;
 		else
@@ -332,7 +332,6 @@ static int8_t strat_calc_clitoid(uint8_t num1, uint8_t dir1,
 		strat_set_speed(SPEED_CLITOID_FAST, SPEED_ANGLE_SLOW);
 	}
 
-	/* XXX check return value !! */
 	ret = trajectory_clitoid(&mainboard.traj, l1.p1.x, l1.p1.y,
 				 line1_a_deg, 150., diff_a_deg, beta_deg,
 				 radius, xy_norm(l1.p1.x, l1.p1.y,
@@ -350,8 +349,10 @@ uint8_t line2line(uint8_t num1, uint8_t dir1, uint8_t num2,
 
  reprocess:
 	ret = strat_calc_clitoid(num1, dir1, num2, dir2, &pack_spickles);
-	if (ret < 0)
+	if (ret < 0) {
 		DEBUG(E_USER_STRAT, "clitoid failed");
+		return END_ERROR;
+	}
 
 	/* XXX what to do if cobboard is stucked */
 
@@ -360,8 +361,13 @@ uint8_t line2line(uint8_t num1, uint8_t dir1, uint8_t num2,
 						     num2, dir2),
 				    flags);
 
+	/* error during traj, or traj finished */
+	if (err != 0)
+		return err;
+
 	/* the speed has to change */
-	if (trajectory_get_state(&mainboard.traj) != RUNNING_CLITOID_CURVE)
+	if (err == 0 &&
+	    trajectory_get_state(&mainboard.traj) != RUNNING_CLITOID_CURVE)
 		goto reprocess;
 
 	DEBUG(E_USER_STRAT, "clitoid started err=%d pack_spickles=%d",
@@ -379,7 +385,7 @@ uint8_t line2line(uint8_t num1, uint8_t dir1, uint8_t num2,
 		err = wait_traj_end(flags);
 	}
 
-	DEBUG(E_USER_STRAT, "clitoid finished");
+	DEBUG(E_USER_STRAT, "clitoid finished, err=%d", err);
 
 	strat_rpack60 = 0;
 	strat_lpack60 = 0;

@@ -135,15 +135,15 @@
 #define ACC_ANGLE 16.
 
 /* default speeds */
-#define SPEED_DIST_FAST 2500.
-#define SPEED_ANGLE_FAST 2000.
-#define SPEED_DIST_SLOW 1000.
-#define SPEED_ANGLE_SLOW 1000.
-#define SPEED_DIST_VERY_SLOW 400.
-#define SPEED_ANGLE_VERY_SLOW 400.
+#define SPEED_DIST_FAST 1500.
+#define SPEED_ANGLE_FAST 1000.
+#define SPEED_DIST_SLOW 500.
+#define SPEED_ANGLE_SLOW 500.
+#define SPEED_DIST_VERY_SLOW 200.
+#define SPEED_ANGLE_VERY_SLOW 200.
 
-#define SPEED_CLITOID_SLOW 100. ///250.
-#define SPEED_CLITOID_FAST 100. ///500.
+#define SPEED_CLITOID_SLOW 250.
+#define SPEED_CLITOID_FAST 500.
 
 
 /* strat infos structures */
@@ -157,6 +157,7 @@ struct strat_conf {
 extern struct strat_conf strat_conf;
 extern volatile uint8_t strat_lpack60;
 extern volatile uint8_t strat_rpack60;
+extern volatile uint8_t strat_want_pack;
 
 /* in strat.c */
 void strat_conf_dump(const char *caller);

@@ -235,7 +235,7 @@ void strat_limit_speed_disable(void)
 	strat_limit_speed_enabled = 0;
 }
 
-/* called periodically */
+/* called periodically (note: disabled in 2010) */
 void strat_limit_speed(void)
 {
 	uint16_t lim_d = 0, lim_a = 0;
@@ -326,7 +326,6 @@ void strat_start(void)
 /* return true if we have to brake due to an obstacle */
 uint8_t strat_obstacle(void)
 {
-#if 0
 	int16_t x_rel, y_rel;
 	int16_t opp_x, opp_y, opp_d, opp_a;
 
@@ -335,8 +334,7 @@ uint8_t strat_obstacle(void)
 		return 0;
 
 	/* no opponent detected */
-	if (get_opponent_xyda(&opp_x, &opp_y,
-			      &opp_d, &opp_a))
+	if (get_opponent_xyda(&opp_x, &opp_y, &opp_d, &opp_a))
 		return 0;
 
 	/* save obstacle position */
@@ -344,28 +342,9 @@ uint8_t strat_obstacle(void)
 	opponent_obstacle.y = opp_y;
 	opponent_obstacle.d = opp_d;
 	opponent_obstacle.a = opp_a;
-#else /* belgium cup only */
-	int16_t x_rel, y_rel;
-	int16_t opp_d, opp_a;
-	double opp_x, opp_y;
 
-#ifdef HOST_VERSION
-	return 0;
-	if (time_get_s() >= 12 && time_get_s() <= 30)
-		return 1;
-#endif
-	return 0; /* XXX disabled */
-
-	if (!sensor_get(S_RCOB_WHITE))
-		return 0;
-
-	opp_a = 0;
-	opp_d = 300;
-
-	rel_da_to_abs_xy(opp_d, RAD(opp_a), &opp_x, &opp_y);
 	if (!is_in_area(opp_x, opp_y, 250))
 		return 0;
-#endif
 
 	/* sensor are temporarily disabled */
 	if (sensor_obstacle_is_disabled())
