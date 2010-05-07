@@ -285,16 +285,36 @@ void strat_event(void *dummy)
 	//strat_limit_speed();
 }
 
+/* check that we are on an eject line */
+static uint8_t robot_is_on_eject_line(void)
+{
+	int16_t x, y;
+	uint8_t i, j;
+
+	x = position_get_x_s16(&mainboard.pos);
+	y = position_get_y_s16(&mainboard.pos);
+
+	if (xycoord_to_ijcoord(&x, &y, &i, &j) < 0)
+		return 0;
+
+	if (!wp_belongs_to_line(i, j, 5, LINE_UP) &&
+	    !wp_belongs_to_line(i, j, 2, LINE_R_UP))
+		return 0;
+
+	return 1;
+}
 
 /* must be called from a terminal line */
 static uint8_t strat_eject(void)
 {
 	uint8_t err;
 
-	/* XXX MUST be a on the line !! */
-	//XXX return vals
-
 	DEBUG(E_USER_STRAT, "%s()", __FUNCTION__);
+
+	if (!robot_is_on_eject_line()) {
+		DEBUG(E_USER_STRAT, "%s() not on eject line", __FUNCTION__);
+		return END_ERROR;
+	}
 
 	/* go to eject point */
 	trajectory_goto_xy_abs(&mainboard.traj, 2625, COLOR_Y(1847));
