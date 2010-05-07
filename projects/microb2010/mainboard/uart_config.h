@@ -1,6 +1,6 @@
-/*  
+/*
  *  Copyright Droids Corporation, Microb Technology, Eirbot (2005)
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -27,11 +27,40 @@
 #define UART_CONFIG_H
 
 /*
- * UART1 definitions 
+ * UART0 definitions
+ */
+
+/* compile uart0 fonctions, undefine it to pass compilation */
+#define UART0_COMPILE
+
+/* enable uart0 if == 1, disable if == 0 */
+#define UART0_ENABLED  1
+
+/* enable uart0 interrupts if == 1, disable if == 0 */
+#define UART0_INTERRUPT_ENABLED  1
+
+#define UART0_BAUDRATE 57600
+
+/*
+ * if you enable this, the maximum baudrate you can reach is
+ * higher, but the precision is lower.
+ */
+#define UART0_USE_DOUBLE_SPEED 1
+
+#define UART0_RX_FIFO_SIZE 64
+#define UART0_TX_FIFO_SIZE 64
+#define UART0_NBITS 8
+
+#define UART0_PARITY UART_PARTITY_NONE
+
+#define UART0_STOP_BIT UART_STOP_BITS_1
+
+/*
+ * UART1 definitions
  */
 
 /* compile uart1 fonctions, undefine it to pass compilation */
-#define UART1_COMPILE  
+#define UART1_COMPILE
 
 /* enable uart1 if == 1, disable if == 0 */
 #define UART1_ENABLED  1
@@ -41,9 +70,9 @@
 
 #define UART1_BAUDRATE 57600
 
-/* 
- * if you enable this, the maximum baudrate you can reach is 
- * higher, but the precision is lower. 
+/*
+ * if you enable this, the maximum baudrate you can reach is
+ * higher, but the precision is lower.
  */
 #define UART1_USE_DOUBLE_SPEED 1
 
@@ -54,39 +83,6 @@
 #define UART1_PARITY UART_PARTITY_NONE
 
 #define UART1_STOP_BIT UART_STOP_BITS_1
-
-
-/*
- * UART3 definitions 
- */
-
-/* compile uart3 fonctions, undefine it to pass compilation */
-#define UART3_COMPILE  
-
-/* enable uart3 if == 1, disable if == 0 */
-#define UART3_ENABLED  1
-
-/* enable uart3 interrupts if == 1, disable if == 0 */
-#define UART3_INTERRUPT_ENABLED  1
-
-#define UART3_BAUDRATE 57600
-
-/* 
- * if you enable this, the maximum baudrate you can reach is 
- * higher, but the precision is lower. 
- */
-#define UART3_USE_DOUBLE_SPEED 1
-
-#define UART3_RX_FIFO_SIZE 64
-#define UART3_TX_FIFO_SIZE 64
-#define UART3_NBITS 8
-
-#define UART3_PARITY UART_PARTITY_NONE
-
-#define UART3_STOP_BIT UART_STOP_BITS_1
-
-
-
 
 /* .... same for uart 1, 2, 3 ... */
 
