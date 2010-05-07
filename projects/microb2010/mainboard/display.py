@@ -169,10 +169,14 @@ def init_waypoints():
                 continue
 
             # balls
-            if (i & 1) == 0 and j > 3:
+            if (i & 1) == 0 and j > 3 and \
+                    (not (i == 0 and j == WAYPOINTS_NBY-1)) and \
+                    (not (i == WAYPOINTS_NBX-1 and j == WAYPOINTS_NBY-1)):
                 waypoints[i][j] = TYPE_BALL
                 continue
-            if (i == 0 or i == WAYPOINTS_NBX-1) and j > 2:
+            if (i == 0 or i == WAYPOINTS_NBX-1) and j > 2 and \
+                    (not (i == 0 and j == WAYPOINTS_NBY-1)) and \
+                    (not (i == WAYPOINTS_NBX-1 and j == WAYPOINTS_NBY-1)):
                 waypoints[i][j] = TYPE_BALL
                 continue
 
