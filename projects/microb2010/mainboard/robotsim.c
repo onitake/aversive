@@ -44,6 +44,7 @@
 #include <blocking_detection_manager.h>
 #include <robot_system.h>
 #include <position_manager.h>
+#include <trajectory_manager_utils.h>
 
 #include <parse.h>
 #include <rdline.h>
@@ -193,15 +194,21 @@ void robotsim_update(void)
 	static int32_t l_speed, r_speed;
 	static unsigned i = 0;
 	static unsigned cpt = 0;
+
+	uint8_t flags;
 	int32_t local_l_pwm, local_r_pwm;
 	double x, y, a, a2, d;
-	char cmd = 0;
+	char cmd[BUFSIZ];
+	int n, pertl = 0, pertr = 0;
 
 	/* corners of the robot */
 	double xfl, yfl; /* front left */
 	double xrl, yrl; /* rear left */
 	double xrr, yrr; /* rear right */
 	double xfr, yfr; /* front right */
+
+	int oppx, oppy;
+	double oppa, oppd;
 
 	/* time shift the command */
 	l_pwm_shift[i] = l_pwm;
@@ -213,8 +220,29 @@ void robotsim_update(void)
 
 	/* read command */
 	if (((cpt ++) & 0x7) == 0) {
-		if (read(fdr, &cmd, 1) != 1)
-			cmd = 0;
+		n = read(fdr, &cmd, BUFSIZ - 1);
+		if (n < 1)
+			n = 0;
+		cmd[n] = 0;
+	}
+
+	/* perturbation */
+	if (cmd[0] == 'l')
+		pertl = 1;
+	else if (cmd[0] == 'r')
+		pertr = 1;
+	if (cmd[0] == 'o') {
+		if (sscanf(cmd, "opp %d %d", &oppx, &oppy) == 2) {
+			abs_xy_to_rel_da(oppx, oppy, &oppd, &oppa);
+			IRQ_LOCK(flags);
+			beaconboard.oppx = oppx;
+			beaconboard.oppy = oppy;
+			beaconboard.oppa = DEG(oppa);
+			if (beaconboard.oppa < 0)
+				beaconboard.oppa += 360;
+			beaconboard.oppd = oppd;
+			IRQ_UNLOCK(flags);
+		}
 	}
 
 	x = position_get_x_double(&mainboard.pos);
@@ -250,10 +278,9 @@ void robotsim_update(void)
 	if (!is_in_area(xfr, yfr, 0) && r_speed > 0)
 		r_speed = 0;
 
-	/* perturbation */
-	if (cmd == 'l')
+	if (pertl)
 		l_enc += 5000; /* push 1 cm */
-	if (cmd == 'r')
+	if (pertr)
 		r_enc += 5000; /* push 1 cm */
 
 	/* XXX should lock */

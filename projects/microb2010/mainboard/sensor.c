@@ -288,29 +288,28 @@ uint8_t sensor_obstacle_is_disabled(void)
 /************ global sensor init */
 #define BACKGROUND_ADC  0
 
-#ifndef HOST_VERSION
 /* called every 10 ms, see init below */
 static void do_sensors(void *dummy)
 {
+#ifndef HOST_VERSION
 	if (BACKGROUND_ADC)
 		do_adc(NULL);
 	do_boolean_sensors(NULL);
+#endif
 	sensor_obstacle_update();
 }
-#endif
 
 void sensor_init(void)
 {
-#ifdef HOST_VERSION
-	return;
-#else
+#ifndef HOST_VERSION
 	adc_init();
 	if (BACKGROUND_ADC)
 		adc_register_event(adc_event);
+#endif
+
 	/* CS EVENT */
 	scheduler_add_periodical_event_priority(do_sensors, NULL,
 						10000L / SCHEDULER_UNIT,
 						ADC_PRIO);
-#endif
 }
 
