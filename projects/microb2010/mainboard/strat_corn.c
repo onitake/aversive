@@ -168,10 +168,6 @@ static uint8_t clitoid_select_speed(uint8_t num1, uint8_t dir1,
 		return 1;
 	}
 
-/* 	if (time_get_s() > 32) */
-/* 		DEBUG(E_USER_STRAT, "i,j = (%d %d), count=%d", i, j, */
-/* 		      corn_count_neigh(i, j)); */
-
 	if (corn_count_neigh(i, j) == 2)
 		return 1;
 

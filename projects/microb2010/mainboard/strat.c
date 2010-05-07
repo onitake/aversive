@@ -281,7 +281,9 @@ void strat_event(void *dummy)
 
 	check_tomato();
 	check_corn();
+
 	/* limit speed when opponent is near */
+	/* disabled for 2010, we are already slow :) */
 	//strat_limit_speed();
 }
 
@@ -304,6 +306,43 @@ static uint8_t robot_is_on_eject_line(void)
 	return 1;
 }
 
+/* 0 = fast, 1 = slow */
+static uint8_t eject_select_speed(void)
+{
+	int16_t x, y;
+	uint8_t i, j;
+
+	x = position_get_x_s16(&mainboard.pos);
+	y = position_get_y_s16(&mainboard.pos);
+
+	if (get_cob_count() >= 5) {
+		strat_want_pack = 1;
+		return 0; /* fast */
+	}
+
+	if (xycoord_to_ijcoord(&x, &y, &i, &j) < 0) {
+		DEBUG(E_USER_STRAT, "%s(): cannot find waypoint at %d,%d",
+		      __FUNCTION__, x, y);
+		return 1; /* slow */
+	}
+
+	if (corn_count_neigh(i, j) == 2)
+		return 1; /* slow */
+
+	return 0; /* fast */
+}
+
+/* called multiple times while we are waiting to reach the ejection
+ * point */
+static uint8_t speedify_eject(void)
+{
+	if (eject_select_speed())
+		strat_set_speed(SPEED_CLITOID_SLOW, SPEED_ANGLE_SLOW);
+	else
+		strat_set_speed(SPEED_CLITOID_FAST, SPEED_ANGLE_SLOW);
+	return 0;
+}
+
 /* must be called from a terminal line */
 static uint8_t strat_eject(void)
 {
@@ -311,6 +350,7 @@ static uint8_t strat_eject(void)
 
 	DEBUG(E_USER_STRAT, "%s()", __FUNCTION__);
 
+	/* check that we are called from an eject line */
 	if (!robot_is_on_eject_line()) {
 		DEBUG(E_USER_STRAT, "%s() not on eject line", __FUNCTION__);
 		return END_ERROR;
@@ -318,18 +358,13 @@ static uint8_t strat_eject(void)
 
 	/* go to eject point */
 	trajectory_goto_xy_abs(&mainboard.traj, 2625, COLOR_Y(1847));
-	err = WAIT_COND_OR_TRAJ_END(get_cob_count() >= 5,
+	err = WAIT_COND_OR_TRAJ_END(speedify_eject(),
 				    TRAJ_FLAGS_NO_NEAR);
-	if (err != 0 && !TRAJ_SUCCESS(err))
+	/* err is never == 0 because speedify_eject() always return 0 */
+	if (!TRAJ_SUCCESS(err))
 		return err;
 
-	strat_want_pack = 1;
-	if (err == 0) {
-		strat_set_speed(SPEED_CLITOID_FAST, SPEED_ANGLE_SLOW);
-		err = wait_traj_end(TRAJ_FLAGS_NO_NEAR);
-	}
-
-	/* pack arms */
+	/* pack arms (force), and disable strat_event */
 	strat_event_disable();
 	i2c_cobboard_pack_weak(I2C_LEFT_SIDE);
 	i2c_cobboard_pack_weak(I2C_RIGHT_SIDE);
