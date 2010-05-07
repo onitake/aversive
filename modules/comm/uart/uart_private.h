@@ -47,12 +47,6 @@ const struct regs uart_regs[UART_HW_NUM];
 typedef void (event)(char);
 typedef void (event_9bits)(int);
 
-/** The emission fifo of uart */
-extern struct cirbuf g_tx_fifo[UART_HW_NUM];
-
-/** The reception fifo of uart  */
-extern struct cirbuf g_rx_fifo[UART_HW_NUM];
-
 extern event *rx_event[UART_HW_NUM];
 extern event *tx_event[UART_HW_NUM];
 

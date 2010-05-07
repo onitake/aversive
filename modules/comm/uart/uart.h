@@ -49,6 +49,7 @@
 #include <stdio.h>
 #include <aversive.h>
 #include <uart_config.h>
+#include <uart_defs.h>
 
 #include <cirbuf.h>
 
@@ -64,6 +65,11 @@ struct uart_config {
       uint32_t baudrate;             /**< speed of uart */
 };
 
+/** The emission fifo of uart */
+extern struct cirbuf g_tx_fifo[UART_HW_NUM];
+
+/** The reception fifo of uart  */
+extern struct cirbuf g_rx_fifo[UART_HW_NUM];
 
 /** 
  * Initialisation function. This function puts the registers of the
