@@ -9,6 +9,7 @@ AREA_Y = 2100.
 
 ROBOT_HEIGHT=5 # 350
 CORN_HEIGHT=5  # 150
+BALL_CYLINDER=1 # 0
 
 ROBOT_WIDTH=320
 ROBOT_LENGTH=250
@@ -25,6 +26,8 @@ save_pos = []
 robot = box(color=(0.4, 0.4, 0.4))
 lspickle = box(color=(0.4, 0.4, 0.4))
 rspickle = box(color=(0.4, 0.4, 0.4))
+
+opp = box(color=(0.7, 0.2, 0.2))
 
 last_pos = (0.,0.,0.)
 hcenter_line = curve()
@@ -236,8 +239,15 @@ def toggle_obj_disp():
                                  pos=(x-AREA_X/2,y-AREA_Y/2,CORN_HEIGHT/2))
                     area_objects.append(c)
                 elif waypoints[i][j] == TYPE_BALL:
-                    c = sphere(radius=50, color=(1., 0.,0.),
-                               pos=(x-AREA_X/2,y-AREA_Y/2,50))
+                    if BALL_CYLINDER == 1:
+                        c = cylinder(axis=(0,0,1), radius=50,
+                                     length=CORN_HEIGHT,
+                                     color=(1., 0.,0.),
+                                     pos=(x-AREA_X/2,y-AREA_Y/2,CORN_HEIGHT/2))
+                    else:
+                        c = sphere(radius=50, color=(1., 0.,0.),
+                                   pos=(x-AREA_X/2,y-AREA_Y/2,50))
+
                     area_objects.append(c)
                 else:
                     c = sphere(radius=5, color=(0., 0.,1.),
@@ -261,6 +271,10 @@ def toggle_color():
         color = BLUE
     else:
         color = YELLOW
+
+def set_opp(x, y):
+    opp.size = (300, 300, ROBOT_HEIGHT)
+    opp.pos = (x, y, ROBOT_HEIGHT/2)
 
 def set_robot():
     global robot, last_pos, robot_trail, robot_trail_list
@@ -364,7 +378,7 @@ while True:
             if not m:
                 m = re.match("cobboard=%s,%s"%(INT,INT), l)
                 if m:
-                    print "cobboard: %x,%x"%(int(m.groups()[0]),int(m.groups()[1]))
+                    #print "cobboard: %x,%x"%(int(m.groups()[0]),int(m.groups()[1]))
                     side = int(m.groups()[0])
                     flags = int(m.groups()[1])
                     if side == 0:
@@ -373,6 +387,17 @@ while True:
                     else:
                         robot_rspickle_deployed = ((flags & 1) * 2)
                         robot_rspickle_autoharvest = ((flags & 2) != 0)
+
+            if scene.mouse.events != 0:
+                oppx, oppy, oppz = scene.mouse.getevent().project(normal=(0,0,1))
+                set_opp(oppx, oppy)
+                try:
+                    if color == YELLOW:
+                        fw.write("opp %d %d"%(int(oppx + 1500), int(oppy + 1050)))
+                    else:
+                        fw.write("opp %d %d"%(int(1500 - oppx), int(1050 - oppy)))
+                except:
+                    print "not connected"
 
             if scene.kb.keys == 0:
                 continue
@@ -403,6 +428,8 @@ while True:
                 toggle_obj_disp()
             elif k == "i":
                 toggle_color()
+            else:
+                print k
 
             # EOF
             if l == "":
