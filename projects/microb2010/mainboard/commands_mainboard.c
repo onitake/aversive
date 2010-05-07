@@ -790,6 +790,10 @@ static void cmd_cobboard_setmode2_parsed(void *parsed_result, void *data)
 		i2c_cobboard_set_mode(I2C_COBBOARD_MODE_HARVEST);
 		i2c_cobboard_pack(side);
 	}
+	else if (!strcmp_P(res->arg1, PSTR("pack_weak"))) {
+		i2c_cobboard_set_mode(I2C_COBBOARD_MODE_HARVEST);
+		i2c_cobboard_pack_weak(side);
+	}
 	else if (!strcmp_P(res->arg1, PSTR("deploy_nomove"))) {
 		i2c_cobboard_set_mode(I2C_COBBOARD_MODE_HARVEST);
 		i2c_cobboard_deploy_nomove(side);
@@ -802,7 +806,7 @@ static void cmd_cobboard_setmode2_parsed(void *parsed_result, void *data)
 
 prog_char str_cobboard_setmode2_arg0[] = "cobboard";
 parse_pgm_token_string_t cmd_cobboard_setmode2_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_cobboard_setmode2_result, arg0, str_cobboard_setmode2_arg0);
-prog_char str_cobboard_setmode2_arg1[] = "harvest#deploy#pack#harvest_nomove#deploy_nomove";
+prog_char str_cobboard_setmode2_arg1[] = "harvest#deploy#pack#pack_weak#harvest_nomove#deploy_nomove";
 parse_pgm_token_string_t cmd_cobboard_setmode2_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_cobboard_setmode2_result, arg1, str_cobboard_setmode2_arg1);
 prog_char str_cobboard_setmode2_arg2[] = "left#right";
 parse_pgm_token_string_t cmd_cobboard_setmode2_arg2 = TOKEN_STRING_INITIALIZER(struct cmd_cobboard_setmode2_result, arg2, str_cobboard_setmode2_arg2);

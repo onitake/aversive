@@ -69,7 +69,7 @@
 #define COL_SCAN_PRE_MARGIN 250
 
 static volatile uint8_t strat_running = 0;
-static volatile uint8_t want_pack = 0;
+volatile uint8_t strat_want_pack = 0;
 volatile uint8_t strat_lpack60 = 0;
 volatile uint8_t strat_rpack60 = 0;
 struct strat_conf strat_conf;
@@ -225,7 +225,7 @@ static void check_corn(void)
 
 	/* control the cobboard mode for left spickle */
 	if (lcob_near && strat_db.corn_table[lidx]->present) {
-		if (get_cob_count() >= 5 || want_pack || strat_lpack60) {
+		if (get_cob_count() >= 5 || strat_want_pack || strat_lpack60) {
 			/* nothing  */
 		}
 		else {
@@ -241,15 +241,15 @@ static void check_corn(void)
 	}
 	else {
 		/* no cob near us, we can pack or deploy freely */
-		if (get_cob_count() >= 5 || want_pack || strat_lpack60)
-			i2c_cobboard_pack(I2C_LEFT_SIDE);
+		if (get_cob_count() >= 5 || strat_want_pack || strat_lpack60)
+			i2c_cobboard_pack_weak(I2C_LEFT_SIDE);
 		else
 			i2c_cobboard_deploy(I2C_LEFT_SIDE);
 	}
 
 	/* control the cobboard mode for right spickle */
 	if (rcob_near && strat_db.corn_table[ridx]->present) {
-		if (get_cob_count() >= 5 || want_pack || strat_rpack60) {
+		if (get_cob_count() >= 5 || strat_want_pack || strat_rpack60) {
 			/* nothing */
 		}
 		else {
@@ -265,8 +265,8 @@ static void check_corn(void)
 	}
 	else {
 		/* no cob near us, we can pack or deploy freely */
-		if (get_cob_count() >= 5 || want_pack || strat_rpack60)
-			i2c_cobboard_pack(I2C_RIGHT_SIDE);
+		if (get_cob_count() >= 5 || strat_want_pack || strat_rpack60)
+			i2c_cobboard_pack_weak(I2C_RIGHT_SIDE);
 		else
 			i2c_cobboard_deploy(I2C_RIGHT_SIDE);
 	}
@@ -302,7 +302,7 @@ static uint8_t strat_eject(void)
 	err = WAIT_COND_OR_TRAJ_END(get_cob_count() >= 5,
 				    TRAJ_FLAGS_NO_NEAR);
 	if (err == 0) {
-		want_pack = 1;
+		strat_want_pack = 1;
 		strat_set_speed(SPEED_CLITOID_FAST, SPEED_ANGLE_SLOW);
 		err = wait_traj_end(TRAJ_FLAGS_NO_NEAR);
 	}
@@ -341,7 +341,7 @@ static uint8_t strat_eject(void)
 	time_wait_ms(2000);
 
 	strat_event_enable();
-	want_pack = 0;
+	strat_want_pack = 0;
 	return 0;
 }
 

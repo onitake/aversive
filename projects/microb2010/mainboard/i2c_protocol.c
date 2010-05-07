@@ -431,6 +431,11 @@ int8_t i2c_cobboard_pack(uint8_t side)
 	return i2c_cobboard_set_spickle(side, 0);
 }
 
+int8_t i2c_cobboard_pack_weak(uint8_t side)
+{
+	return i2c_cobboard_set_spickle(side, I2C_COBBOARD_SPK_WEAK);
+}
+
 int8_t i2c_cobboard_autoharvest(uint8_t side)
 {
 	return i2c_cobboard_set_spickle(side,
