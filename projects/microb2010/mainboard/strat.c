@@ -311,29 +311,31 @@ static uint8_t strat_eject(void)
 
 	/* pack arms */
 	strat_event_disable();
-	i2c_cobboard_pack(I2C_LEFT_SIDE);
-	i2c_cobboard_pack(I2C_RIGHT_SIDE);
+	i2c_cobboard_pack_weak(I2C_LEFT_SIDE);
+	i2c_cobboard_pack_weak(I2C_RIGHT_SIDE);
 
 	/* ball ejection */
-	i2c_ballboard_set_mode(I2C_BALLBOARD_MODE_EJECT);
-	trajectory_a_abs(&mainboard.traj, COLOR_A(70));
-	err = wait_traj_end(TRAJ_FLAGS_NO_NEAR);
-	if (!TRAJ_SUCCESS(err))
-		goto fail;
+	if (get_ball_count() > 0) {
+		i2c_ballboard_set_mode(I2C_BALLBOARD_MODE_EJECT);
+		trajectory_a_abs(&mainboard.traj, COLOR_A(70));
+		err = wait_traj_end(TRAJ_FLAGS_NO_NEAR);
+		if (!TRAJ_SUCCESS(err))
+			goto fail;
 
-	DEBUG(E_USER_STRAT, "%s():%d", __FUNCTION__, __LINE__);
-	strat_hardstop();
+		DEBUG(E_USER_STRAT, "%s():%d", __FUNCTION__, __LINE__);
+		strat_hardstop();
 #ifdef HOST_VERSION
-	time_wait_ms(2000);
+		time_wait_ms(2000);
 #else
-	WAIT_COND_OR_TIMEOUT(ballboard.status == I2C_BALLBOARD_STATUS_F_BUSY,
-			     2000);
-	WAIT_COND_OR_TIMEOUT(ballboard.status == I2C_BALLBOARD_STATUS_F_READY,
-			     2000);
+		WAIT_COND_OR_TIMEOUT(ballboard.status == I2C_BALLBOARD_STATUS_F_BUSY,
+				     2000);
+		WAIT_COND_OR_TIMEOUT(ballboard.status == I2C_BALLBOARD_STATUS_F_READY,
+				     2000);
 #endif
+	}
 
 	/* half turn */
-	trajectory_a_rel(&mainboard.traj, COLOR_A(180));
+	trajectory_a_abs(&mainboard.traj, COLOR_A(-110));
 	err = wait_traj_end(END_INTR|END_TRAJ);
 	if (!TRAJ_SUCCESS(err))
 		goto fail;
@@ -344,9 +346,11 @@ static uint8_t strat_eject(void)
 	if (!TRAJ_SUCCESS(err))
 		goto fail;
 
-	i2c_cobboard_set_mode(I2C_COBBOARD_MODE_EJECT);
-	strat_db_dump(__FUNCTION__);
-	time_wait_ms(2000);
+	if (get_cob_count() > 0) {
+		i2c_cobboard_set_mode(I2C_COBBOARD_MODE_EJECT);
+		strat_db_dump(__FUNCTION__);
+		time_wait_ms(2000);
+	}
 
 	err = END_TRAJ;
 
