@@ -1,6 +1,6 @@
 /*
- *  Copyright Droids Corporation (2007)
- * 
+ *  Copyright Droids Corporation (2010)
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -78,6 +78,7 @@ struct i2c_cmd_cobboard_set_mode {
 #define I2C_COBBOARD_MODE_HARVEST      0x01 /* harvest mode */
 #define I2C_COBBOARD_MODE_EJECT        0x02 /* eject cobs */
 #define I2C_COBBOARD_MODE_INIT         0x03 /* init state machine */
+#define I2C_COBBOARD_MODE_KICKSTAND    0x04 /* help to climb the hill */
 	uint8_t mode;
 };
 
@@ -128,6 +129,7 @@ struct i2c_ans_cobboard_status {
 #define I2C_COBBOARD_STATUS_LBUSY         0x02
 #define I2C_COBBOARD_STATUS_RBUSY         0x03
 #define I2C_COBBOARD_STATUS_EJECT         0x04
+#define I2C_COBBOARD_STATUS_KICKSTAND     0x05
 	uint8_t status;
 
 	uint8_t cob_count;

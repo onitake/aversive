@@ -193,6 +193,8 @@ static void cmd_state1_parsed(void *parsed_result,
 		state_init();
 	else if (!strcmp_P(res->arg1, PSTR("eject")))
 		state_set_mode(I2C_COBBOARD_MODE_EJECT);
+	else if (!strcmp_P(res->arg1, PSTR("kickstand")))
+		state_set_mode(I2C_COBBOARD_MODE_KICKSTAND);
 	else if (!strcmp_P(res->arg1, PSTR("ignore_i2c")))
 		state_set_i2c_ignore(1);
 	else if (!strcmp_P(res->arg1, PSTR("care_i2c")))
@@ -203,7 +205,7 @@ static void cmd_state1_parsed(void *parsed_result,
 
 prog_char str_state1_arg0[] = "cobboard";
 parse_pgm_token_string_t cmd_state1_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_state1_result, arg0, str_state1_arg0);
-prog_char str_state1_arg1[] = "init#eject#ignore_i2c#care_i2c";
+prog_char str_state1_arg1[] = "init#eject#ignore_i2c#care_i2c#kickstand";
 parse_pgm_token_string_t cmd_state1_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_state1_result, arg1, str_state1_arg1);
 
 prog_char help_state1[] = "set cobboard mode";

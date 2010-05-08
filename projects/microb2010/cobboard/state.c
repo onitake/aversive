@@ -66,6 +66,7 @@ static uint8_t cob_count;
 #define INIT(mode)       ((mode) == I2C_COBBOARD_MODE_INIT)
 #define HARVEST(mode)    ((mode) == I2C_COBBOARD_MODE_HARVEST)
 #define EJECT(mode)      ((mode) == I2C_COBBOARD_MODE_EJECT)
+#define KICKSTAND(mode)  ((mode) == I2C_COBBOARD_MODE_KICKSTAND)
 
 uint8_t state_debug = 0;
 
@@ -131,6 +132,10 @@ uint8_t state_spicklemode_weak(uint8_t side)
 /* pack/deploy spickles depending on mode */
 static void spickle_prepare(uint8_t side)
 {
+	/* pack spickle if we are not in harvest mode */
+	if (!HARVEST(state_mode))
+		spickle_pack(side);
+
 	/* we do nothing in mode no out */
 	if (state_spicklemode_nomove(side))
 		return;
@@ -337,20 +342,36 @@ void state_machine(void)
 			state_mode = I2C_COBBOARD_MODE_HARVEST;
 		}
 
-		/* pack/deply spickles, enable/disable roller */
-		cobroller_off(I2C_LEFT_SIDE);
-		cobroller_off(I2C_RIGHT_SIDE);
-		spickle_prepare(I2C_LEFT_SIDE);
-		spickle_prepare(I2C_RIGHT_SIDE);
+		if (HARVEST(state_mode)) {
+			/* init for each loop */
+			shovel_down();
+			servo_carry_close();
+			servo_door_close();
+			shovel_current_limit_enable(0);
 
-		/* harvest */
-		if (cob_count < 5) {
-			if (state_spicklemode_deployed(I2C_LEFT_SIDE) &&
-			    state_spicklemode_autoharvest(I2C_LEFT_SIDE))
-				state_do_harvest(I2C_LEFT_SIDE);
-			if (state_spicklemode_deployed(I2C_RIGHT_SIDE) &&
-			    state_spicklemode_autoharvest(I2C_RIGHT_SIDE))
-				state_do_harvest(I2C_RIGHT_SIDE);
+			/* pack/deply spickles, enable/disable roller */
+			cobroller_off(I2C_LEFT_SIDE);
+			cobroller_off(I2C_RIGHT_SIDE);
+			spickle_prepare(I2C_LEFT_SIDE);
+			spickle_prepare(I2C_RIGHT_SIDE);
+
+			/* harvest if not many cobs */
+			if (cob_count < 5) {
+				if (state_spicklemode_deployed(I2C_LEFT_SIDE) &&
+				    state_spicklemode_autoharvest(I2C_LEFT_SIDE))
+					state_do_harvest(I2C_LEFT_SIDE);
+				if (state_spicklemode_deployed(I2C_RIGHT_SIDE) &&
+				    state_spicklemode_autoharvest(I2C_RIGHT_SIDE))
+					state_do_harvest(I2C_RIGHT_SIDE);
+			}
+		}
+
+		/* help to climb the hill */
+		if (KICKSTAND(state_mode)) {
+			servo_carry_open();
+			servo_door_open();
+			shovel_current_limit_enable(1);
+			shovel_kickstand();
 		}
 
 		/* eject */

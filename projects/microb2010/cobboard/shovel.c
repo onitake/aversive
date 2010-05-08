@@ -142,6 +142,13 @@ void shovel_up(void)
 	cs_set_consign(&cobboard.shovel.cs, SHOVEL_UP);
 }
 
+void shovel_kickstand(void)
+{
+	quadramp_set_1st_order_vars(&cobboard.shovel.qr, 200, 200);
+	quadramp_set_2nd_order_vars(&cobboard.shovel.qr, 10, 10);
+	cs_set_consign(&cobboard.shovel.cs, SHOVEL_UP);
+}
+
 uint8_t shovel_is_up(void)
 {
 	return shovel_is_at_pos(SHOVEL_UP);

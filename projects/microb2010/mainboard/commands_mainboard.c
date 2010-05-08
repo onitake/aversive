@@ -738,11 +738,13 @@ static void cmd_cobboard_setmode1_parsed(void *parsed_result, void *data)
 		i2c_cobboard_set_mode(I2C_COBBOARD_MODE_INIT);
 	else if (!strcmp_P(res->arg1, PSTR("eject")))
 		i2c_cobboard_set_mode(I2C_COBBOARD_MODE_EJECT);
+	else if (!strcmp_P(res->arg1, PSTR("kickstand")))
+		i2c_cobboard_set_mode(I2C_COBBOARD_MODE_KICKSTAND);
 }
 
 prog_char str_cobboard_setmode1_arg0[] = "cobboard";
 parse_pgm_token_string_t cmd_cobboard_setmode1_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_cobboard_setmode1_result, arg0, str_cobboard_setmode1_arg0);
-prog_char str_cobboard_setmode1_arg1[] = "init#eject";
+prog_char str_cobboard_setmode1_arg1[] = "init#eject#kickstand";
 parse_pgm_token_string_t cmd_cobboard_setmode1_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_cobboard_setmode1_result, arg1, str_cobboard_setmode1_arg1);
 
 prog_char help_cobboard_setmode1[] = "set cobboard mode (mode)";
