@@ -125,8 +125,14 @@ void microb_cs_init(void)
 	pid_set_out_shift(&cobboard.left_spickle.pid, 10);
 	pid_set_derivate_filter(&cobboard.left_spickle.pid, 4);
 
+	/* quadramp */
+	quadramp_init(&cobboard.left_spickle.qr);
+	quadramp_set_1st_order_vars(&cobboard.left_spickle.qr, 3000, 3000); /* set speed */
+	quadramp_set_2nd_order_vars(&cobboard.left_spickle.qr, 0, 0); /* set accel */
+
 	/* CS */
 	cs_init(&cobboard.left_spickle.cs);
+	cs_set_consign_filter(&cobboard.left_spickle.cs, quadramp_do_filter, &cobboard.left_spickle.qr);
 	cs_set_correct_filter(&cobboard.left_spickle.cs, pid_do_filter, &cobboard.left_spickle.pid);
 	cs_set_process_in(&cobboard.left_spickle.cs, spickle_set, LEFT_SPICKLE_PWM);
 	cs_set_process_out(&cobboard.left_spickle.cs, encoders_spi_get_value, LEFT_SPICKLE_ENCODER);
@@ -145,8 +151,14 @@ void microb_cs_init(void)
 	pid_set_out_shift(&cobboard.right_spickle.pid, 10);
 	pid_set_derivate_filter(&cobboard.right_spickle.pid, 4);
 
+	/* quadramp */
+	quadramp_init(&cobboard.right_spickle.qr);
+	quadramp_set_1st_order_vars(&cobboard.right_spickle.qr, 0, 0); /* set speed */
+	quadramp_set_2nd_order_vars(&cobboard.right_spickle.qr, 0, 0); /* set accel */
+
 	/* CS */
 	cs_init(&cobboard.right_spickle.cs);
+	cs_set_consign_filter(&cobboard.right_spickle.cs, quadramp_do_filter, &cobboard.right_spickle.qr);
 	cs_set_correct_filter(&cobboard.right_spickle.cs, pid_do_filter, &cobboard.right_spickle.pid);
 	cs_set_process_in(&cobboard.right_spickle.cs, spickle_set, RIGHT_SPICKLE_PWM);
 	cs_set_process_out(&cobboard.right_spickle.cs, encoders_spi_get_value, RIGHT_SPICKLE_ENCODER);

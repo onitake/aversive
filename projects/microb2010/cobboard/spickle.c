@@ -203,6 +203,21 @@ static uint8_t spickle_is_at_pos(uint8_t side, int32_t pos)
 	return 0;
 }
 
+static void spickle_set_qr(uint8_t side)
+{
+	struct quadramp_filter *qr;
+
+	if (side == I2C_LEFT_SIDE)
+		qr = &cobboard.left_spickle.qr;
+	else
+		qr = &cobboard.right_spickle.qr;
+
+	if (state_spicklemode_weak(side))
+		quadramp_set_1st_order_vars(qr, 700, 700); /* set speed */
+	else
+		quadramp_set_1st_order_vars(qr, 3000, 3000); /* set speed */
+}
+
 uint8_t spickle_is_packed(uint8_t side)
 {
 	return spickle_is_at_pos(side, spickle.pos_packed[side]);
@@ -215,16 +230,19 @@ uint8_t spickle_is_deployed(uint8_t side)
 
 void spickle_deploy(uint8_t side)
 {
+	spickle_set_qr(side);
 	cs_set_consign(&spickle.csb[side]->cs, spickle.pos_deployed[side]);
 }
 
 void spickle_mid(uint8_t side)
 {
+	spickle_set_qr(side);
 	cs_set_consign(&spickle.csb[side]->cs, spickle.pos_mid[side]);
 }
 
 void spickle_pack(uint8_t side)
 {
+	spickle_set_qr(side);
 	cs_set_consign(&spickle.csb[side]->cs, spickle.pos_packed[side]);
 }
 
