@@ -1,6 +1,6 @@
-/*  
+/*
  *  Copyright Droids Corporation (2010)
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -46,6 +46,7 @@
 #define SHOVEL_DOWN 100
 #define SHOVEL_MID  4500
 #define SHOVEL_UP   11000
+#define SHOVEL_KICKSTAND 12800
 
 static int32_t shovel_k1 = 1000;
 static int32_t shovel_k2 = 20;
@@ -146,7 +147,7 @@ void shovel_kickstand(void)
 {
 	quadramp_set_1st_order_vars(&cobboard.shovel.qr, 200, 200);
 	quadramp_set_2nd_order_vars(&cobboard.shovel.qr, 10, 10);
-	cs_set_consign(&cobboard.shovel.cs, SHOVEL_UP);
+	cs_set_consign(&cobboard.shovel.cs, SHOVEL_KICKSTAND);
 }
 
 uint8_t shovel_is_up(void)

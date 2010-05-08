@@ -727,7 +727,7 @@ static void cmd_spickle_params2_parsed(void *parsed_result,
 	spickle_dump_params();
 }
 
-prog_char str_spickle_params2_arg0[] = "spickle_params2";
+prog_char str_spickle_params2_arg0[] = "spickle_params";
 parse_pgm_token_string_t cmd_spickle_params2_arg0 =
 	TOKEN_STRING_INITIALIZER(struct cmd_spickle_params2_result, arg0, str_spickle_params2_arg0);
 prog_char str_spickle_params2_arg1[] = "wcoef#scoef";

@@ -66,7 +66,7 @@ static struct spickle_params spickle = {
 	.sk1 = 1000,
 	.sk2 = 20,
 	.wk1 = 200,
-	.wk2 = 20,
+	.wk2 = 5,
 	.csb = {
 		&cobboard.left_spickle,
 		&cobboard.right_spickle,
