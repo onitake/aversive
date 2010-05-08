@@ -41,12 +41,14 @@
 
 //#define NO_MODULATION
 #define WAIT_LASER
-#define MODUL_455KHZ
-//#define MODUL_56KHZ
+//#define MODUL_455KHZ
+#define MODUL_56KHZ
 //#define MODUL_38KHZ
-//#define SPEED_40RPS
+//#define INC_FRAME
+//#define FIXED_FRAME
+//#define SEND_RAWTIME
+#define LOCK_BUS
 #define SPEED_20RPS
-//#define SPEED_10RPS
 
 /* beacon identifier: must be odd, 3 bits */
 #define BEACON_ID 0x1
@@ -106,10 +108,15 @@
 #define IR_DDR  DDRB
 #define IR_BIT  1
 
+#define LOCKBUS_PORT PORTD
+#define LOCKBUS_PIN  PIND
+#define LOCKBUS_DDR  DDRD
+#define LOCKBUS_BIT  3
+
 /* FRAME must be odd */
 /* #define FRAME 0x0B /\* in little endian 1-1-0-1 *\/ */
 /* #define FRAME_LEN 4 */
-#define FRAME 0x4A5B /* in little endian */
+#define FRAME 0x621 /* in little endian */
 #define FRAME_LEN 16
 
 /* pin returns !0 when nothing, and 0 when laser is on photodiode */
@@ -117,25 +124,11 @@
 #define PHOTO_BIT 0
 #define READ_PHOTO() (!!(PHOTO_PIN & (_BV(PHOTO_BIT))))
 
-/* IR_DELAY **must** be < 32768 */
-#if (defined SPEED_10RPS)
-#define MIN_INTER_TIME    ((uint16_t)(160*2))  /* t~=160us dist=350cm */
-#define MAX_INTER_TIME    ((uint16_t)(8000*2)) /* t=8ms dist=10cm */
-#define IR_DELAY          ((uint16_t)(8000*2))
-#define INTER_LASER_TIME   30 /* in ms */
-#elif (defined SPEED_20RPS)
-#define MIN_INTER_TIME    ((uint16_t)(40*16))   /* t~=80us dist=350cm */
-#define MAX_INTER_TIME    ((uint16_t)(2000*16)) /* t=2ms dist=? >10cm */
-#define IR_DELAY          ((uint16_t)(2000*16))
+/* IR_DELAY must be < 32768 */
+#define MIN_INTER_TIME    ((uint16_t)(100*16U))   /* t~=160us dist=400cm */
+#define MAX_INTER_TIME    ((uint16_t)(4000*16U)) /* t=4ms dist=16cm */
+#define IR_DELAY          ((uint16_t)(MAX_INTER_TIME/2))
 #define INTER_LASER_TIME   10 /* in ms */
-#elif (defined SPEED_40RPS)
-#define MIN_INTER_TIME    ((uint16_t)(40*16))  /* t~=40us dist=350cm */
-#define MAX_INTER_TIME    ((uint16_t)(2000*16)) /* t=2ms dist=10cm */
-#define IR_DELAY          ((uint16_t)(2000*16))
-#define INTER_LASER_TIME   10 /* in ms */
-#else
-#error "speed not defined"
-#endif
 
 extern prog_uint16_t framedist_table[];
 /* basic functions to transmit on IR */
@@ -199,7 +192,6 @@ static void xmit_bits(uint32_t frame, uint8_t nbit)
 	xmit_0();
 }
 
-#ifdef WAIT_LASER
 /* val is 12 bits. Return the 16 bits value that includes the 4 bits
  * cksum in MSB. */
 static uint16_t do_cksum(uint16_t val)
@@ -224,22 +216,33 @@ static uint16_t do_cksum(uint16_t val)
 static uint32_t get_frame(uint16_t laserdiff)
 {
 	uint32_t frame = 0;
-	uint16_t frame_dist = 256;
-	uint16_t step, val;
+	uint16_t val, mid, min, max;
 
 	/* for calibration, return the time */
-	if (0)
-		return laserdiff;
+#ifdef INC_FRAME
+	static uint16_t fr = 1;
+	fr += 2;
+	return fr;
+#endif
+#ifdef SEND_RAWTIME
+	return laserdiff | 1; /* frame must be odd */
+#endif
 
-	for (step = 128; step != 0; step /= 2) {
-		val = pgm_read_word(&framedist_table[frame_dist]);
+	min = 0;
+	max = 511;
+	while (min != max) {
+		mid = (max + min + 1) / 2;
+		val = pgm_read_word(&framedist_table[mid]);
+
 		if (laserdiff > val)
-			frame_dist -= step;
+			max = mid - 1;
 		else
-			frame_dist += step;
+			min = mid;
 	}
 
-	frame |= ((uint32_t)(frame_dist & FRAME_DATA_MASK) << FRAME_DATA_SHIFT);
+	frame |= ((uint32_t)((min << FRAME_DATA_SHIFT)
+			     & FRAME_DATA_MASK));
+	frame |= BEACON_ID;
 
 	/* process cksum and return */
 	return do_cksum(frame);
@@ -254,17 +257,11 @@ static inline int8_t wait_laser(uint16_t *when, uint16_t *laserdiff)
 	uint16_t time1, time2;
 	uint16_t diff;
 
-#if (defined SPEED_40RPS) || (defined SPEED_20RPS)
 	/* set timer to 16Mhz, we will use ICP */
 	TCCR1A = 0;
 	TCCR1B = _BV(CS10);
-#else /* 10 RPS */
-	/* set timer to 2Mhz, we will use ICP */
-	TCCR1A = 0;
-	TCCR1B = _BV(CS11);
-#endif
 
-	/* wait until all is off (inverted logic)  */
+	/* wait until all is off (inverted logic) */
 	while (READ_PHOTO() == 0);
 	TIFR = _BV(ICF1);
 
@@ -293,16 +290,20 @@ static inline int8_t wait_laser(uint16_t *when, uint16_t *laserdiff)
 
 	/* process time difference */
 	diff = time2 - time1;
-	if (diff < MIN_INTER_TIME)
+	if (diff > MAX_INTER_TIME)
 		return -1;
 
+	/*
+	 * diff/2 is < 32768
+	 * ir_delay is < 32768
+	 * current time is ~time1 + diff
+	 */
 	*when = time1 + (diff/2) + IR_DELAY;
 	*laserdiff = diff;
 
 	/* laser ok */
 	return 0;
 }
-#endif
 
 /* */
 
@@ -310,11 +311,10 @@ int main(void)
 {
 	/* must be odd */
 	uint32_t frame = FRAME;
-#ifdef WAIT_LASER
 	int8_t ret;
 	uint16_t when = 0;
 	uint16_t diff = 0;
-#endif
+
 	/* LEDS */
 	LED_DDR = _BV(LED1_BIT) | _BV(LED2_BIT) | _BV(LED3_BIT);
 	IR_DDR |= _BV(IR_BIT);
@@ -377,10 +377,13 @@ int main(void)
 	DDRB |= 0x08;
 	OCR2 = 50;
 	TCCR2 = _BV(WGM21) | _BV(WGM20) | _BV(COM21) | _BV(CS21) ;
-	
+
 	while (1);
 #endif
 
+#ifdef LOCK_BUS
+	LOCKBUS_PORT &= (~_BV(LOCKBUS_BIT));
+#endif
 
 	/* configure timer 0, prescaler = 64 */
 	TCCR0 = _BV(CS01) | _BV(CS00);
@@ -395,23 +398,40 @@ int main(void)
 
 		if (ret)
 			continue;
+#endif /* WAIT_LASER */
 
+#ifdef LOCK_BUS
+		if ((LOCKBUS_PIN & _BV(LOCKBUS_BIT)) == 0)
+			continue;
+		LOCKBUS_DDR |= _BV(LOCKBUS_BIT);
+#endif
+
+#ifdef FIXED_FRAME
+		frame = FRAME;
+#else
 		frame = get_frame(diff);
+#endif /* FIXED_FRAME */
 		/* cannot convert into frame... skip it */
 		if (frame == 0) {
 			wait_ms(INTER_LASER_TIME);
 			continue;
 		}
 
+
+#ifdef WAIT_LASER
 		/* wait before IR xmit */
 		while ((int16_t)(when-TCNT1) > 0);
-#endif
+#endif /* WAIT_LASER */
 
 		LED3_ON();
 		/* ok, transmit frame */
 		xmit_bits(frame, FRAME_LEN);
 
 		LED3_OFF();
+
+#ifdef LOCK_BUS
+		LOCKBUS_DDR &= (~_BV(LOCKBUS_BIT));
+#endif
 
 		/* don't watch a laser during this time */
 		wait_ms(INTER_LASER_TIME);

@@ -10,7 +10,7 @@ RPS = 20.
 #TIMER_FREQ = 2000000.
 TIMER_FREQ = 16000000.
 
-LASER_RADIUS = 25. # mm
+LASER_RADIUS = 20. # mm
 
 MIN = 200.
 MAX = 3500.
@@ -68,10 +68,12 @@ def time_tick_to_us(t):
 # linear correction: distance_mm, time_us
 # must be ordered
 samples = [
-    (250., 2201.),
-    (450., 701.),
-    (1200., 231.),
-    (3000., 50.),
+    (330.,  15681./16),
+    (778.,  6437./16),
+    (1180., 4351./16),
+    (1608., 3221./16),
+    (2045., 2583./16),
+    (2487., 2167./16),
     ]
 
 dist_mm = map(frame_to_mm, range(512))
@@ -83,7 +85,7 @@ for i in range(512):
 
 # find offset and update theorical curve
 off = samples[-1][1] - mm_to_us(3000.)
-print "offset=%f"%(off)
+#print "offset=%f"%(off)
 theo_off = [0] * 512
 for i in range(512):
     mm = frame_to_mm(i)
@@ -107,24 +109,18 @@ for i in range(512):
     ratio = (mm - samples[smp][0]) / (samples[smp+1][0] - samples[smp][0])
     mm_new = mm_start + ratio * (mm_end - mm_start)
 
+    if mm_new < 0:
+        mm_new = 1.
     final[i] = mm_to_us(mm_new) + off
-
-sample_idx = 0
-while sample_idx < len(samples):
-    print samples[sample_idx][1],
-    print us_to_mm(samples[sample_idx][1] - off),
-    print mm_to_us(samples[sample_idx][0])
-    sample_idx += 1
 
 
 plt.plot(
-#    dist_mm, theorical, "r-",
-#    dist_mm, theo_off, "b-",
+    dist_mm, theorical, "r-",
+    dist_mm, theo_off, "b-",
     dist_mm, final, "g-",
     map(lambda x:x[0], samples), map(lambda x:x[1], samples), "g^",
     )
 plt.show()
-
 
 print "#include <aversive.h>"
 print "#include <aversive/pgmspace.h>"
@@ -132,8 +128,7 @@ print "prog_uint16_t framedist_table[] = {"
 for i in range(512):
     if (i % 8) == 0:
         print "	",
-#    print "%d,"%(int(linear_interpolation(offsets, i, table[i]))),
-    print "%d,"%(int(table[i])),
+    print "%d,"%(int(time_us_to_tick(final[i]))),
     if (i % 8 == 7):
         print
 print "};"
