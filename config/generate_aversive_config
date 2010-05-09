@@ -128,7 +128,8 @@ fi
 
 if grep "CONFIG_MODULE_HOSTSIM=y" $1 > /dev/null 2> /dev/null
     then
-    echo "PTHREAD_LDFLAGS = -lpthread" >> $2
+    echo "PTHREAD_CFLAGS = -pthread" >> $2
+    echo "PTHREAD_LDFLAGS = -pthread" >> $2
 fi
 
 

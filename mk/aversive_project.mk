@@ -69,7 +69,8 @@ ifeq ($(HOST),avr)
 #    -ahlms:  create assembler listing
 ALL_CFLAGS += -Wa,-adhlns=$(addprefix compiler_files/,$(<:.c=.$(HOST).lst))
 else
-ALL_CFLAGS +=
+ALL_CFLAGS += $(PTHREAD_CFLAGS)
+
 endif
 
 
