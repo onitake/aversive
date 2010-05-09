@@ -314,6 +314,7 @@ int hostsim_exit(void)
 #ifdef CONFIG_MODULE_UART
 	tcsetattr(0, TCSANOW, &oldterm);
 #endif
+	exit(0);
 	return 0;
 }
 #endif /* HOST_VERSION */
