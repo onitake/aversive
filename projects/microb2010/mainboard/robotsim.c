@@ -105,9 +105,19 @@ robotsim_i2c_ballboard_set_mode(struct i2c_cmd_ballboard_set_mode *cmd)
 
 	ballboard.mode = cmd->mode;
 	len = snprintf(buf, sizeof(buf), "ballboard=%d\n", cmd->mode);
+	if (cmd->mode == I2C_BALLBOARD_MODE_EJECT)
+		ballboard.ball_count = 0;
 	hostsim_lock();
 	write(fdw, buf, len);
 	hostsim_unlock();
+	return 0;
+}
+
+static int8_t
+robotsim_i2c_cobboard_set_mode(struct i2c_cmd_cobboard_set_mode *cmd)
+{
+	if (cmd->mode == I2C_COBBOARD_MODE_EJECT)
+		cobboard.cob_count = 0;
 	return 0;
 }
 
@@ -159,17 +169,17 @@ robotsim_i2c_ballboard(uint8_t addr, uint8_t *buf, uint8_t size)
 static int8_t
 robotsim_i2c_cobboard(uint8_t addr, uint8_t *buf, uint8_t size)
 {
-	//	void *void_cmd = buf;
+	void *void_cmd = buf;
 
 	switch (buf[0]) {
-#if 0 /* deleted */
+
 	case I2C_CMD_COBBOARD_SET_MODE:
 		{
 			struct i2c_cmd_cobboard_set_mode *cmd = void_cmd;
 			robotsim_i2c_cobboard_set_mode(cmd);
 			break;
 		}
-#endif
+
 	default:
 		break;
 	}

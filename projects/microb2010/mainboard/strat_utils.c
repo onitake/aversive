@@ -68,6 +68,17 @@ int16_t distance_between(int16_t x1, int16_t y1, int16_t x2, int16_t y2)
 	return sqrt(x+y);
 }
 
+/* return the distance between two points */
+int32_t quad_distance_between(int16_t x1, int16_t y1, int16_t x2, int16_t y2)
+{
+	int32_t x,y;
+	x = (x2-x1);
+	x = x*x;
+	y = (y2-y1);
+	y = y*y;
+	return x+y;
+}
+
 /* return the distance to a point in the area */
 int16_t distance_from_robot(int16_t x, int16_t y)
 {

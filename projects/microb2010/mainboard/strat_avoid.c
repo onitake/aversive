@@ -315,6 +315,39 @@ const struct circuit letter_v_circuit = {
 	.path = letter_v_tab,
 };
 
+const struct wp_coord sperma_tab[] = {
+	{ .i = 11, .j = 6, },
+	{ .i = 10, .j = 6, },
+	{ .i = 9, .j = 5, },
+	{ .i = 8, .j = 5, },
+	{ .i = 7, .j = 5, },
+	{ .i = 6, .j = 6, },
+	{ .i = 5, .j = 5, },
+	{ .i = 4, .j = 5, },
+	{ .i = 3, .j = 4, },
+	{ .i = 2, .j = 4, },
+	{ .i = 1, .j = 3, },
+	{ .i = 1, .j = 4, },
+	{ .i = 1, .j = 5, },
+	{ .i = 1, .j = 6, },
+	{ .i = 2, .j = 6, },
+	{ .i = 3, .j = 5, },
+	{ .i = 4, .j = 5, },
+	{ .i = 5, .j = 5, },
+	{ .i = 6, .j = 6, },
+	{ .i = 7, .j = 5, },
+	{ .i = 8, .j = 5, },
+	{ .i = 9, .j = 5, },
+	{ .i = 10, .j = 6, },
+	{ .i = 11, .j = 6, },
+};
+
+const struct circuit sperma_circuit = {
+	.name = "sperma",
+	.len = sizeof(sperma_tab)/sizeof(struct wp_coord),
+	.path = sperma_tab,
+};
+
 /* list of all possible circuits */
 const struct circuit *circuits[] = {
 	&butterfly_circuit,
@@ -325,6 +358,7 @@ const struct circuit *circuits[] = {
 	&asym_butterfly_circuit,
 	&big_h_lambda_circuit,
 	&letter_v_circuit,
+	&sperma_circuit,
 	NULL,
 };
 
@@ -434,19 +468,33 @@ int8_t wp_get_neigh(uint8_t i, uint8_t j, uint8_t *ni, uint8_t *nj,
 	return 0;
 }
 
-static uint8_t get_line_num(int8_t i, int8_t j, uint8_t dir)
+static int8_t get_line_num(int8_t i, int8_t j, uint8_t dir)
 {
+	uint8_t mod;
+
 	switch (dir) {
 	case LINE_UP:
 	case LINE_DOWN:
+		if ((i & 1) == 0)
+			return -1;
 		return i/2;
 	case LINE_R_UP:
 	case LINE_L_DOWN:
+		mod = i & 3;
+		if ((mod == 0 || mod == 1) && ((j & 1) == 0))
+			return -1;
+		if ((mod == 2 || mod == 3) && ((j & 1) == 1))
+			return -1;
 		i &= 0xfe;
 		j -= i/2;
 		return (5-j)/2;
 	case LINE_R_DOWN:
 	case LINE_L_UP:
+		mod = i & 3;
+		if ((mod == 0 || mod == 3) && ((j & 1) == 0))
+			return -1;
+		if ((mod == 1 || mod == 2) && ((j & 1) == 1))
+			return -1;
 		i &= 0xfe;
 		j += i/2;
 		return (11-j)/2;
@@ -493,11 +541,34 @@ static uint8_t get_dir(uint8_t prev_i, uint8_t prev_j,
 	return 0xFF;
 }
 
+/* return approximative angle of line */
+int16_t linedir2angle(uint8_t dir)
+{
+	switch (dir) {
+	case LINE_UP:
+		return COLOR_A(90);
+	case LINE_DOWN:
+		return COLOR_A(-90);
+	case LINE_R_UP:
+		return COLOR_A(30);
+	case LINE_R_DOWN:
+		return COLOR_A(-90);
+	case LINE_L_UP:
+		return COLOR_A(150);
+	case LINE_L_DOWN:
+		return COLOR_A(-150);
+	default:
+		return 0;
+	}
+}
+
 /* return true if a waypoint belongs to a line */
 uint8_t wp_belongs_to_line(uint8_t i, uint8_t j, uint8_t linenum, uint8_t dir)
 {
-	uint8_t ln;
+	int8_t ln;
 	ln = get_line_num(i, j, dir);
+	if (ln == -1)
+		return 0;
 	if (ln == linenum)
 		return 1;
 	return 0;
@@ -514,10 +585,11 @@ uint8_t corn_count_neigh(uint8_t i, uint8_t j)
 		if (wp_get_neigh(i, j, &ni, &nj, dir) < 0)
 			continue;
 
-		/* is there a corn cob ? */
+		/* is there a corn cob removed for more than 2 secs ? */
 		if (strat_db.wp_table[ni][nj].type == WP_TYPE_CORN &&
-		    strat_db.wp_table[ni][nj].present &&
-		    strat_db.wp_table[ni][nj].corn.color != I2C_COB_BLACK)
+		    strat_db.wp_table[ni][nj].corn.color != I2C_COB_BLACK &&
+		    (strat_db.wp_table[ni][nj].present ||
+		     strat_db.wp_table[ni][nj].time_removed + 2 > time_get_s()))
 			n ++;
 	}
 
@@ -656,8 +728,8 @@ static int16_t get_score(uint32_t wcorn_retrieved,
 
 	/* malus if there is opponent on the path */
 	if (opp_on_path) {
-		DPR("malus for opponent: 1000\r\n");
-		score -= 2000;
+		DPR("malus for opponent: %d\r\n", (500 * opp_on_path));
+		score -= (500 * opp_on_path);
 	}
 
 	return score;
@@ -697,7 +769,8 @@ static int8_t evaluate_one_face(const struct circuit *circuit,
 	uint8_t ni = 0, nj = 0;
 	uint8_t dir, color, idx;
 	int8_t step = faceA ? 1 : -1;
-	int16_t x, y, d, prev_d = 0;
+	int16_t x, y;
+	int32_t d, prev_d = 0;
 	int16_t oppx, oppy;
 
 	*score = 0x8000; /* -int_max */
@@ -744,11 +817,13 @@ static int8_t evaluate_one_face(const struct circuit *circuit,
 		/* is opponent near the point ? */
 		ijcoord_to_xycoord(i, j, &x, &y);
 		if (oppx != I2C_OPPONENT_NOT_THERE) {
-			d = distance_between(oppx, oppy, x, y);
+			d = quad_distance_between(oppx, oppy, x, y);
 			DPR("%s(): opp at %d mm (ij=%d,%d opp=%d,%d pos=%d,%d)\r\n",
 			    __FUNCTION__, d, i, j, oppx, oppy, x, y);
-			if (d < 600 && d < prev_d)
-				opponent_on_path = 1;
+			if (d < (250L*250L) && d < prev_d)
+				opponent_on_path += 3;
+			else if (d < (500L*500L) && d < prev_d)
+				opponent_on_path ++;
 			prev_d = d;
 		}
 
@@ -865,7 +940,7 @@ static int8_t find_best_circuit(uint8_t i, uint8_t j,
 	return found;
 }
 
-static void test_all_circuits(void)
+static void init_all_circuits(void)
 {
 	const struct circuit **circuit;
 	const struct wp_coord *cur;
@@ -886,6 +961,8 @@ static void test_all_circuits(void)
 
 			i = cur->i;
 			j = cur->j;
+
+			strat_db.wp_table[i][j].on_circuit = 1;
 
 			dir = get_dir(prev_i, prev_j, i, j);
 			if (dir == 0xFF)
@@ -922,6 +999,9 @@ uint8_t strat_harvest_circuit(void)
 	uint8_t err;
 
 	strat_set_speed(SPEED_CLITOID_SLOW, SPEED_ANGLE_SLOW);
+	strat_want_pack = 1;
+
+	printf("PACK PACK\n");
 
 	x = position_get_x_s16(&mainboard.pos);
 	y = position_get_y_s16(&mainboard.pos);
@@ -929,26 +1009,38 @@ uint8_t strat_harvest_circuit(void)
 	if (xycoord_to_ijcoord(&x, &y, &i, &j) < 0) {
 		DEBUG(E_USER_STRAT, "%s(): cannot find waypoint at %d,%d",
 		      __FUNCTION__, x, y);
-		return END_ERROR;
+		err = END_ERROR;
+		goto fail;
 	}
 
 	if (find_best_circuit(i, j, &selected_circuit, &selected_face) < 0) {
 		DEBUG(E_USER_STRAT, "%s(): cannot find a good circuit",
 		      __FUNCTION__);
-		return END_ERROR;
+		err = END_ERROR;
+		goto fail;
 	}
 
 	len = get_path(selected_circuit, i, j, selected_face, circuit_wpline);
 	if (len < 0) {
 		DEBUG(E_USER_STRAT, "%s(): cannot find a path",
 		      __FUNCTION__);
-		return END_ERROR;
+		err = END_ERROR;
+		goto fail;
 	}
 
 	dump_circuit_wp(circuit_wpline, len);
 
 	prev_linenum = circuit_wpline[0].line_num;
 	prev_dir = circuit_wpline[0].dir;
+
+	/* fix orientation first */
+	trajectory_a_abs(&mainboard.traj, linedir2angle(prev_dir));
+	err = wait_traj_end(TRAJ_FLAGS_NO_NEAR);
+	if (!TRAJ_SUCCESS(err))
+		goto fail;
+
+	strat_want_pack = 0;
+	printf("UNPACK UNPACK\n");
 
 	/* do all lines of circuit */
 	for (idx = 1; idx < len; idx ++) {
@@ -960,22 +1052,40 @@ uint8_t strat_harvest_circuit(void)
 		err = line2line(prev_linenum, prev_dir, linenum, dir,
 				TRAJ_FLAGS_NO_NEAR);
 		if (!TRAJ_SUCCESS(err))
-			return err;
+			goto fail;
 
 		prev_linenum = linenum;
 		prev_dir = dir;
 	}
+	err = END_TRAJ;
 
-	return END_TRAJ;
+ fail:
+	strat_want_pack = 0;
+	return err;
 }
+
+/* list of waypoints when we are not on a circuit */
+const struct xy_point unblock_pts[] = {
+	{ .x = 375, .y = 597 },  /* 1,1 */
+	{ .x = 2625, .y = 597 }, /* 11,1 */
+	{ .x = 1500, .y = 722 }, /* 6,2 */
+	{ .x = 375, .y = 1097 }, /* 1,3 */
+	{ .x = 375, .y = 1597 }, /* 1,5 */
+	{ .x = 2625, .y = 1097 }, /* 11,3 */
+	{ .x = 2625, .y = 1597 }, /* 11,5 */
+	{ .x = 1500, .y = 1722 }, /* 6,6 */
+};
+
 
 /* try to unblock in any situation */
 uint8_t strat_unblock(void)
 {
 	int16_t x, y;
-	uint8_t i, j;
+	uint8_t i, j, k;
 	uint16_t old_dspeed, old_aspeed;
 	uint8_t err;
+	uint16_t d_min = 0xFFFF, d;
+	const struct xy_point *pt;
 
 	DEBUG(E_USER_STRAT, "%s()", __FUNCTION__);
 
@@ -986,11 +1096,28 @@ uint8_t strat_unblock(void)
 	strat_set_speed(SPEED_DIST_SLOW, SPEED_ANGLE_SLOW);
 	x = position_get_x_s16(&mainboard.pos);
 	y = position_get_y_s16(&mainboard.pos);
-	if (xycoord_to_ijcoord(&x, &y, &i, &j) < 0) {
-		/* aie... go to center... but it's really a bad
-		 * idea */
-		x = CENTER_X;
-		y = CENTER_Y;
+
+	if (xycoord_to_ijcoord(&x, &y, &i, &j) < 0)
+		x = -1;
+	else if (strat_db.wp_table[i][j].on_circuit == 0)
+		x = -1;
+
+	/* find the nearest unblock point */
+	if (x == -1) {
+		/* position may have been modified */
+		x = position_get_x_s16(&mainboard.pos);
+		y = position_get_y_s16(&mainboard.pos);
+
+		/* browse all points and find the nearest */
+		for (k = 0; k < sizeof(unblock_pts)/sizeof(*unblock_pts); k++) {
+			pt = &unblock_pts[k];
+			d = distance_between(x, y, pt->x, COLOR_Y(pt->y));
+			if (d < d_min) {
+				d_min = d;
+				x = pt->x;
+				y = COLOR_Y(pt->y);
+			}
+		}
 	}
 
 	/* XXX if opponent is too close, go back, or wait ? */
@@ -1009,9 +1136,9 @@ uint8_t strat_unblock(void)
 	return END_TRAJ;
 }
 
-void test_strat_avoid(void)
+void strat_avoid_init(void)
 {
-	test_all_circuits();
+	init_all_circuits();
 
 #ifdef TEST_STRAT_AVOID
 	uint8_t i, j;

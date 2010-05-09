@@ -321,7 +321,6 @@ int main(void)
 	sei();
 
 	strat_db_init();
-	test_strat_avoid();
 
 	printf_P(PSTR("\r\n"));
 	printf_P(PSTR("Respect et robustesse.\r\n"));

@@ -225,6 +225,15 @@ void strat_get_speed(uint16_t *d, uint16_t *a)
 	IRQ_UNLOCK(flags);
 }
 
+void strat_get_acc(double *d, double *a)
+{
+	uint8_t flags;
+	IRQ_LOCK(flags);
+	*d = mainboard.traj.d_acc;
+	*a = mainboard.traj.a_acc;
+	IRQ_UNLOCK(flags);
+}
+
 void strat_limit_speed_enable(void)
 {
 	strat_limit_speed_enabled = 1;
@@ -355,7 +364,7 @@ uint8_t strat_obstacle(void)
 	y_rel = sin(RAD(opp_a)) * (double)opp_d;
 
 	/* opponent too far */
-	if (opp_d > 600)
+	if (opp_d > 500)
 		return 0;
 
 	/* opponent is in front of us */

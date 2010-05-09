@@ -404,13 +404,11 @@ int8_t i2c_cobboard_set_mode(uint8_t mode)
 {
 #ifdef HOST_VERSION
 	cobboard.mode = mode;
-	return 0;
-#else
+#endif
 	struct i2c_cmd_cobboard_set_mode buf;
 	buf.hdr.cmd = I2C_CMD_COBBOARD_SET_MODE;
 	buf.mode = mode;
 	return i2c_send_command(I2C_COBBOARD_ADDR, (uint8_t*)&buf, sizeof(buf));
-#endif
 }
 
 static int8_t i2c_cobboard_set_spickle(uint8_t side, uint8_t flags)

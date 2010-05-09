@@ -60,6 +60,7 @@
 #include "main.h"
 #include "strat.h"
 #include "strat_base.h"
+#include "strat_avoid.h"
 #include "strat_corn.h"
 #include "strat_db.h"
 #include "strat_utils.h"
@@ -87,7 +88,9 @@ static const uint8_t corn_sym[] = {
 	8, 9, 6, 7, 3, 4, 5, 0, 1, 2
 };
 
-#if 0 /* XXX maybe useless */
+#ifdef HOST_VERSION
+#define SIDE_CONF 0
+#define CENTER_CONF 0
 /* the 10 possible configurations for corn on the side */
 static const uint8_t corn_side_confs[9][2] = {
 	{ 1, 4 },
@@ -467,6 +470,9 @@ void strat_db_init(void)
 			/* default type */
 			wp->type = WP_TYPE_WAYPOINT;
 
+			/* */
+			wp->time_removed = -1;
+
 			/* mark dangerous points */
 			if (i == 0 || i == (WAYPOINTS_NBX-1))
 				wp->dangerous = 1;
@@ -491,7 +497,21 @@ void strat_db_init(void)
 				wp->type = WP_TYPE_CORN;
 				wp->present = 1;
 				wp->corn.idx = idx;
+#ifdef HOST_VERSION
+				if (idx == corn_side_confs[SIDE_CONF][0] ||
+				    idx == corn_side_confs[SIDE_CONF][1] ||
+				    corn_get_sym_idx(idx) == corn_side_confs[SIDE_CONF][0] ||
+				    corn_get_sym_idx(idx) == corn_side_confs[SIDE_CONF][1] ||
+				    idx == corn_center_confs[CENTER_CONF][0] ||
+				    idx == corn_center_confs[CENTER_CONF][1] ||
+				    corn_get_sym_idx(idx) == corn_center_confs[CENTER_CONF][0] ||
+				    corn_get_sym_idx(idx) == corn_center_confs[CENTER_CONF][1])
+					wp->corn.color = I2C_COB_BLACK;
+				else
+					wp->corn.color = I2C_COB_WHITE;
+#else
 				wp->corn.color = I2C_COB_UNKNOWN;
+#endif
 				continue;
 			}
 
@@ -535,4 +555,7 @@ void strat_db_dump(const char *caller)
 		printf_P(PSTR("tomato%d: present=%d opp=%d\r\n"),
 			 i, wp->present, wp->opp_visited);
 	}
+
+	/* fill circuit infos */
+	strat_avoid_init();
 }

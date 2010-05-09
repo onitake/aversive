@@ -54,16 +54,19 @@ struct waypoint_db {
 	/* visited by opponent */
 	uint8_t opp_visited:1;
 
-	uint8_t reserved:3;
+	/* true if the wp is on a circuit */
+	uint8_t on_circuit:1;
 
-	/* absolute position of the waypoint */
-/* 	int16_t x; */
-/* 	int16_t y; */
+	uint8_t reserved:2;
 
 	union {
 		struct corn_db corn;
 		struct tomato_db tomato;
 	};
+
+	/* to monitor time when corn/ball was removed */
+	/* not optimal... but... we have enough ram */
+	int8_t time_removed;
 };
 
 /* database reflecting the status of objects on area */

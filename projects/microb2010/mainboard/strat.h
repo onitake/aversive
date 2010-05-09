@@ -150,7 +150,10 @@
 struct strat_conf {
 	uint8_t dump_enabled;
 
-#define STRAT_CONF_XXX   0x01
+	uint8_t opp_orange;
+	uint8_t orphan_tomato;
+
+#define STRAT_CONF_OUR_ORANGE   0x01
 	uint8_t flags;
 };
 
@@ -171,5 +174,7 @@ uint8_t strat_main(void);
 void strat_event(void *dummy);
 void strat_event_enable(void);
 void strat_event_disable(void);
+uint8_t run_to_the_hills(uint8_t orange_color);
+uint8_t get_orphan_tomatoes(void);
 
 #endif

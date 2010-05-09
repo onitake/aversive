@@ -171,10 +171,12 @@ static uint8_t clitoid_select_speed(uint8_t num1, uint8_t dir1,
 	if (corn_count_neigh(i, j) == 2)
 		return 1;
 
-	/* we are on intersection, let's go slow... but as we enter in
-	 * the curve-part of the clitoid, we should not go there */
+
+	/* we are on intersection, keep the same speed... but as we
+	 * enter in the curve-part of the clitoid, we should not go
+	 * there */
 	if (wp_belongs_to_line(i, j, num2, dir2))
-		return 0;
+		return clitoid_slow;
 
 	/* we can ge fast if it's a 60deg angle and if we checked the
 	 * current point */

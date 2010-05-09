@@ -67,6 +67,7 @@ uint8_t strat_obstacle(void);
 void strat_set_speed(uint16_t d, uint16_t a);
 void strat_get_speed(uint16_t *d, uint16_t *a);
 void strat_set_acc(double d, double a);
+void strat_get_acc(double *d, double *a);
 
 /* when user type ctrl-c we can interrupt traj */
 void interrupt_traj(void);

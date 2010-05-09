@@ -1042,24 +1042,8 @@ static void cmd_strat_conf2_parsed(void *parsed_result, void *data)
 	else
 		on = 0;
 
-#if 0
-	if (!strcmp_P(res->arg1, PSTR("one_temple_on_disc")))
-		bit = STRAT_CONF_ONLY_ONE_ON_DISC;
-	else if (!strcmp_P(res->arg1, PSTR("bypass_static2")))
-		bit = STRAT_CONF_BYPASS_STATIC2;
-	else if (!strcmp_P(res->arg1, PSTR("take_one_lintel")))
-		bit = STRAT_CONF_TAKE_ONE_LINTEL;
-	else if (!strcmp_P(res->arg1, PSTR("skip_when_check_fail")))
-		bit = STRAT_CONF_TAKE_ONE_LINTEL;
-	else if (!strcmp_P(res->arg1, PSTR("store_static2")))
-		bit = STRAT_CONF_STORE_STATIC2;
-	else if (!strcmp_P(res->arg1, PSTR("big3_temple")))
-		bit = STRAT_CONF_BIG_3_TEMPLE;
-	else if (!strcmp_P(res->arg1, PSTR("early_opp_scan")))
-		bit = STRAT_CONF_EARLY_SCAN;
-	else if (!strcmp_P(res->arg1, PSTR("push_opp_cols")))
-		bit = STRAT_CONF_PUSH_OPP_COLS;
-#endif
+	if (!strcmp_P(res->arg1, PSTR("our_orange")))
+		bit = STRAT_CONF_OUR_ORANGE;
 
 	if (on)
 		strat_conf.flags |= bit;
@@ -1072,7 +1056,7 @@ static void cmd_strat_conf2_parsed(void *parsed_result, void *data)
 
 prog_char str_strat_conf2_arg0[] = "strat_conf";
 parse_pgm_token_string_t cmd_strat_conf2_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_strat_conf2_result, arg0, str_strat_conf2_arg0);
-prog_char str_strat_conf2_arg1[] = "faux";
+prog_char str_strat_conf2_arg1[] = "our_orange";
 parse_pgm_token_string_t cmd_strat_conf2_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_strat_conf2_result, arg1, str_strat_conf2_arg1);
 prog_char str_strat_conf2_arg2[] = "on#off";
 parse_pgm_token_string_t cmd_strat_conf2_arg2 = TOKEN_STRING_INITIALIZER(struct cmd_strat_conf2_result, arg2, str_strat_conf2_arg2);
@@ -1104,43 +1088,25 @@ struct cmd_strat_conf3_result {
 /* function called when cmd_strat_conf3 is parsed successfully */
 static void cmd_strat_conf3_parsed(void *parsed_result, void *data)
 {
-#if 0
 	struct cmd_strat_conf3_result *res = parsed_result;
 
-	if (!strcmp_P(res->arg1, PSTR("scan_opponent_min_time"))) {
+	if (!strcmp_P(res->arg1, PSTR("orphan_tomato"))) {
 		if (res->arg2 > 90)
 			res->arg2 = 90;
-		strat_conf.scan_opp_min_time = res->arg2;
+		strat_conf.orphan_tomato = res->arg2;
 	}
-	else if (!strcmp_P(res->arg1, PSTR("delay_between_opponent_scan"))) {
+	else if (!strcmp_P(res->arg1, PSTR("opp_orange"))) {
 		if (res->arg2 > 90)
 			res->arg2 = 90;
-		strat_conf.delay_between_opp_scan = res->arg2;
+		strat_conf.opp_orange = res->arg2;
 	}
-	else if (!strcmp_P(res->arg1, PSTR("scan_our_min_time"))) {
-		if (res->arg2 > 90)
-			res->arg2 = 90;
-		strat_conf.scan_our_min_time = res->arg2;
-	}
-	else if (!strcmp_P(res->arg1, PSTR("delay_between_our_scan"))) {
-		if (res->arg2 > 90)
-			res->arg2 = 90;
-		strat_conf.delay_between_our_scan = res->arg2;
-	}
-	else if (!strcmp_P(res->arg1, PSTR("wait_opponent"))) {
-		strat_conf.wait_opponent = res->arg2;
-	}
-	else if (!strcmp_P(res->arg1, PSTR("lintel_min_time"))) {
-		strat_conf.lintel_min_time = res->arg2;
-	}
-#endif
 	strat_conf.dump_enabled = 1;
 	strat_conf_dump(__FUNCTION__);
 }
 
 prog_char str_strat_conf3_arg0[] = "strat_conf";
 parse_pgm_token_string_t cmd_strat_conf3_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_strat_conf3_result, arg0, str_strat_conf3_arg0);
-prog_char str_strat_conf3_arg1[] = "faux2";
+prog_char str_strat_conf3_arg1[] = "orphan_tomato#opp_orange";
 parse_pgm_token_string_t cmd_strat_conf3_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_strat_conf3_result, arg1, str_strat_conf3_arg1);
 parse_pgm_token_num_t cmd_strat_conf3_arg2 = TOKEN_NUM_INITIALIZER(struct cmd_strat_conf3_result, arg2, UINT16);
 
@@ -1161,221 +1127,10 @@ parse_pgm_inst_t cmd_strat_conf3 = {
 /**********************************************************/
 /* Subtraj */
 
-//////////////////////
-
-// 500 -- 5
-// 400 -- 3
-#define TEST_SPEED 400
-#define TEST_ACC 3
-
-static void line2line(double line1x1, double line1y1,
-		      double line1x2, double line1y2,
-		      double line2x1, double line2y1,
-		      double line2x2, double line2y2,
-		      double radius, double dist)
-{
-	uint8_t err;
-	double speed_d, speed_a;
-	double distance, angle;
-	double line1_angle = atan2(line1y2-line1y1, line1x2-line1x1);
-	double line2_angle = atan2(line2y2-line2y1, line2x2-line2x1);
-
-	printf_P(PSTR("%s()\r\n"), __FUNCTION__);
-
-	strat_set_speed(TEST_SPEED, TEST_SPEED);
-	quadramp_set_2nd_order_vars(&mainboard.angle.qr, TEST_ACC, TEST_ACC);
-
-	circle_get_da_speed_from_radius(&mainboard.traj, radius,
-					&speed_d, &speed_a);
-	trajectory_line_abs(&mainboard.traj,
-			    line1x1, line1y1,
-			    line1x2, line1y2, 150.);
-	err = WAIT_COND_OR_TRAJ_END(distance_from_robot(line1x2, line1y2) <
-				    dist, TRAJ_FLAGS_NO_NEAR);
-	/* circle */
-	strat_set_speed(speed_d, speed_a);
-	angle = line2_angle - line1_angle;
-	distance = angle * radius;
-	if (distance < 0)
-		distance = -distance;
-	angle = simple_modulo_2pi(angle);
-	angle = DEG(angle);
-	printf_P(PSTR("(%d,%d,%d) "),
-		 position_get_x_s16(&mainboard.pos),
-		 position_get_y_s16(&mainboard.pos),
-		 position_get_a_deg_s16(&mainboard.pos));
-	printf_P(PSTR("circle distance=%2.2f angle=%2.2f\r\n"),
-		 distance, angle);
-
-	/* take some margin on dist to avoid deceleration */
-	trajectory_d_a_rel(&mainboard.traj, distance + 250, angle);
-
-	/* circle exit condition */
-	err = WAIT_COND_OR_TRAJ_END(trajectory_angle_finished(&mainboard.traj),
-				    TRAJ_FLAGS_NO_NEAR);
-
-	strat_set_speed(500, 500);
-	printf_P(PSTR("(%d,%d,%d) "),
-		 position_get_x_s16(&mainboard.pos),
-		 position_get_y_s16(&mainboard.pos),
-		 position_get_a_deg_s16(&mainboard.pos));
-	printf_P(PSTR("line\r\n"));
-	trajectory_line_abs(&mainboard.traj,
-			    line2x1, line2y1,
-			    line2x2, line2y2, 150.);
-}
-
-static void halfturn(double line1x1, double line1y1,
-		     double line1x2, double line1y2,
-		     double line2x1, double line2y1,
-		     double line2x2, double line2y2,
-		     double radius, double dist, double dir)
-{
-	uint8_t err;
-	double speed_d, speed_a;
-	double distance, angle;
-
-	printf_P(PSTR("%s()\r\n"), __FUNCTION__);
-
-	strat_set_speed(TEST_SPEED, TEST_SPEED);
-	quadramp_set_2nd_order_vars(&mainboard.angle.qr, TEST_ACC, TEST_ACC);
-
-	circle_get_da_speed_from_radius(&mainboard.traj, radius,
-					&speed_d, &speed_a);
-	trajectory_line_abs(&mainboard.traj,
-			    line1x1, line1y1,
-			    line1x2, line1y2, 150.);
-	err = WAIT_COND_OR_TRAJ_END(distance_from_robot(line1x2, line1y2) <
-				    dist, TRAJ_FLAGS_NO_NEAR);
-	/* circle */
-	strat_set_speed(speed_d, speed_a);
-	angle = dir * M_PI/2.;
-	distance = angle * radius;
-	if (distance < 0)
-		distance = -distance;
-	angle = simple_modulo_2pi(angle);
-	angle = DEG(angle);
-
-	/* take some margin on dist to avoid deceleration */
-	DEBUG(E_USER_STRAT, "circle1 distance=%2.2f angle=%2.2f",
-	      distance, angle);
-	trajectory_d_a_rel(&mainboard.traj, distance + 500, angle);
-
-	/* circle exit condition */
-	err = WAIT_COND_OR_TRAJ_END(trajectory_angle_finished(&mainboard.traj),
-				    TRAJ_FLAGS_NO_NEAR);
-
-	DEBUG(E_USER_STRAT, "miniline");
-	err = WAIT_COND_OR_TRAJ_END(distance_from_robot(line2x1, line2y1) <
-				    dist, TRAJ_FLAGS_NO_NEAR);
-	DEBUG(E_USER_STRAT, "circle2");
-	/* take some margin on dist to avoid deceleration */
-	trajectory_d_a_rel(&mainboard.traj, distance + 500, angle);
-
-	err = WAIT_COND_OR_TRAJ_END(trajectory_angle_finished(&mainboard.traj),
-				    TRAJ_FLAGS_NO_NEAR);
-
-	strat_set_speed(500, 500);
-	DEBUG(E_USER_STRAT, "line");
-	trajectory_line_abs(&mainboard.traj,
-			    line2x1, line2y1,
-			    line2x2, line2y2, 150.);
-}
-
 
 /* function called when cmd_test is parsed successfully */
 static void subtraj_test(void)
 {
-#ifdef HOST_VERSION
-	strat_reset_pos(400, 400, 90);
-	mainboard.angle.on = 1;
-	mainboard.distance.on = 1;
-#endif
-	printf_P(PSTR("%s()\r\n"), __FUNCTION__);
-	while (!cmdline_keypressed()) {
-		/****** PASS1 */
-
-#define DIST_HARD_TURN   260
-#define RADIUS_HARD_TURN 100
-#define DIST_EASY_TURN   190
-#define RADIUS_EASY_TURN 190
-#define DIST_HALF_TURN   225
-#define RADIUS_HALF_TURN 130
-
-		/* hard turn */
-		line2line(375, 597, 375, 1847,
-			  375, 1847, 1050, 1472,
-			  RADIUS_HARD_TURN, DIST_HARD_TURN);
-
-		/* easy left and easy right !*/
-		line2line(825, 1596, 1050, 1472,
-			  1050, 1472, 1500, 1722,
-			  RADIUS_EASY_TURN, DIST_EASY_TURN);
-		line2line(1050, 1472, 1500, 1722,
-			  1500, 1722, 2175, 1347,
-			  RADIUS_EASY_TURN, DIST_EASY_TURN);
-		line2line(1500, 1722, 2175, 1347,
-			  2175, 1347, 2175, 847,
-			  RADIUS_EASY_TURN, DIST_EASY_TURN);
-
-		/* half turns */
-		halfturn(2175, 1347, 2175, 722,
-			 2625, 722, 2625, 1597,
-			 RADIUS_HALF_TURN, DIST_HALF_TURN, 1.);
-		halfturn(2625, 847, 2625, 1722,
-			  2175, 1722, 2175, 1097,
-			  RADIUS_HALF_TURN, DIST_HALF_TURN, 1.);
-
-		/* easy turns */
-		line2line(2175, 1597, 2175, 1097,
-			  2175, 1097, 1500, 722,
-			  RADIUS_EASY_TURN, DIST_EASY_TURN);
-		line2line(2175, 1097, 1500, 722,
-			  1500, 722, 1050, 972,
-			  RADIUS_EASY_TURN, DIST_EASY_TURN);
-		line2line(1500, 722, 1050, 972,
-			  1050, 972, 375, 597,
-			  RADIUS_EASY_TURN, DIST_EASY_TURN);
-
-		/* hard turn */
-		line2line(1050, 972, 375, 597,
-			  375, 597, 375, 1097,
-			  RADIUS_HARD_TURN, DIST_HARD_TURN);
-
-		/****** PASS2 */
-
-		/* easy turn */
-		line2line(375, 597, 375, 1097,
-			  375, 1097, 1050, 1472,
-			  RADIUS_EASY_TURN, DIST_EASY_TURN);
-
-		/* hard turn */
-		line2line(375, 1097, 1050, 1472,
-			  1050, 1472, 375, 1847,
-			  RADIUS_HARD_TURN, DIST_HARD_TURN);
-
-		/* hard turn */
-		line2line(1050, 1472, 375, 1847,
-			  375, 1847, 375, 1347,
-			  RADIUS_HARD_TURN, DIST_HARD_TURN);
-
-		/* easy turn */
-		line2line(375, 1847, 375, 1347,
-			  375, 1347, 1050, 972,
-			  RADIUS_EASY_TURN, DIST_EASY_TURN);
-
-		/* hard turn */
-		line2line(375, 1347, 1050, 972,
-			  1050, 972, 375, 597,
-			  RADIUS_HARD_TURN, DIST_HARD_TURN);
-
-		/* hard turn */
-		line2line(1050, 972, 375, 597,
-			  375, 597, 375, 1847,
-			  RADIUS_HARD_TURN, DIST_HARD_TURN);
-
-	}
-	trajectory_hardstop(&mainboard.traj);
 }
 
 
@@ -1396,13 +1151,20 @@ static void cmd_subtraj_parsed(void *parsed_result, void *data)
 
 	if (!strcmp_P(res->arg1, PSTR("test")))
 		subtraj_test();
+	else if (!strcmp_P(res->arg1, PSTR("orange")))
+		subtraj_test();
+	else if (!strcmp_P(res->arg1, PSTR("tomato"))) {
+		position_set(&mainboard.pos, 2625,
+			     COLOR_Y(1847), COLOR_A(0.00));
+		get_orphan_tomatoes();
+	}
 
 	trajectory_hardstop(&mainboard.traj);
 }
 
 prog_char str_subtraj_arg0[] = "subtraj";
 parse_pgm_token_string_t cmd_subtraj_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_subtraj_result, arg0, str_subtraj_arg0);
-prog_char str_subtraj_arg1[] = "faux";
+prog_char str_subtraj_arg1[] = "test#orange#tomato";
 parse_pgm_token_string_t cmd_subtraj_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_subtraj_result, arg1, str_subtraj_arg1);
 parse_pgm_token_num_t cmd_subtraj_arg2 = TOKEN_NUM_INITIALIZER(struct cmd_subtraj_result, arg2, INT32);
 parse_pgm_token_num_t cmd_subtraj_arg3 = TOKEN_NUM_INITIALIZER(struct cmd_subtraj_result, arg3, INT32);

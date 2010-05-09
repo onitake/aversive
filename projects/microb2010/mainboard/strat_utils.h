@@ -33,10 +33,17 @@ struct xy_point {
 		while ( (! (cond)) && (__err == 0)) {			\
 			__err = test_traj_end(mask);			\
 		}							\
+		if (!__err)						\
+			DEBUG(E_USER_STRAT, "cond is true at line %d",	\
+			      __LINE__);				\
+		else							\
+			DEBUG(E_USER_STRAT, "got %s at line %d",	\
+			      get_err(__err), __LINE__);		\
 		__err;							\
 	})								\
 
 int16_t distance_between(int16_t x1, int16_t y1, int16_t x2, int16_t y2);
+int32_t quad_distance_between(int16_t x1, int16_t y1, int16_t x2, int16_t y2);
 int16_t distance_from_robot(int16_t x, int16_t y);
 int16_t simple_modulo_360(int16_t a);
 int16_t angle_abs_to_rel(int16_t a_abs);

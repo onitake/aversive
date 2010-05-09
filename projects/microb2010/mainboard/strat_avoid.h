@@ -60,6 +60,6 @@ uint8_t wp_belongs_to_line(uint8_t i, uint8_t j, uint8_t linenum, uint8_t dir);
 uint8_t is_60deg(uint8_t dir1, uint8_t dir2);
 uint8_t is_120deg(uint8_t dir1, uint8_t dir2);
 
-void test_strat_avoid(void);
+void strat_avoid_init(void);
 
 #endif

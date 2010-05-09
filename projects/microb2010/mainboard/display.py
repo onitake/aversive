@@ -305,7 +305,7 @@ def set_robot():
     lspickle.axis = axis
     lspickle.size = (20, ROBOT_WIDTH, 5)
     if robot_lspickle_autoharvest:
-        lspickle.color = (1, 0, 0)
+        lspickle.color = (0.2, 0.2, 1)
     else:
         lspickle.color = (0.4, 0.4, 0.4)
 
@@ -315,7 +315,7 @@ def set_robot():
     rspickle.axis = axis
     rspickle.size = (20, ROBOT_WIDTH, 5)
     if robot_rspickle_autoharvest:
-        rspickle.color = (1, 0, 0)
+        rspickle.color = (0.2, 0.2, 1)
     else:
         rspickle.color = (0.4, 0.4, 0.4)
 
