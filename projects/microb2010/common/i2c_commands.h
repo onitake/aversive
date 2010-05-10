@@ -78,7 +78,8 @@ struct i2c_cmd_cobboard_set_mode {
 #define I2C_COBBOARD_MODE_HARVEST      0x01 /* harvest mode */
 #define I2C_COBBOARD_MODE_EJECT        0x02 /* eject cobs */
 #define I2C_COBBOARD_MODE_INIT         0x03 /* init state machine */
-#define I2C_COBBOARD_MODE_KICKSTAND    0x04 /* help to climb the hill */
+#define I2C_COBBOARD_MODE_KICKSTAND_UP   0x04 /* help to climb the hill */
+#define I2C_COBBOARD_MODE_KICKSTAND_DOWN 0x05 /* help to climb the hill */
 	uint8_t mode;
 };
 
@@ -91,10 +92,8 @@ struct i2c_cmd_ballboard_set_mode {
 #define I2C_BALLBOARD_MODE_OFF         0x01
 #define I2C_BALLBOARD_MODE_HARVEST     0x02
 #define I2C_BALLBOARD_MODE_EJECT       0x03
-#define I2C_BALLBOARD_MODE_PREP_L_FORK 0x04
-#define I2C_BALLBOARD_MODE_TAKE_L_FORK 0x05
-#define I2C_BALLBOARD_MODE_PREP_R_FORK 0x06
-#define I2C_BALLBOARD_MODE_TAKE_R_FORK 0x07
+#define I2C_BALLBOARD_MODE_PREP_FORK   0x04
+#define I2C_BALLBOARD_MODE_TAKE_FORK   0x05
 	uint8_t mode;
 };
 
@@ -124,12 +123,13 @@ struct i2c_ans_cobboard_status {
 	/* mode type are defined above: I2C_COBBOARD_MODE_xxx */
 	uint8_t mode;
 
-#define I2C_COBBOARD_STATUS_READY         0x00
-#define I2C_COBBOARD_STATUS_OFF           0x01
-#define I2C_COBBOARD_STATUS_LBUSY         0x02
-#define I2C_COBBOARD_STATUS_RBUSY         0x03
-#define I2C_COBBOARD_STATUS_EJECT         0x04
-#define I2C_COBBOARD_STATUS_KICKSTAND     0x05
+#define I2C_COBBOARD_STATUS_READY          0x00
+#define I2C_COBBOARD_STATUS_OFF            0x01
+#define I2C_COBBOARD_STATUS_LBUSY          0x02
+#define I2C_COBBOARD_STATUS_RBUSY          0x03
+#define I2C_COBBOARD_STATUS_EJECT          0x04
+#define I2C_COBBOARD_STATUS_KICKSTAND_UP   0x05
+#define I2C_COBBOARD_STATUS_KICKSTAND_DOWN 0x06
 	uint8_t status;
 
 	uint8_t cob_count;

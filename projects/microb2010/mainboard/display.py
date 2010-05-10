@@ -380,7 +380,7 @@ while True:
             if not m:
                 m = re.match("cobboard=%s,%s"%(INT,INT), l)
                 if m:
-                    #print "cobboard: %x,%x"%(int(m.groups()[0]),int(m.groups()[1]))
+                    print "cobboard: %x,%x"%(int(m.groups()[0]),int(m.groups()[1]))
                     side = int(m.groups()[0])
                     flags = int(m.groups()[1])
                     if side == 0:

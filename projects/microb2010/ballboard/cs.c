@@ -178,7 +178,7 @@ void microb_cs_init(void)
 
 	/* QUADRAMP */
 	quadramp_init(&ballboard.forkrot.qr);
-	quadramp_set_1st_order_vars(&ballboard.forkrot.qr, 800, 800); /* set speed */
+	quadramp_set_1st_order_vars(&ballboard.forkrot.qr, 200, 800); /* set speed */
 	quadramp_set_2nd_order_vars(&ballboard.forkrot.qr, 20, 20); /* set accel */
 
 	/* CS */
@@ -197,7 +197,7 @@ void microb_cs_init(void)
 	/* set them on !! */
 	ballboard.roller.on = 1;
 	ballboard.forktrans.on = 1;
-	ballboard.forkrot.on = 1;
+	ballboard.forkrot.on = 0;
 
 
 	scheduler_add_periodical_event_priority(do_cs, NULL,

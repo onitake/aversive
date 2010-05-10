@@ -156,6 +156,25 @@ void strat_reset_pos(int16_t x, int16_t y, int16_t a)
 	if (a == DO_NOT_SET_POS)
 		a = posa;
 
+	/* some issues with blocking on simulator */
+#ifdef HOST_VERSION
+	if (x == ROBOT_HALF_LENGTH_REAR)
+		x = ROBOT_HALF_LENGTH_REAR + 10;
+	if (x == AREA_X - ROBOT_HALF_LENGTH_REAR)
+		x = AREA_X - ROBOT_HALF_LENGTH_REAR - 10;
+	if (y == ROBOT_HALF_LENGTH_REAR)
+		y = ROBOT_HALF_LENGTH_REAR + 10;
+	if (y == AREA_Y - ROBOT_HALF_LENGTH_REAR)
+		y = AREA_Y - ROBOT_HALF_LENGTH_REAR - 10;
+	if (x == ROBOT_HALF_LENGTH_FRONT)
+		x = ROBOT_HALF_LENGTH_FRONT + 10;
+	if (x == AREA_X - ROBOT_HALF_LENGTH_FRONT)
+		x = AREA_X - ROBOT_HALF_LENGTH_FRONT - 10;
+	if (y == ROBOT_HALF_LENGTH_FRONT)
+		y = ROBOT_HALF_LENGTH_FRONT + 10;
+	if (y == AREA_Y - ROBOT_HALF_LENGTH_FRONT)
+		y = AREA_Y - ROBOT_HALF_LENGTH_FRONT - 10;
+#endif
 	DEBUG(E_USER_STRAT, "reset pos (%s%s%s)",
 	      x == DO_NOT_SET_POS ? "" : "x",
 	      y == DO_NOT_SET_POS ? "" : "y",
@@ -176,14 +195,45 @@ uint8_t strat_calib(int16_t dist, uint8_t flags)
 	int32_t max_in = pid_get_max_in(&mainboard.angle.pid);
 	int32_t max_i = pid_get_max_I(&mainboard.angle.pid);
 	int32_t max_out = pid_get_max_out(&mainboard.angle.pid);
+	uint32_t i_thres = mainboard.distance.bd.i_thres;
+	int32_t k1 = mainboard.distance.bd.k1;
+	int32_t k2 = mainboard.distance.bd.k2;
+	uint16_t cpt_thres = mainboard.distance.bd.cpt_thres;
+
 	uint8_t err;
 
+	/* go with a lower angle pid, and with a sensible blocking
+	 * detection */
+	bd_set_current_thresholds(&mainboard.distance.bd, 500, 8000, 400000, 20);
 	pid_set_maximums(&mainboard.distance.pid, 0, 20000, 1000);
-	pid_set_gains(&mainboard.angle.pid, 200, 0, 2000);
+	pid_set_gains(&mainboard.angle.pid, 500, 10, 4000);
 	trajectory_d_rel(&mainboard.traj, dist);
 	err = wait_traj_end(flags);
+	if (err != END_BLOCKING)
+		goto fail;
+
+	/* we detected a blocking, reset bd, remove angle pid and
+	 * continue */
+	trajectory_d_rel(&mainboard.traj, dist);
+	pid_set_maximums(&mainboard.distance.pid, max_in, max_i, 4095);
+	pid_set_gains(&mainboard.angle.pid, 1, 0, 0);
+	time_wait_ms(300);
+	strat_hardstop();
+
+#ifdef HOST_VERSION
+	/* issue with block on simulator */
+	if (dist > 0)
+		trajectory_d_rel(&mainboard.traj, -10);
+	else
+		trajectory_d_rel(&mainboard.traj, 10);
+	wait_traj_end(END_TRAJ);
+#endif
+
+ fail:
 	pid_set_gains(&mainboard.angle.pid, p, i, d);
 	pid_set_maximums(&mainboard.distance.pid, max_in, max_i, max_out);
+	bd_set_current_thresholds(&mainboard.distance.bd, k1, k2, i_thres, cpt_thres);
+
 	return err;
 }
 

@@ -162,8 +162,11 @@ static void beacon_event(void *dummy)
 	IRQ_LOCK(flags);
 	if (opp_age < 3)
 		opp_age ++;
-	else
+	else {
 		beaconboard.oppx = I2C_OPPONENT_NOT_THERE;
+		IRQ_UNLOCK(flags);
+		return;
+	}
 
 	ia = opp_a;
 	id = opp_d;

@@ -885,7 +885,8 @@ static void cmd_position_parsed(void * parsed_result, void * data)
 	else if (!strcmp_P(res->arg1, PSTR("set"))) {
 		position_set(&mainboard.pos, res->arg2, res->arg3, res->arg4);
 	}
-	else if (!strcmp_P(res->arg1, PSTR("autoset_blue"))) {
+	else if (!strcmp_P(res->arg1, PSTR("autoset_blue")) ||
+		 !strcmp_P(res->arg1, PSTR("autoset_or_blue"))) {
 		mainboard.our_color = I2C_COLOR_BLUE;
 #ifndef HOST_VERSION
 		i2c_set_color(I2C_COBBOARD_ADDR, I2C_COLOR_BLUE);
@@ -893,13 +894,23 @@ static void cmd_position_parsed(void * parsed_result, void * data)
 #endif
 		auto_position();
 	}
-	else if (!strcmp_P(res->arg1, PSTR("autoset_yellow"))) {
+	else if (!strcmp_P(res->arg1, PSTR("autoset_yellow")) ||
+		 !strcmp_P(res->arg1, PSTR("autoset_or_yellow"))) {
 		mainboard.our_color = I2C_COLOR_YELLOW;
 #ifndef HOST_VERSION
 		i2c_set_color(I2C_COBBOARD_ADDR, I2C_COLOR_YELLOW);
 		i2c_set_color(I2C_BALLBOARD_ADDR, I2C_COLOR_YELLOW);
 #endif
 		auto_position();
+	}
+
+	if (!strcmp_P(res->arg1, PSTR("autoset_or_blue"))) {
+		strat_conf.flags |= STRAT_CONF_OUR_ORANGE;
+		prepare_hill(I2C_COLOR_BLUE, 340);
+	}
+	else if (!strcmp_P(res->arg1, PSTR("autoset_or_yellow"))) {
+		strat_conf.flags |= STRAT_CONF_OUR_ORANGE;
+		prepare_hill(I2C_COLOR_YELLOW, 340);
 	}
 
 	/* else it's just a "show" */
@@ -911,7 +922,7 @@ static void cmd_position_parsed(void * parsed_result, void * data)
 
 prog_char str_position_arg0[] = "position";
 parse_pgm_token_string_t cmd_position_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_position_result, arg0, str_position_arg0);
-prog_char str_position_arg1[] = "show#reset#autoset_blue#autoset_yellow";
+prog_char str_position_arg1[] = "show#reset#autoset_blue#autoset_yellow#autoset_or_blue#autoset_or_yellow";
 parse_pgm_token_string_t cmd_position_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_position_result, arg1, str_position_arg1);
 
 prog_char help_position[] = "Show/reset (x,y,a) position";
@@ -1108,7 +1119,7 @@ prog_char str_strat_conf3_arg0[] = "strat_conf";
 parse_pgm_token_string_t cmd_strat_conf3_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_strat_conf3_result, arg0, str_strat_conf3_arg0);
 prog_char str_strat_conf3_arg1[] = "orphan_tomato#opp_orange";
 parse_pgm_token_string_t cmd_strat_conf3_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_strat_conf3_result, arg1, str_strat_conf3_arg1);
-parse_pgm_token_num_t cmd_strat_conf3_arg2 = TOKEN_NUM_INITIALIZER(struct cmd_strat_conf3_result, arg2, UINT16);
+parse_pgm_token_num_t cmd_strat_conf3_arg2 = TOKEN_NUM_INITIALIZER(struct cmd_strat_conf3_result, arg2, UINT8);
 
 prog_char help_strat_conf3[] = "configure strat options";
 parse_pgm_inst_t cmd_strat_conf3 = {
@@ -1151,8 +1162,10 @@ static void cmd_subtraj_parsed(void *parsed_result, void *data)
 
 	if (!strcmp_P(res->arg1, PSTR("test")))
 		subtraj_test();
-	else if (!strcmp_P(res->arg1, PSTR("orange")))
-		subtraj_test();
+	else if (!strcmp_P(res->arg1, PSTR("orange_yellow")))
+		run_to_the_hills(I2C_COLOR_YELLOW);
+	else if (!strcmp_P(res->arg1, PSTR("orange_blue")))
+		run_to_the_hills(I2C_COLOR_BLUE);
 	else if (!strcmp_P(res->arg1, PSTR("tomato"))) {
 		position_set(&mainboard.pos, 2625,
 			     COLOR_Y(1847), COLOR_A(0.00));
@@ -1164,7 +1177,7 @@ static void cmd_subtraj_parsed(void *parsed_result, void *data)
 
 prog_char str_subtraj_arg0[] = "subtraj";
 parse_pgm_token_string_t cmd_subtraj_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_subtraj_result, arg0, str_subtraj_arg0);
-prog_char str_subtraj_arg1[] = "test#orange#tomato";
+prog_char str_subtraj_arg1[] = "test#orange_yellow#orange_blue#tomato";
 parse_pgm_token_string_t cmd_subtraj_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_subtraj_result, arg1, str_subtraj_arg1);
 parse_pgm_token_num_t cmd_subtraj_arg2 = TOKEN_NUM_INITIALIZER(struct cmd_subtraj_result, arg2, INT32);
 parse_pgm_token_num_t cmd_subtraj_arg3 = TOKEN_NUM_INITIALIZER(struct cmd_subtraj_result, arg3, INT32);

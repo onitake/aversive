@@ -512,7 +512,7 @@ static void cmd_interact_parsed(void * parsed_result, void * data)
 		}
 		else {
 #ifdef HOST_VERSION
-#define PWM_INTERACT 300
+#define PWM_INTERACT 1200
 #else
 #define PWM_INTERACT 1200
 #endif
@@ -738,13 +738,15 @@ static void cmd_cobboard_setmode1_parsed(void *parsed_result, void *data)
 		i2c_cobboard_set_mode(I2C_COBBOARD_MODE_INIT);
 	else if (!strcmp_P(res->arg1, PSTR("eject")))
 		i2c_cobboard_set_mode(I2C_COBBOARD_MODE_EJECT);
-	else if (!strcmp_P(res->arg1, PSTR("kickstand")))
-		i2c_cobboard_set_mode(I2C_COBBOARD_MODE_KICKSTAND);
+	else if (!strcmp_P(res->arg1, PSTR("kickstand_up")))
+		i2c_cobboard_set_mode(I2C_COBBOARD_MODE_KICKSTAND_UP);
+	else if (!strcmp_P(res->arg1, PSTR("kickstand_down")))
+		i2c_cobboard_set_mode(I2C_COBBOARD_MODE_KICKSTAND_DOWN);
 }
 
 prog_char str_cobboard_setmode1_arg0[] = "cobboard";
 parse_pgm_token_string_t cmd_cobboard_setmode1_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_cobboard_setmode1_result, arg0, str_cobboard_setmode1_arg0);
-prog_char str_cobboard_setmode1_arg1[] = "init#eject#kickstand";
+prog_char str_cobboard_setmode1_arg1[] = "init#eject#kickstand_up#kickstand_down";
 parse_pgm_token_string_t cmd_cobboard_setmode1_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_cobboard_setmode1_result, arg1, str_cobboard_setmode1_arg1);
 
 prog_char help_cobboard_setmode1[] = "set cobboard mode (mode)";
@@ -925,13 +927,17 @@ static void cmd_ballboard_setmode1_parsed(void *parsed_result, void *data)
 		i2c_ballboard_set_mode(I2C_BALLBOARD_MODE_EJECT);
 	else if (!strcmp_P(res->arg1, PSTR("harvest")))
 		i2c_ballboard_set_mode(I2C_BALLBOARD_MODE_HARVEST);
+	else if (!strcmp_P(res->arg1, PSTR("prepare")))
+		i2c_ballboard_set_mode(I2C_BALLBOARD_MODE_PREP_FORK);
+	else if (!strcmp_P(res->arg1, PSTR("take")))
+		i2c_ballboard_set_mode(I2C_BALLBOARD_MODE_TAKE_FORK);
 
 	/* other commands */
 }
 
 prog_char str_ballboard_setmode1_arg0[] = "ballboard";
 parse_pgm_token_string_t cmd_ballboard_setmode1_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_ballboard_setmode1_result, arg0, str_ballboard_setmode1_arg0);
-prog_char str_ballboard_setmode1_arg1[] = "init#eject#harvest#off";
+prog_char str_ballboard_setmode1_arg1[] = "init#eject#harvest#off#take#prepare";
 parse_pgm_token_string_t cmd_ballboard_setmode1_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_ballboard_setmode1_result, arg1, str_ballboard_setmode1_arg1);
 
 prog_char help_ballboard_setmode1[] = "set ballboard mode (mode)";
@@ -959,27 +965,11 @@ struct cmd_ballboard_setmode2_result {
 /* function called when cmd_ballboard_setmode2 is parsed successfully */
 static void cmd_ballboard_setmode2_parsed(void * parsed_result, void * data)
 {
-	struct cmd_ballboard_setmode2_result *res = parsed_result;
-	uint8_t mode = I2C_BALLBOARD_MODE_INIT;
-
-	if (!strcmp_P(res->arg2, PSTR("left"))) {
-		if (!strcmp_P(res->arg1, PSTR("prepare")))
-			mode = I2C_BALLBOARD_MODE_PREP_L_FORK;
-		else if (!strcmp_P(res->arg1, PSTR("take")))
-			mode = I2C_BALLBOARD_MODE_TAKE_L_FORK;
-	}
-	else {
-		if (!strcmp_P(res->arg1, PSTR("prepare")))
-			mode = I2C_BALLBOARD_MODE_PREP_R_FORK;
-		else if (!strcmp_P(res->arg1, PSTR("take")))
-			mode = I2C_BALLBOARD_MODE_TAKE_R_FORK;
-	}
-	i2c_ballboard_set_mode(mode);
 }
 
 prog_char str_ballboard_setmode2_arg0[] = "ballboard";
 parse_pgm_token_string_t cmd_ballboard_setmode2_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_ballboard_setmode2_result, arg0, str_ballboard_setmode2_arg0);
-prog_char str_ballboard_setmode2_arg1[] = "prepare#take";
+prog_char str_ballboard_setmode2_arg1[] = "xxx";
 parse_pgm_token_string_t cmd_ballboard_setmode2_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_ballboard_setmode2_result, arg1, str_ballboard_setmode2_arg1);
 prog_char str_ballboard_setmode2_arg2[] = "left#right";
 parse_pgm_token_string_t cmd_ballboard_setmode2_arg2 = TOKEN_STRING_INITIALIZER(struct cmd_ballboard_setmode2_result, arg2, str_ballboard_setmode2_arg2);

@@ -42,6 +42,27 @@ struct xy_point {
 		__err;							\
 	})								\
 
+#define WAIT_COND_OR_TE_TO(cond, mask, timeout)				\
+	({								\
+		microseconds __us = time_get_us2();			\
+		uint8_t __ret = 0;					\
+		while ( (! (cond)) && (__ret == 0)) {			\
+			__ret = test_traj_end(mask);			\
+			if (time_get_us2() - __us > (timeout)*1000L) {	\
+				__ret = 0;				\
+				break;					\
+			}						\
+		}							\
+		if (!__ret)						\
+			DEBUG(E_USER_STRAT, "cond / timeout at line %d", \
+			      __LINE__);				\
+		else							\
+			DEBUG(E_USER_STRAT, "got %s (%d) at line %d",	\
+			      get_err(__ret), __ret, __LINE__);		\
+									\
+		__ret;							\
+	})
+
 int16_t distance_between(int16_t x1, int16_t y1, int16_t x2, int16_t y2);
 int32_t quad_distance_between(int16_t x1, int16_t y1, int16_t x2, int16_t y2);
 int16_t distance_from_robot(int16_t x, int16_t y);

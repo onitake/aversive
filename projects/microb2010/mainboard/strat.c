@@ -58,6 +58,7 @@
 #include "../common/i2c_commands.h"
 #include "i2c_protocol.h"
 #include "main.h"
+#include "cs.h"
 #include "strat.h"
 #include "strat_db.h"
 #include "strat_base.h"
@@ -179,8 +180,9 @@ static void check_tomato(void)
 		uint8_t k;
 
 		for (k = 0; k < TOMATO_NB; k++) {
-			if (strat_db.tomato_table[k]->time_removed != -1 &&
-			    strat_db.tomato_table[k]->time_removed + 2 == time_get_s()) {
+			if (strat_db.tomato_table[k]->present == 1 &&
+			    strat_db.tomato_table[k]->time_removed != -1 &&
+			    strat_db.tomato_table[k]->time_removed + 2 <= time_get_s()) {
 #ifdef HOST_VERSION
 				printf("remove tomato %d\n", k);
 #endif
@@ -237,8 +239,9 @@ static void check_corn(void)
 		uint8_t i;
 
 		for (i = 0; i < CORN_NB; i++) {
-			if (strat_db.corn_table[i]->time_removed != -1 &&
-			    strat_db.corn_table[i]->time_removed + 2 == time_get_s()) {
+			if (strat_db.corn_table[i]->present == 1 &&
+			    strat_db.corn_table[i]->time_removed != -1 &&
+			    strat_db.corn_table[i]->time_removed + 2 <= time_get_s()) {
 #ifdef HOST_VERSION
 				printf("remove cob %d\n", i);
 #endif
@@ -419,7 +422,7 @@ static uint8_t strat_eject(void)
 	}
 
 	/* go to eject point */
-	trajectory_goto_xy_abs(&mainboard.traj, 2625, COLOR_Y(1847));
+	trajectory_goto_forward_xy_abs(&mainboard.traj, 2625, COLOR_Y(1847));
 	err = WAIT_COND_OR_TRAJ_END(speedify_eject(),
 				    TRAJ_FLAGS_NO_NEAR);
 	/* err is never == 0 because speedify_eject() always return 0 */
@@ -547,6 +550,57 @@ static uint8_t need_more_elements(void)
 #endif
 
 /* get tomatoes near our goals (12,5 and 12,3) */
+uint8_t get_opp_oranges(void)
+{
+	int16_t x, y;
+	uint8_t i, j;
+	uint8_t err;
+
+	DEBUG(E_USER_STRAT, "%s()", __FUNCTION__);
+
+	/* only if oranges are present */
+	if (strat_db.opp_oranges_count == 0)
+		return END_TRAJ;
+
+	strat_db.opp_oranges_count = 0;
+	x = position_get_x_s16(&mainboard.pos);
+	y = position_get_y_s16(&mainboard.pos);
+
+	if (xycoord_to_ijcoord(&x, &y, &i, &j) < 0)
+		return END_ERROR;
+
+	/* not on eject point */
+	if (i != 11 || j != 6)
+		return END_ERROR;
+
+	strat_want_pack = 1;
+	strat_set_speed(SPEED_DIST_FAST, SPEED_ANGLE_FAST);
+
+	/* turn in the correct direction */
+	trajectory_a_abs(&mainboard.traj, COLOR_A(-90));
+	err = wait_traj_end(TRAJ_FLAGS_NO_NEAR);
+	if (!TRAJ_SUCCESS(err))
+		goto fail;
+
+	trajectory_goto_forward_xy_abs(&mainboard.traj, 2625, COLOR_Y(597));
+	err = wait_traj_end(TRAJ_FLAGS_STD);
+	if (!TRAJ_SUCCESS(err))
+		goto fail;
+
+	strat_set_speed(SPEED_DIST_SLOW, SPEED_ANGLE_SLOW);
+	trajectory_goto_forward_xy_abs(&mainboard.traj, 2750, COLOR_Y(250));
+	err = wait_traj_end(TRAJ_FLAGS_NO_NEAR);
+	if (!TRAJ_SUCCESS(err))
+		goto fail;
+
+	err = run_to_the_hills(get_opponent_color());
+
+ fail:
+	strat_want_pack = 0;
+	return err;
+}
+
+/* get tomatoes near our goals (12,5 and 12,3) */
 uint8_t get_orphan_tomatoes(void)
 {
 #define CLITOID_TOMATO_RADIUS 100.
@@ -608,13 +662,6 @@ uint8_t get_orphan_tomatoes(void)
 	trajectory_d_rel(&mainboard.traj, -250);
 	err = WAIT_COND_OR_TRAJ_END(!x_is_more_than(TOMATO_BACK_X),
 				    TRAJ_FLAGS_NO_NEAR);
-#ifdef HOST_VERSION /* simulator sees 2 blockings */
-	if (err == END_BLOCKING) {
-		trajectory_d_rel(&mainboard.traj, -250);
-		err = WAIT_COND_OR_TRAJ_END(!x_is_more_than(TOMATO_BACK_X),
-					    TRAJ_FLAGS_NO_NEAR);
-	}
-#endif
 
 	if (err != 0 && !TRAJ_SUCCESS(err))
 		goto fail;
@@ -650,20 +697,62 @@ fail:
 	return err;
 }
 
+
+#define HILL_LEN 1000
+
+#define HILL_ANGLE 0
+#define HILL_POSY_YELLOW 310
+#define HILL_POSY_BLUE 190
+
+#define HILL_POSX_BALLS_DOWN1 830
+#define HILL_POSX_BALLS_DOWN2 920
+#define HILL_POSX_BALLS_DOWN3 730
+#define HILL_START_POSX 580
+
+uint8_t prepare_hill(uint8_t orange_color, int16_t posx)
+{
+	int16_t startx, starty;
+	uint8_t our_color = get_color();
+	uint8_t err;
+
+	if (orange_color == I2C_COLOR_YELLOW)
+		starty = HILL_POSY_YELLOW;
+	else
+		starty = HILL_POSY_BLUE;
+	if (orange_color == our_color)
+		startx = posx;
+	else
+		startx = AREA_X - posx;
+	trajectory_goto_forward_xy_abs(&mainboard.traj, startx, COLOR_Y(starty));
+	err = wait_traj_end(TRAJ_FLAGS_SMALL_DIST);
+	if (!TRAJ_SUCCESS(err))
+		return err;
+
+	/* turn to the hills */
+	if (orange_color == our_color)
+		trajectory_a_abs(&mainboard.traj, COLOR_A(HILL_ANGLE));
+	else
+		trajectory_a_abs(&mainboard.traj, COLOR_A(-180+HILL_ANGLE));
+	err = wait_traj_end(TRAJ_FLAGS_SMALL_DIST);
+	if (!TRAJ_SUCCESS(err))
+		return err;
+
+	return END_TRAJ;
+}
+
 /* get oranges, must be called near game area */
 uint8_t run_to_the_hills(uint8_t orange_color)
 {
-#define HILL_LEN 500
-#define HILL_POSY_YELLOW 300
-#define HILL_POSY_BLUE 200
-#define HILL_POSX_BALLS_DOWN 900
-#define HILL_START_POSX 580
-
 	double aa, ad;
 	uint16_t sa, sd;
 	uint8_t err;
 	uint8_t our_color = get_color();
-	int16_t startx, starty;
+	int32_t p = pid_get_gain_P(&mainboard.angle.pid);
+	int32_t i = pid_get_gain_I(&mainboard.angle.pid);
+	int32_t d = pid_get_gain_D(&mainboard.angle.pid);
+	int32_t max_in = pid_get_max_in(&mainboard.angle.pid);
+	int32_t max_i = pid_get_max_I(&mainboard.angle.pid);
+	int32_t max_out = pid_get_max_out(&mainboard.angle.pid);
 
 	strat_want_pack = 1;
 	strat_get_acc(&ad, &aa);
@@ -672,75 +761,105 @@ uint8_t run_to_the_hills(uint8_t orange_color)
 	DEBUG(E_USER_STRAT, "%s()", __FUNCTION__);
 
 	strat_set_speed(SPEED_DIST_FAST, SPEED_ANGLE_FAST);
-	if (orange_color == I2C_COLOR_YELLOW)
-		starty = HILL_POSY_YELLOW;
-	else
-		starty = HILL_POSY_BLUE;
-	if (orange_color == our_color)
-		startx = HILL_START_POSX;
-	else
-		startx = AREA_X - HILL_START_POSX;
-	trajectory_goto_xy_abs(&mainboard.traj, startx, COLOR_Y(starty));
-	err = wait_traj_end(TRAJ_FLAGS_SMALL_DIST);
+	err = prepare_hill(orange_color, HILL_START_POSX);
+	if (!TRAJ_SUCCESS(err))
+		return err;
 
-	/* turn to the hills */
-	if (orange_color == our_color)
-		trajectory_a_abs(&mainboard.traj, COLOR_A(0));
-	else
-		trajectory_a_abs(&mainboard.traj, COLOR_A(180));
-	err = wait_traj_end(TRAJ_FLAGS_SMALL_DIST);
-
-	strat_set_acc(3, 3);
-	strat_set_speed(300, 500);
-	bd_set_current_thresholds(&mainboard.distance.bd, 500, 8000, 2000000, 40);
+	strat_set_acc(5, ACC_ANGLE);
+	strat_set_speed(300, SPEED_ANGLE_SLOW);
+	bd_set_current_thresholds(&mainboard.distance.bd, 500, 8000, 2000000, 80);
+	bd_set_current_thresholds(&mainboard.angle.bd, 500, 8000, 2000000, 80);
+	bd_set_speed_threshold(&mainboard.distance.bd, 10);
 	support_balls_pack();
+	i2c_ballboard_set_mode(I2C_BALLBOARD_MODE_PREP_FORK);
+
+	/* decrease angle gains */
+	pid_set_gains(&mainboard.angle.pid, 200, 0, 2000);
 
 	/* here it is difficult to handle return values, because we
 	 * are on the hill */
+	i2c_cobboard_set_mode(I2C_COBBOARD_MODE_KICKSTAND_DOWN);
 	trajectory_d_rel(&mainboard.traj, HILL_LEN);
-	err = WAIT_COND_OR_TRAJ_END(position_get_x_s16(&mainboard.pos) > HILL_POSX_BALLS_DOWN,
-				    TRAJ_FLAGS_NO_NEAR);
-	printf_P(PSTR("deploy\r\n"));
+	err = WAIT_COND_OR_TRAJ_END(position_get_x_s16(&mainboard.pos) >
+				    HILL_POSX_BALLS_DOWN1,
+				    TRAJ_FLAGS_SMALL_DIST);
+	DEBUG(E_USER_STRAT, "deploy support balls");
 	support_balls_deploy();
-	i2c_cobboard_set_mode(I2C_COBBOARD_MODE_KICKSTAND);
-	err = wait_traj_end(TRAJ_FLAGS_NO_NEAR);
+	i2c_cobboard_set_mode(I2C_COBBOARD_MODE_KICKSTAND_UP);
+	trajectory_only_a_rel(&mainboard.traj, 2);
+	err = WAIT_COND_OR_TE_TO(0, 0, 2200);
 
-	time_wait_ms(2000);
+	i2c_cobboard_set_mode(I2C_COBBOARD_MODE_KICKSTAND_DOWN);
+	strat_set_acc(3, 3);
+	strat_hardstop();
+	i2c_ballboard_set_mode(I2C_BALLBOARD_MODE_TAKE_FORK);
+
+	time_wait_ms(1800);
 
 	/* reach top, go down */
 	trajectory_d_rel(&mainboard.traj, -HILL_LEN);
 
-	err = WAIT_COND_OR_TRAJ_END(position_get_x_s16(&mainboard.pos) < HILL_POSX_BALLS_DOWN,
-				    TRAJ_FLAGS_NO_NEAR);
-	printf_P(PSTR("pack\r\n"));
+	err = WAIT_COND_OR_TRAJ_END(position_get_x_s16(&mainboard.pos) <
+				    HILL_POSX_BALLS_DOWN2,
+				    TRAJ_FLAGS_SMALL_DIST);
+	DEBUG(E_USER_STRAT, "pack support balls");
 	support_balls_pack();
-	err = wait_traj_end(TRAJ_FLAGS_NO_NEAR);
-	printf_P(PSTR("deploy\r\n"));
-	support_balls_deploy();
-
-	/* calibrate position on the wall */
+	err = WAIT_COND_OR_TRAJ_END(position_get_x_s16(&mainboard.pos) <
+				    HILL_POSX_BALLS_DOWN3,
+				    TRAJ_FLAGS_SMALL_DIST);
+	DEBUG(E_USER_STRAT, "deploy support balls");
 	strat_set_speed(SPEED_DIST_FAST, SPEED_ANGLE_FAST);
 	strat_set_acc(ad, aa);
-	trajectory_goto_xy_abs(&mainboard.traj, 150, COLOR_Y(starty));
-	err = WAIT_COND_OR_TRAJ_END(position_get_x_s16(&mainboard.pos) < 300,
-				    TRAJ_FLAGS_NO_NEAR);
+	support_balls_deploy();
+	err = wait_traj_end(TRAJ_FLAGS_SMALL_DIST);
+	i2c_cobboard_set_mode(I2C_COBBOARD_MODE_HARVEST);
+
+	/* wait to be near the wall */
+	err = WAIT_COND_OR_TRAJ_END(position_get_x_s16(&mainboard.pos) < 200,
+				    TRAJ_FLAGS_SMALL_DIST);
+
+	i2c_cobboard_set_mode(I2C_COBBOARD_MODE_HARVEST);
+
+	/* restore BD coefs */
+	bd_set_current_thresholds(&mainboard.distance.bd, 500, 8000, 1000000, 20);
+	bd_set_current_thresholds(&mainboard.distance.bd, 500, 8000, 1000000, 20);
+	bd_set_speed_threshold(&mainboard.distance.bd, 60);
+
+	/* calibrate position on the wall */
 	strat_set_speed(SPEED_DIST_VERY_SLOW, SPEED_ANGLE_FAST);
-	err = strat_calib(-300, TRAJ_FLAGS_NO_NEAR);
+	err = strat_calib(-400, TRAJ_FLAGS_SMALL_DIST);
 	if (orange_color == our_color)
-		position_set(&mainboard.pos, ROBOT_HALF_LENGTH_REAR,
+		strat_reset_pos(ROBOT_HALF_LENGTH_REAR,
 			     DO_NOT_SET_POS, COLOR_A(0));
 	else
-		position_set(&mainboard.pos, AREA_X - ROBOT_HALF_LENGTH_REAR,
+		strat_reset_pos(AREA_X - ROBOT_HALF_LENGTH_REAR,
 			     DO_NOT_SET_POS, COLOR_A(180));
 	strat_set_speed(SPEED_DIST_FAST, SPEED_ANGLE_FAST);
-	trajectory_goto_xy_abs(&mainboard.traj, 150, COLOR_Y(starty));
-	err = wait_traj_end(TRAJ_FLAGS_STD);
+
+	trajectory_d_rel(&mainboard.traj, 250);
+	err = wait_traj_end(TRAJ_FLAGS_NO_NEAR);
+	if (orange_color == I2C_COLOR_YELLOW)
+		trajectory_a_rel(&mainboard.traj, 90);
+	else
+		trajectory_a_rel(&mainboard.traj, -90);
+	err = wait_traj_end(TRAJ_FLAGS_NO_NEAR);
+	time_wait_ms(200);
+
+	strat_set_speed(SPEED_DIST_VERY_SLOW, SPEED_ANGLE_FAST);
+	err = strat_calib(-400, TRAJ_FLAGS_SMALL_DIST);
+	strat_reset_pos(DO_NOT_SET_POS,
+			COLOR_Y(ROBOT_HALF_LENGTH_REAR),
+			COLOR_A(90));
+	strat_set_speed(SPEED_DIST_FAST, SPEED_ANGLE_FAST);
+
+	trajectory_d_rel(&mainboard.traj, 250);
+	err = wait_traj_end(TRAJ_FLAGS_NO_NEAR);
 
 	/* revert acceleration and speed */
-	i2c_cobboard_set_mode(I2C_COBBOARD_MODE_HARVEST);
+	pid_set_gains(&mainboard.angle.pid, p, i, d);
+	pid_set_maximums(&mainboard.distance.pid, max_in, max_i, max_out);
 	strat_want_pack = 0;
 	strat_set_speed(sd, sa);
-	bd_set_current_thresholds(&mainboard.distance.bd, 500, 8000, 1000000, 20);
 	support_balls_deploy();
 	return err;
 }
@@ -752,6 +871,7 @@ uint8_t strat_main(void)
 	/* get oranges */
 	if (strat_conf.flags & STRAT_CONF_OUR_ORANGE) {
 		err = run_to_the_hills(get_color());
+		strat_db.our_oranges_count = 0;
 		do_initturn = 0;
 	}
 
@@ -783,6 +903,25 @@ uint8_t strat_main(void)
 			else if (!TRAJ_SUCCESS(err)) {
 				/* don't retry these tomatoes if it failed */
 				strat_conf.orphan_tomato = 90;
+				strat_unblock();
+			}
+		}
+
+		/* if it's time to get opponent oranges, do it */
+		if (time_get_s() > strat_conf.opp_orange) {
+			err = get_opp_oranges();
+			if (err == END_ERROR) {
+				DEBUG(E_USER_STRAT,
+				      "get_opp_oranges returned END_ERROR");
+			}
+			else if (err == END_TIMER) {
+				DEBUG(E_USER_STRAT, "End of time");
+				strat_exit();
+				break;
+			}
+			else if (!TRAJ_SUCCESS(err)) {
+				/* don't retry oranges if it failed */
+				strat_conf.opp_orange = 90;
 				strat_unblock();
 			}
 		}

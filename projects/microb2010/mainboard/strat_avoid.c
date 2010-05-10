@@ -1001,8 +1001,6 @@ uint8_t strat_harvest_circuit(void)
 	strat_set_speed(SPEED_CLITOID_SLOW, SPEED_ANGLE_SLOW);
 	strat_want_pack = 1;
 
-	printf("PACK PACK\n");
-
 	x = position_get_x_s16(&mainboard.pos);
 	y = position_get_y_s16(&mainboard.pos);
 
@@ -1040,7 +1038,6 @@ uint8_t strat_harvest_circuit(void)
 		goto fail;
 
 	strat_want_pack = 0;
-	printf("UNPACK UNPACK\n");
 
 	/* do all lines of circuit */
 	for (idx = 1; idx < len; idx ++) {
@@ -1080,11 +1077,11 @@ const struct xy_point unblock_pts[] = {
 /* try to unblock in any situation */
 uint8_t strat_unblock(void)
 {
-	int16_t x, y;
+	int16_t x, y, posx, posy;
 	uint8_t i, j, k;
 	uint16_t old_dspeed, old_aspeed;
 	uint8_t err;
-	uint16_t d_min = 0xFFFF, d;
+	uint16_t d_min = 0x7FFF, d;
 	const struct xy_point *pt;
 
 	DEBUG(E_USER_STRAT, "%s()", __FUNCTION__);
@@ -1094,8 +1091,10 @@ uint8_t strat_unblock(void)
 
 	strat_hardstop();
 	strat_set_speed(SPEED_DIST_SLOW, SPEED_ANGLE_SLOW);
-	x = position_get_x_s16(&mainboard.pos);
-	y = position_get_y_s16(&mainboard.pos);
+	posx = position_get_x_s16(&mainboard.pos);
+	posy = position_get_y_s16(&mainboard.pos);
+	x = posx;
+	y = posy;
 
 	if (xycoord_to_ijcoord(&x, &y, &i, &j) < 0)
 		x = -1;
@@ -1104,14 +1103,11 @@ uint8_t strat_unblock(void)
 
 	/* find the nearest unblock point */
 	if (x == -1) {
-		/* position may have been modified */
-		x = position_get_x_s16(&mainboard.pos);
-		y = position_get_y_s16(&mainboard.pos);
 
 		/* browse all points and find the nearest */
 		for (k = 0; k < sizeof(unblock_pts)/sizeof(*unblock_pts); k++) {
 			pt = &unblock_pts[k];
-			d = distance_between(x, y, pt->x, COLOR_Y(pt->y));
+			d = distance_between(posx, posy, pt->x, COLOR_Y(pt->y));
 			if (d < d_min) {
 				d_min = d;
 				x = pt->x;
@@ -1119,6 +1115,8 @@ uint8_t strat_unblock(void)
 			}
 		}
 	}
+	DEBUG(E_USER_STRAT, "%s() unblock point is %d,%d",
+	      __FUNCTION__, x, y);
 
 	/* XXX if opponent is too close, go back, or wait ? */
 
@@ -1132,7 +1130,6 @@ uint8_t strat_unblock(void)
 		return err;
 
 	strat_set_speed(old_dspeed, old_aspeed);
-	strat_want_pack = 0;
 	return END_TRAJ;
 }
 

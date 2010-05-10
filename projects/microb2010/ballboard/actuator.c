@@ -47,12 +47,9 @@
 #define ROLLER_OFF     0
 #define ROLLER_REVERSE ROLLER_SPEED
 
-#define FORKROT_DEPLOYED -50000
+#define FORKROT_DEPLOYED -55000
+#define FORKROT_MID -33000
 #define FORKROT_PACKED   0
-
-#define FORKTRANS_LEFT   0
-#define FORKTRANS_MIDDLE 500
-#define FORKTRANS_RIGHT  1000
 
 void roller_on(void)
 {
@@ -79,17 +76,18 @@ void fork_pack(void)
 	cs_set_consign(&ballboard.forkrot.cs, FORKROT_PACKED);
 }
 
-void fork_left(void)
+void fork_mid(void)
 {
-	cs_set_consign(&ballboard.forktrans.cs, FORKTRANS_LEFT);
+	cs_set_consign(&ballboard.forkrot.cs, FORKROT_MID);
 }
 
-void fork_right(void)
+void actuator_init(void)
 {
-	cs_set_consign(&ballboard.forktrans.cs, FORKTRANS_RIGHT);
-}
-
-void fork_middle(void)
-{
-	cs_set_consign(&ballboard.forktrans.cs, FORKTRANS_MIDDLE);
+	printf_P(PSTR("fork autopos..."));
+	pwm_ng_set(FORKROT_PWM, 400);
+	wait_ms(1000);
+	pwm_ng_set(FORKROT_PWM, 0);
+	encoders_spi_set_value(FORKROT_ENCODER, 0);
+	printf_P(PSTR("ok\r\n"));
+	ballboard.forkrot.on = 1;
 }

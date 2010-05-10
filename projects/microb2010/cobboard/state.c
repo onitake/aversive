@@ -66,7 +66,8 @@ static uint8_t cob_count;
 #define INIT(mode)       ((mode) == I2C_COBBOARD_MODE_INIT)
 #define HARVEST(mode)    ((mode) == I2C_COBBOARD_MODE_HARVEST)
 #define EJECT(mode)      ((mode) == I2C_COBBOARD_MODE_EJECT)
-#define KICKSTAND(mode)  ((mode) == I2C_COBBOARD_MODE_KICKSTAND)
+#define KICKSTAND_UP(mode)    ((mode) == I2C_COBBOARD_MODE_KICKSTAND_UP)
+#define KICKSTAND_DOWN(mode)  ((mode) == I2C_COBBOARD_MODE_KICKSTAND_DOWN)
 
 uint8_t state_debug = 0;
 
@@ -347,7 +348,6 @@ void state_machine(void)
 			shovel_down();
 			servo_carry_close();
 			servo_door_close();
-			shovel_current_limit_enable(0);
 
 			/* pack/deply spickles, enable/disable roller */
 			cobroller_off(I2C_LEFT_SIDE);
@@ -367,11 +367,18 @@ void state_machine(void)
 		}
 
 		/* help to climb the hill */
-		if (KICKSTAND(state_mode)) {
+		if (KICKSTAND_UP(state_mode)) {
+			state_status = I2C_COBBOARD_STATUS_KICKSTAND_UP;
 			servo_carry_open();
 			servo_door_open();
-			shovel_current_limit_enable(1);
-			shovel_kickstand();
+			shovel_kickstand_up();
+		}
+
+		if (KICKSTAND_DOWN(state_mode)) {
+			state_status = I2C_COBBOARD_STATUS_KICKSTAND_DOWN;
+			servo_carry_open();
+			servo_door_open();
+			shovel_kickstand_down();
 		}
 
 		/* eject */

@@ -32,7 +32,8 @@ void shovel_set(void *mot, int32_t cmd);
 void shovel_down(void);
 void shovel_mid(void);
 void shovel_up(void);
-void shovel_kickstand(void);
+void shovel_kickstand_up(void);
+void shovel_kickstand_down(void);
 
 uint8_t shovel_is_up(void);
 uint8_t shovel_is_down(void);

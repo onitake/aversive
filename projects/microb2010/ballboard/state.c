@@ -64,10 +64,8 @@ static volatile uint8_t ball_count;
 #define OFF I2C_BALLBOARD_MODE_OFF
 #define HARVEST I2C_BALLBOARD_MODE_HARVEST
 #define EJECT I2C_BALLBOARD_MODE_EJECT
-#define PREP_L_FORK I2C_BALLBOARD_MODE_PREP_L_FORK
-#define TAKE_L_FORK I2C_BALLBOARD_MODE_TAKE_L_FORK
-#define PREP_R_FORK I2C_BALLBOARD_MODE_PREP_R_FORK
-#define TAKE_R_FORK I2C_BALLBOARD_MODE_TAKE_R_FORK
+#define PREP_FORK I2C_BALLBOARD_MODE_PREP_FORK
+#define TAKE_FORK I2C_BALLBOARD_MODE_TAKE_FORK
 
 uint8_t state_debug = 0;
 
@@ -216,6 +214,7 @@ void state_machine(void)
 
 		case INIT:
 			state_init();
+			fork_pack();
 			state_mode = OFF;
 			state_status = I2C_BALLBOARD_STATUS_F_READY;
 			break;
@@ -223,18 +222,33 @@ void state_machine(void)
 		case OFF:
 			state_status = I2C_BALLBOARD_STATUS_F_READY;
 			roller_off();
+			fork_pack();
 			break;
 
 		case HARVEST:
 			state_status = I2C_BALLBOARD_STATUS_F_READY;
+			fork_pack();
 			state_do_harvest();
 			break;
 
 		case EJECT:
 			state_status = I2C_BALLBOARD_STATUS_F_BUSY;
+			fork_pack();
 			state_do_eject();
 			state_status = I2C_BALLBOARD_STATUS_F_READY;
 			state_mode = HARVEST;
+			break;
+
+		case PREP_FORK:
+			roller_off();
+			fork_deploy();
+			break;
+
+		case TAKE_FORK:
+			roller_off();
+			fork_mid();
+			time_wait_ms(1300);
+			state_mode = OFF;
 			break;
 
 		default:

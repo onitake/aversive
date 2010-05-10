@@ -195,13 +195,17 @@ static void cmd_state1_parsed(void *parsed_result,
 		state_set_mode(I2C_BALLBOARD_MODE_EJECT);
 	else if (!strcmp_P(res->arg1, PSTR("harvest")))
 		state_set_mode(I2C_BALLBOARD_MODE_HARVEST);
+	else if (!strcmp_P(res->arg1, PSTR("prepare")))
+		state_set_mode(I2C_BALLBOARD_MODE_PREP_FORK);
+	else if (!strcmp_P(res->arg1, PSTR("take")))
+		state_set_mode(I2C_BALLBOARD_MODE_TAKE_FORK);
 
 	/* other commands */
 }
 
 prog_char str_state1_arg0[] = "ballboard";
 parse_pgm_token_string_t cmd_state1_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_state1_result, arg0, str_state1_arg0);
-prog_char str_state1_arg1[] = "init#eject#harvest#off";
+prog_char str_state1_arg1[] = "init#eject#harvest#off#prepare#take";
 parse_pgm_token_string_t cmd_state1_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_state1_result, arg1, str_state1_arg1);
 
 prog_char help_state1[] = "set ballboard mode";
@@ -230,27 +234,11 @@ struct cmd_state2_result {
 static void cmd_state2_parsed(void *parsed_result,
 			      __attribute__((unused)) void *data)
 {
-	struct cmd_state2_result *res = parsed_result;
-	uint8_t mode;
-
-	if (!strcmp_P(res->arg2, PSTR("left"))) {
-		if (!strcmp_P(res->arg1, PSTR("prepare")))
-			mode = I2C_BALLBOARD_MODE_PREP_L_FORK;
-		else if (!strcmp_P(res->arg1, PSTR("take")))
-			mode = I2C_BALLBOARD_MODE_TAKE_L_FORK;
-	}
-	else {
-		if (!strcmp_P(res->arg1, PSTR("prepare")))
-			mode = I2C_BALLBOARD_MODE_PREP_R_FORK;
-		else if (!strcmp_P(res->arg1, PSTR("take")))
-			mode = I2C_BALLBOARD_MODE_TAKE_R_FORK;
-	}
-	//state_set_mode(mode);
 }
 
 prog_char str_state2_arg0[] = "ballboard";
 parse_pgm_token_string_t cmd_state2_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_state2_result, arg0, str_state2_arg0);
-prog_char str_state2_arg1[] = "prepare#take";
+prog_char str_state2_arg1[] = "xxx";
 parse_pgm_token_string_t cmd_state2_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_state2_result, arg1, str_state2_arg1);
 prog_char str_state2_arg2[] = "left#right";
 parse_pgm_token_string_t cmd_state2_arg2 = TOKEN_STRING_INITIALIZER(struct cmd_state2_result, arg2, str_state2_arg2);
@@ -391,17 +379,13 @@ static void cmd_fork_parsed(void *parsed_result,
 		fork_deploy();
 	else if (!strcmp_P(res->arg1, PSTR("pack")))
 		fork_pack();
-	else if (!strcmp_P(res->arg1, PSTR("left")))
-		fork_left();
-	else if (!strcmp_P(res->arg1, PSTR("right")))
-		fork_right();
 	else if (!strcmp_P(res->arg1, PSTR("middle")))
-		fork_middle();
+		fork_mid();
 }
 
 prog_char str_fork_arg0[] = "fork";
 parse_pgm_token_string_t cmd_fork_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_fork_result, arg0, str_fork_arg0);
-prog_char str_fork_arg1[] = "deploy#pack#left#right#middle";
+prog_char str_fork_arg1[] = "deploy#pack#middle";
 parse_pgm_token_string_t cmd_fork_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_fork_result, arg1, str_fork_arg1);
 
 prog_char help_fork[] = "move fork";

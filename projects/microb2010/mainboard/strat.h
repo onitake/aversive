@@ -135,8 +135,8 @@
 #define ACC_ANGLE 16.
 
 /* default speeds */
-#define SPEED_DIST_FAST 1500.
-#define SPEED_ANGLE_FAST 1000.
+#define SPEED_DIST_FAST 1200.
+#define SPEED_ANGLE_FAST 800.
 #define SPEED_DIST_SLOW 500.
 #define SPEED_ANGLE_SLOW 500.
 #define SPEED_DIST_VERY_SLOW 200.
@@ -174,6 +174,7 @@ uint8_t strat_main(void);
 void strat_event(void *dummy);
 void strat_event_enable(void);
 void strat_event_disable(void);
+uint8_t prepare_hill(uint8_t orange_color, int16_t posx);
 uint8_t run_to_the_hills(uint8_t orange_color);
 uint8_t get_orphan_tomatoes(void);
 
