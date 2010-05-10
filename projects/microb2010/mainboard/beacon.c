@@ -66,16 +66,44 @@
 #define STA1 6
 #define STA2 7
 #define STA3 8
+#define STA4 9
+#define STA5 10
 
 static volatile uint8_t opp_age = 0;
 static volatile int16_t opp_a = I2C_OPPONENT_NOT_THERE;
 static volatile int16_t opp_d = I2C_OPPONENT_NOT_THERE;
 
+static volatile uint8_t pos_age = 0;
+static volatile int16_t pos_x = I2C_BEACON_NOT_FOUND;
+static volatile int16_t pos_y = I2C_BEACON_NOT_FOUND;
+static volatile int16_t pos_a = I2C_BEACON_NOT_FOUND;
+
+int8_t beacon_get_pos(int16_t *x, int16_t *y, double *a)
+{
+	uint8_t flags;
+	int16_t tmpx, tmpy, tmpa;
+
+	IRQ_LOCK(flags);
+	tmpx = beaconboard.posx;
+	tmpy = beaconboard.posy;
+	tmpa = beaconboard.posa;
+	IRQ_UNLOCK(flags);
+
+	if (tmpx == I2C_BEACON_NOT_FOUND)
+		return -1;
+
+	*x = tmpx;
+	*y = tmpy;
+	*a = ((double)tmpa / 10.);
+	return 0;
+}
+
 #ifndef HOST_VERSION
 static void beacon_uart_cb(char c)
 {
 	static uint8_t state;
-	static uint16_t d, a, x, y;
+	static uint16_t tmp_opp_d, tmp_opp_a;
+	static uint16_t x, y, a;
 
 	/* init command */
 	if ((c & 0x80) == 0)
@@ -86,46 +114,64 @@ static void beacon_uart_cb(char c)
 		/* recv opp */
 		if (c == 0) {
 			state = OPP0;
-			d = 0;
-			a = 0;
+			tmp_opp_d = 0;
+			tmp_opp_a = 0;
 		}
 		/* recv opp */
-		else if (c == 0) {
+		else if (c == 1) {
 			state = STA0;
 			x = 0;
 			y = 0;
+			a = 0;
 		}
 		break;
 	case OPP0:
-		d = ((uint16_t)c) & 0x7F;
+		tmp_opp_d = ((uint16_t)c) & 0x7F;
+		state = OPP1;
 		break;
 	case OPP1:
-		d |= (((uint16_t)c << 7) & 0x3F80);
+		tmp_opp_d |= (((uint16_t)c << 7) & 0x3F80);
+		state = OPP2;
 		break;
 	case OPP2:
-		a = ((uint16_t)c) & 0x7F;
+		tmp_opp_a = ((uint16_t)c) & 0x7F;
+		state = OPP3;
 		break;
 	case OPP3:
-		a |= (((uint16_t)c << 7) & 0x3F80);
-		opp_a = a;
-		opp_d = d;
+		tmp_opp_a |= (((uint16_t)c << 7) & 0x3F80);
+		opp_a = tmp_opp_a;
+		opp_d = tmp_opp_d;
 		opp_age = 0;
+		state = INIT;
 		break;
 	case STA0:
 		x = ((uint16_t)c) & 0x7F;
+		state = STA1;
 		break;
 	case STA1:
 		x |= (((uint16_t)c << 7) & 0x3F80);
+		state = STA2;
 		break;
 	case STA2:
 		y = ((uint16_t)c) & 0x7F;
+		state = STA3;
 		break;
 	case STA3:
 		y |= (((uint16_t)c << 7) & 0x3F80);
-		beaconboard.posx = x;
-		beaconboard.posy = y;
+		state = STA4;
 		break;
-		/* XXX STA4 with angle */
+	case STA4:
+		a = ((uint16_t)c) & 0x7F;
+		state = STA5;
+		break;
+	case STA5:
+		a |= (((uint16_t)c << 7) & 0x3F80);
+		pos_x = x;
+		pos_y = y;
+		pos_a = a;
+		pos_age = 0;
+		state = INIT;
+		break;
 	default:
 		state = INIT;
 		break;
@@ -133,7 +179,7 @@ static void beacon_uart_cb(char c)
 }
 #endif
 
-static void beacon_event(void *dummy)
+static void beacon_opponent_event(void)
 {
 #ifdef HOST_VERSION
 	uint8_t flags;
@@ -187,6 +233,38 @@ static void beacon_event(void *dummy)
 	beaconboard.oppd = id;
 	IRQ_UNLOCK(flags);
 #endif
+}
+
+static void beacon_static_event(void)
+{
+	uint8_t flags;
+
+	/* if beacon is too old, remove it */
+	IRQ_LOCK(flags);
+	if (pos_age < 3)
+		pos_age ++;
+	else {
+		beaconboard.posx = I2C_BEACON_NOT_FOUND;
+		IRQ_UNLOCK(flags);
+		return;
+	}
+
+	beaconboard.posx = pos_x;
+	beaconboard.posy = pos_y;
+	beaconboard.posa = pos_a;
+	IRQ_UNLOCK(flags);
+}
+
+
+static void beacon_event(void *dummy)
+{
+	beacon_opponent_event();
+	beacon_static_event();
+}
+
+void beacon_set_color(uint8_t color)
+{
+	uart_send(BEACON_UART_NUM, color);
 }
 
 void beacon_init(void)

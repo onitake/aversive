@@ -65,6 +65,7 @@ extern parse_pgm_inst_t cmd_event;
 extern parse_pgm_inst_t cmd_spi_test;
 extern parse_pgm_inst_t cmd_opponent;
 extern parse_pgm_inst_t cmd_opponent_set;
+extern parse_pgm_inst_t cmd_beacon;
 extern parse_pgm_inst_t cmd_start;
 extern parse_pgm_inst_t cmd_interact;
 extern parse_pgm_inst_t cmd_color;
@@ -78,7 +79,6 @@ extern parse_pgm_inst_t cmd_ballboard_show;
 extern parse_pgm_inst_t cmd_ballboard_setmode1;
 extern parse_pgm_inst_t cmd_ballboard_setmode2;
 extern parse_pgm_inst_t cmd_ballboard_setmode3;
-extern parse_pgm_inst_t cmd_beacon_start;
 extern parse_pgm_inst_t cmd_servo_balls;
 extern parse_pgm_inst_t cmd_clitoid;
 extern parse_pgm_inst_t cmd_time_monitor;
@@ -161,6 +161,7 @@ parse_pgm_ctx_t main_ctx[] = {
 	(parse_pgm_inst_t *)&cmd_spi_test,
 	(parse_pgm_inst_t *)&cmd_opponent,
 	(parse_pgm_inst_t *)&cmd_opponent_set,
+	(parse_pgm_inst_t *)&cmd_beacon,
 	(parse_pgm_inst_t *)&cmd_start,
 	(parse_pgm_inst_t *)&cmd_interact,
 	(parse_pgm_inst_t *)&cmd_color,

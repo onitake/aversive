@@ -20,3 +20,5 @@
  */
 
 void beacon_init(void);
+int8_t beacon_get_pos(int16_t *x, int16_t *y, double *a);
+void beacon_set_color(uint8_t color);

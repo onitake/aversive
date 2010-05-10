@@ -23,3 +23,4 @@
 void uart_proto_init(void);
 void xmit_opp(uint16_t d, uint16_t a);
 void xmit_static(uint16_t x, uint16_t y, uint16_t a);
+int16_t uart_proto_recv(void);

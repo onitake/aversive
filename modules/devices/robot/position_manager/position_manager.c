@@ -35,16 +35,16 @@ void position_init(struct robot_position *pos)
 }
 
 /** Set a new robot position */
-void position_set(struct robot_position *pos, int16_t x, int16_t y, int16_t a)
+void position_set(struct robot_position *pos, int16_t x, int16_t y, double a_deg)
 {
 	uint8_t flags;
 	IRQ_LOCK(flags);
-	pos->pos_d.a = ((double)a * M_PI)/ 180.0;
+	pos->pos_d.a = (a_deg * M_PI)/ 180.0;
 	pos->pos_d.x = x;
 	pos->pos_d.y = y;
 	pos->pos_s16.x = x;
 	pos->pos_s16.y = y;
-	pos->pos_s16.a = a;
+	pos->pos_s16.a = a_deg;
 	IRQ_UNLOCK(flags);
 }
 

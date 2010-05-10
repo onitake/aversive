@@ -221,6 +221,7 @@ struct beaconboard {
 	int16_t oppd;
 	uint16_t posx;
 	uint16_t posy;
+	uint16_t posa; /* between 0 and 3600 */
 };
 
 extern struct genboard gen;

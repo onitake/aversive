@@ -86,7 +86,7 @@ void position_set_centrifugal_coef(struct robot_position *pos, double coef);
 #endif
 
 /** Set a new robot position */
-void position_set(struct robot_position *pos, int16_t x, int16_t y, int16_t a);
+void position_set(struct robot_position *pos, int16_t x, int16_t y, double a_deg);
 
 void position_use_ext(struct robot_position *pos);
 void position_use_mot(struct robot_position *pos);

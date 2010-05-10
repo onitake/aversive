@@ -43,9 +43,10 @@ static int dprint = 0;
 
 #define ANGLE_EPSILON 0.005
 
-const point_t beacon0 = { 0, 1050 };
-const point_t beacon1 = { 3000, 0 };
-const point_t beacon2 = { 3000, 2100 };
+/* valid for yellow */
+point_t beacon0 = { -70, 1050 };
+point_t beacon1 = { 3065, -65 };
+point_t beacon2 = { 3065, 2165 };
 
 static inline double abs_dbl(double x)
 {

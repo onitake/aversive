@@ -193,6 +193,7 @@ int main(void)
 	ballboard.rcob = I2C_COB_NONE;
 
 	beaconboard.oppx = I2C_OPPONENT_NOT_THERE;
+	beaconboard.posx = I2C_BEACON_NOT_FOUND;
 
 	/* UART */
 	uart_init();

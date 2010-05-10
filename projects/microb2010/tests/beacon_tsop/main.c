@@ -38,6 +38,7 @@
 #include "uart_proto.h"
 #include "trigo.h"
 #include "main.h"
+#include "i2c_commands.h"
 
 #define BOARD2010
 //#define BOARD2006
@@ -454,11 +455,12 @@ static void process_sta_ring(struct frame_status *status)
 		       beacon_id, dist0, angle0 * 180. / M_PI, dist1, angle1 * 180. / M_PI);
 	}
 
-	if (ad_to_posxya(&pos, &a, 0, &beacon0, &beacon1, angle0, dist0,
+	if (ad_to_posxya(&pos, &a, 0, &beacon0, &beacon2, angle0, dist0,
 			 angle1, dist1) < 0)
 		return;
 
-	xmit_static((uint16_t)pos.x, (uint16_t)pos.y, (uint16_t)a);
+	/* /!\ angle is between 0 and 3600 */
+	xmit_static((uint16_t)pos.x, (uint16_t)pos.y, (uint16_t)(a*10));
 }
 
 static int8_t check_opp_frame(uint16_t frame, uint16_t time)
@@ -554,6 +556,7 @@ int main(void)
 	uint8_t cpt = 0;
 	int32_t speed = 0, out, err;
 	uint16_t tcnt3;
+	int16_t c;
 	uint8_t x = 0; /* debug display counter */
 
 	opp_beacon.frame_len = TSOP_OPP_FRAME_LEN;
@@ -689,6 +692,25 @@ int main(void)
 
 		process_sta_ring(&static_beacon);
 		process_opp_ring(&opp_beacon);
+
+		c = uart_proto_recv();
+		if (c == I2C_COLOR_YELLOW) {
+			beacon0.x = -70;
+			beacon0.y = 1050;
+			beacon1.x = 3065;
+			beacon1.y = -65;
+			beacon2.x = 3065;
+			beacon2.y = 2165;
+		}
+		else {
+			beacon0.x = -70;
+			beacon0.y = 1050;
+			beacon1.x = 3065;
+			beacon1.y = 2165;
+			beacon2.x = 3065;
+			beacon2.y = -65;
+		}
+
 		cli();
 		tick ++; /* global imprecise time reference */
 		sei();

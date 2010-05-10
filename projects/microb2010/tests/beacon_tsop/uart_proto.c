@@ -31,8 +31,6 @@
 
 #include "cmdline.h"
 #include "main.h"
-#include "board2006.h"
-//#include "board2010.h"
 
 #define UART_NUM 0
 
@@ -79,12 +77,18 @@ void uart_proto_init(void)
 	UBRRxH = 0;
 }
 
-static void uart_proto_send(char c) 
-{ 
+static void uart_proto_send(char c)
+{
 	while ( !( UCSRxA & (1<<UDREx)) ) ;
-	UDRx = c; 
+	UDRx = c;
 }
 
+int16_t uart_proto_recv(void)
+{
+	if ( !(UCSRxA & (1<<RXCx)) )
+		return -1;
+	return UDRx;
+}
 
 /* transmit an integer between 0 and 16384 */
 static void xmit_int14(uint16_t x)

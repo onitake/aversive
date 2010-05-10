@@ -70,6 +70,7 @@
 #include "strat_corn.h"
 #include "i2c_protocol.h"
 #include "actuator.h"
+#include "beacon.h"
 
 struct cmd_event_result {
 	fixed_string_t arg0;
@@ -283,6 +284,43 @@ parse_pgm_inst_t cmd_opponent_set = {
 	},
 };
 
+/**********************************************************/
+/* Beacon tests */
+
+/* this structure is filled when cmd_beacon is parsed successfully */
+struct cmd_beacon_result {
+	fixed_string_t arg0;
+	fixed_string_t arg1;
+};
+
+/* function called when cmd_beacon is parsed successfully */
+static void cmd_beacon_parsed(void *parsed_result, void *data)
+{
+	int16_t x, y;
+	double a;
+
+	if (beacon_get_pos(&x, &y, &a) < 0)
+		printf_P(PSTR("No position from beacon\r\n"));
+	else
+		printf_P(PSTR("x=%d y=%d a=%2.2f\r\n"), x, y, a);
+}
+
+prog_char str_beacon_arg0[] = "beacon";
+parse_pgm_token_string_t cmd_beacon_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_beacon_result, arg0, str_beacon_arg0);
+prog_char str_beacon_arg1[] = "show";
+parse_pgm_token_string_t cmd_beacon_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_beacon_result, arg1, str_beacon_arg1);
+
+prog_char help_beacon[] = "Show (x,y) beacon";
+parse_pgm_inst_t cmd_beacon = {
+	.f = cmd_beacon_parsed,  /* function to call */
+	.data = NULL,      /* 2nd arg of func */
+	.help_str = help_beacon,
+	.tokens = {        /* token list, NULL terminated */
+		(prog_void *)&cmd_beacon_arg0,
+		(prog_void *)&cmd_beacon_arg1,
+		NULL,
+	},
+};
 
 /**********************************************************/
 /* Start */
@@ -314,11 +352,13 @@ static void cmd_start_parsed(void *parsed_result, void *data)
 		mainboard.our_color = I2C_COLOR_YELLOW;
 		i2c_set_color(I2C_COBBOARD_ADDR, I2C_COLOR_YELLOW);
 		i2c_set_color(I2C_BALLBOARD_ADDR, I2C_COLOR_YELLOW);
+		beacon_set_color(I2C_COLOR_YELLOW);
 	}
 	else if (!strcmp_P(res->color, PSTR("blue"))) {
 		mainboard.our_color = I2C_COLOR_BLUE;
 		i2c_set_color(I2C_COBBOARD_ADDR, I2C_COLOR_BLUE);
 		i2c_set_color(I2C_BALLBOARD_ADDR, I2C_COLOR_BLUE);
+		beacon_set_color(I2C_COLOR_BLUE);
 	}
 
 	strat_start();
@@ -574,11 +614,13 @@ static void cmd_color_parsed(void *parsed_result, void *data)
 		mainboard.our_color = I2C_COLOR_YELLOW;
 		i2c_set_color(I2C_COBBOARD_ADDR, I2C_COLOR_YELLOW);
 		i2c_set_color(I2C_BALLBOARD_ADDR, I2C_COLOR_YELLOW);
+		beacon_set_color(I2C_COLOR_YELLOW);
 	}
 	else if (!strcmp_P(res->color, PSTR("blue"))) {
 		mainboard.our_color = I2C_COLOR_BLUE;
 		i2c_set_color(I2C_COBBOARD_ADDR, I2C_COLOR_BLUE);
 		i2c_set_color(I2C_BALLBOARD_ADDR, I2C_COLOR_BLUE);
+		beacon_set_color(I2C_COLOR_BLUE);
 	}
 	printf_P(PSTR("Done\r\n"));
 #endif
