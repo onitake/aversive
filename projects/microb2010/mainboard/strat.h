@@ -153,7 +153,10 @@ struct strat_conf {
 	uint8_t opp_orange;
 	uint8_t orphan_tomato;
 
-#define STRAT_CONF_OUR_ORANGE   0x01
+	int8_t prev_wait_obstacle;
+
+#define STRAT_CONF_OUR_ORANGE      0x01
+#define STRAT_CONF_WAIT_OBSTACLE   0x02
 	uint8_t flags;
 };
 

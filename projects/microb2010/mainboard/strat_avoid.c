@@ -1060,6 +1060,7 @@ uint8_t strat_harvest_circuit(void)
 
 	/* do all lines of circuit */
 	for (idx = 1; idx < len; idx ++) {
+	retry:
 		linenum = circuit_wpline[idx].line_num;
 		dir = circuit_wpline[idx].dir;
 
@@ -1067,6 +1068,16 @@ uint8_t strat_harvest_circuit(void)
 		      __FUNCTION__, prev_linenum, prev_dir, linenum, dir);
 		err = line2line(prev_linenum, prev_dir, linenum, dir,
 				TRAJ_FLAGS_NO_NEAR);
+
+		/* in some cases it is better to wait that obstacle is
+		 * gone before starting to avoid it */
+		if (err == END_OBSTACLE &&
+		    strat_conf.flags & STRAT_CONF_WAIT_OBSTACLE &&
+		    time_get_s() > strat_conf.prev_wait_obstacle + 5) {
+			strat_conf.prev_wait_obstacle = time_get_s();
+			time_wait_ms(2000);
+			goto retry;
+		}
 		if (!TRAJ_SUCCESS(err))
 			goto fail;
 

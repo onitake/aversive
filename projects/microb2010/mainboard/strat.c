@@ -101,6 +101,7 @@ void strat_preinit(void)
 		DO_POS | DO_BD | DO_POWER;
 
 	strat_db_init();
+	strat_conf.prev_wait_obstacle = -5;
 	strat_conf_dump(__FUNCTION__);
 	strat_db_dump(__FUNCTION__);
 }
@@ -111,10 +112,12 @@ void strat_conf_dump(const char *caller)
 		return;
 
 	printf_P(PSTR("-- conf --\r\n"));
-	printf_P(PSTR("opp_orange = %d\n"), strat_conf.opp_orange);
-	printf_P(PSTR("orphan_tomato = %d\n"), strat_conf.orphan_tomato);
 	printf_P(PSTR("our_orange = %s\n"),
 		 (strat_conf.flags & STRAT_CONF_OUR_ORANGE) ? "y":"n");
+	printf_P(PSTR("wait_obstacle = %s\n"),
+		 (strat_conf.flags & STRAT_CONF_WAIT_OBSTACLE) ? "y":"n");
+	printf_P(PSTR("opp_orange = %d\n"), strat_conf.opp_orange);
+	printf_P(PSTR("orphan_tomato = %d\n"), strat_conf.orphan_tomato);
 }
 
 void strat_event_enable(void)
@@ -556,11 +559,27 @@ static uint8_t strat_beginning(uint8_t do_initturn)
 	strat_set_acc(ACC_DIST, ACC_ANGLE);
 	strat_set_speed(SPEED_CLITOID_SLOW, SPEED_ANGLE_SLOW);
 
+ l1:
 	err = line2line(0, LINE_UP, 2, LINE_R_DOWN, TRAJ_FLAGS_NO_NEAR);
+	if (err == END_OBSTACLE &&
+	    strat_conf.flags & STRAT_CONF_WAIT_OBSTACLE &&
+	    time_get_s() > strat_conf.prev_wait_obstacle + 5) {
+		strat_conf.prev_wait_obstacle = time_get_s();
+		time_wait_ms(2000);
+		goto l1;
+	}
 	if (!TRAJ_SUCCESS(err))
 		return err;
 
+ l2:
 	err = line2line(2, LINE_R_DOWN, 2, LINE_R_UP, TRAJ_FLAGS_NO_NEAR);
+	if (err == END_OBSTACLE &&
+	    strat_conf.flags & STRAT_CONF_WAIT_OBSTACLE &&
+	    time_get_s() > strat_conf.prev_wait_obstacle + 5) {
+		strat_conf.prev_wait_obstacle = time_get_s();
+		time_wait_ms(2000);
+		goto l2;
+	}
 	if (!TRAJ_SUCCESS(err)) {
 		return err;
 	}

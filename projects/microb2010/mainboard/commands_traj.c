@@ -1058,6 +1058,8 @@ static void cmd_strat_conf2_parsed(void *parsed_result, void *data)
 
 	if (!strcmp_P(res->arg1, PSTR("our_orange")))
 		bit = STRAT_CONF_OUR_ORANGE;
+	else if (!strcmp_P(res->arg1, PSTR("wait_obstacle")))
+		bit = STRAT_CONF_WAIT_OBSTACLE;
 
 	if (on)
 		strat_conf.flags |= bit;
@@ -1070,7 +1072,7 @@ static void cmd_strat_conf2_parsed(void *parsed_result, void *data)
 
 prog_char str_strat_conf2_arg0[] = "strat_conf";
 parse_pgm_token_string_t cmd_strat_conf2_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_strat_conf2_result, arg0, str_strat_conf2_arg0);
-prog_char str_strat_conf2_arg1[] = "our_orange";
+prog_char str_strat_conf2_arg1[] = "our_orange#wait_obstacle";
 parse_pgm_token_string_t cmd_strat_conf2_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_strat_conf2_result, arg1, str_strat_conf2_arg1);
 prog_char str_strat_conf2_arg2[] = "on#off";
 parse_pgm_token_string_t cmd_strat_conf2_arg2 = TOKEN_STRING_INITIALIZER(struct cmd_strat_conf2_result, arg2, str_strat_conf2_arg2);
