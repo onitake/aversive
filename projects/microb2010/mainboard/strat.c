@@ -82,7 +82,7 @@ volatile uint8_t strat_opponent_rpack = 0;
 struct strat_conf strat_conf = {
 	.dump_enabled = 0,
 	.opp_orange = 90,
-	.orphan_tomato = 50,
+	.orphan_tomato = 45,
 	.flags = 0,
 };
 
@@ -699,7 +699,7 @@ uint8_t get_opp_oranges(void)
 uint8_t get_orphan_tomatoes(void)
 {
 #define CLITOID_TOMATO_RADIUS 100.
-#define TOMATO_BACK_X 2760
+#define TOMATO_BACK_X 2780
 #define TOMATO_BACK_LEN 200
 
 	int16_t x, y, a;
