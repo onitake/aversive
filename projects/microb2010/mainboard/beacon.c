@@ -78,10 +78,12 @@ static volatile int16_t pos_x = I2C_BEACON_NOT_FOUND;
 static volatile int16_t pos_y = I2C_BEACON_NOT_FOUND;
 static volatile int16_t pos_a = I2C_BEACON_NOT_FOUND;
 
-int8_t beacon_get_pos(int16_t *x, int16_t *y, double *a)
+#define BEACON_OFFSET (-50.)
+int8_t beacon_get_pos_double(double *x, double *y, double *a_rad)
 {
 	uint8_t flags;
 	int16_t tmpx, tmpy, tmpa;
+	double dtmpx, dtmpy, dtmpa;
 
 	IRQ_LOCK(flags);
 	tmpx = beaconboard.posx;
@@ -92,9 +94,16 @@ int8_t beacon_get_pos(int16_t *x, int16_t *y, double *a)
 	if (tmpx == I2C_BEACON_NOT_FOUND)
 		return -1;
 
-	*x = tmpx;
-	*y = tmpy;
-	*a = ((double)tmpa / 10.);
+	dtmpx = tmpx;
+	dtmpy = tmpy;
+	dtmpa = RAD((double)tmpa / 10.);
+
+	dtmpx += cos(dtmpa) * BEACON_OFFSET;
+	dtmpx += sin(dtmpa) * BEACON_OFFSET;
+
+	*x = dtmpx;
+	*y = dtmpy;
+	*a_rad = dtmpa;
 	return 0;
 }
 

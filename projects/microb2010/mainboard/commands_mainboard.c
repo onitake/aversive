@@ -296,13 +296,12 @@ struct cmd_beacon_result {
 /* function called when cmd_beacon is parsed successfully */
 static void cmd_beacon_parsed(void *parsed_result, void *data)
 {
-	int16_t x, y;
-	double a;
+	double x, y, a;
 
-	if (beacon_get_pos(&x, &y, &a) < 0)
+	if (beacon_get_pos_double(&x, &y, &a) < 0)
 		printf_P(PSTR("No position from beacon\r\n"));
 	else
-		printf_P(PSTR("x=%d y=%d a=%2.2f\r\n"), x, y, a);
+		printf_P(PSTR("x=%2.2f y=%2.2f a=%2.2f\r\n"), x, y, DEG(a));
 }
 
 prog_char str_beacon_arg0[] = "beacon";
