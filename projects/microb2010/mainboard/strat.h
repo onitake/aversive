@@ -157,6 +157,7 @@ struct strat_conf {
 
 #define STRAT_CONF_OUR_ORANGE      0x01
 #define STRAT_CONF_WAIT_OBSTACLE   0x02
+#define STRAT_CONF_STRAIGHT_BEGIN  0x04
 	uint8_t flags;
 };
 

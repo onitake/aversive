@@ -587,6 +587,28 @@ static uint8_t strat_beginning(uint8_t do_initturn)
 	return END_TRAJ;
 }
 
+static uint8_t strat_beginning2(uint8_t do_initturn)
+{
+	uint8_t err;
+
+	strat_set_acc(ACC_DIST, ACC_ANGLE);
+
+	if (do_initturn) {
+		strat_set_speed(600, 90); /* OK */
+		trajectory_d_a_rel(&mainboard.traj, 1000, COLOR_A(-40));
+		err = WAIT_COND_OR_TRAJ_END(trajectory_angle_finished(&mainboard.traj),
+					    TRAJ_FLAGS_STD);
+		if (err == 0)
+			return END_TRAJ;
+	}
+	else {
+		trajectory_goto_forward_xy_abs(&mainboard.traj,
+					       375, COLOR_Y(597));
+		err = wait_traj_end(TRAJ_FLAGS_STD);
+	}
+	return err;
+}
+
 /* dump state (every 5 s max) */
 #define DUMP_RATE_LIMIT(dump, last_print)		\
 	do {						\
@@ -949,7 +971,10 @@ uint8_t strat_main(void)
 	}
 
 	/* harvest the first cobs + balls */
-	err = strat_beginning(do_initturn);
+	if (strat_conf.flags & STRAT_CONF_STRAIGHT_BEGIN)
+		err = strat_beginning2(do_initturn);
+	else
+		err = strat_beginning(do_initturn);
 
 	if (!TRAJ_SUCCESS(err))
 		strat_unblock();
