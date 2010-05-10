@@ -808,8 +808,8 @@ uint8_t run_to_the_hills(uint8_t orange_color)
 				    HILL_POSX_BALLS_DOWN3,
 				    TRAJ_FLAGS_SMALL_DIST);
 	DEBUG(E_USER_STRAT, "deploy support balls");
-	strat_set_speed(SPEED_DIST_FAST, SPEED_ANGLE_FAST);
 	strat_set_acc(ad, aa);
+	strat_set_speed(SPEED_DIST_FAST, SPEED_ANGLE_FAST);
 	support_balls_deploy();
 	err = wait_traj_end(TRAJ_FLAGS_SMALL_DIST);
 	i2c_cobboard_set_mode(I2C_COBBOARD_MODE_HARVEST);

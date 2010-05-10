@@ -383,7 +383,7 @@ while True:
                     print "cobboard: %x,%x"%(int(m.groups()[0]),int(m.groups()[1]))
                     side = int(m.groups()[0])
                     flags = int(m.groups()[1])
-                    if side == 0:
+                    if (side == 0 and color == YELLOW) or (side == 1 and color == BLUE):
                         robot_lspickle_deployed = ((flags & 1) * 2)
                         robot_lspickle_autoharvest = ((flags & 2) != 0)
                     else:

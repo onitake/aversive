@@ -29,6 +29,7 @@
 
 #include <aversive.h>
 #include <aversive/pgmspace.h>
+#include <aversive/error.h>
 
 #include <ax12.h>
 #include <uart.h>
@@ -174,7 +175,7 @@ int8_t xycoord_to_ijcoord(int16_t *xp, int16_t *yp, uint8_t *ip, uint8_t *jp)
 	x += (STEP_CORN_X/2);
 	i = x / STEP_CORN_X;
 
-	y = COLOR_Y(y);
+	y = COLOR_Y(y); /* Y depends on color */
 	y -= OFFSET_CORN_Y;
 	if ((i & 1) == 1) {
 		j = y / STEP_CORN_Y;
@@ -206,8 +207,7 @@ int8_t xycoord_to_ijcoord(int16_t *xp, int16_t *yp, uint8_t *ip, uint8_t *jp)
 
 /******** CORN */
 
-/* return the index of a corn given its i,j coords. */
-int8_t ijcoord_to_corn_idx(uint8_t i, uint8_t j)
+static int8_t early_ijcoord_to_corn_idx(uint8_t i, uint8_t j)
 {
 	uint8_t n;
 	for (n = 0; n < CORN_NB; n ++) {
@@ -216,6 +216,14 @@ int8_t ijcoord_to_corn_idx(uint8_t i, uint8_t j)
 			return n;
 	}
 	return -1;
+}
+
+/* return the index of a corn given its i,j coords. */
+int8_t ijcoord_to_corn_idx(uint8_t i, uint8_t j)
+{
+	if (strat_db.wp_table[i][j].type != WP_TYPE_CORN)
+		return -1;
+	return strat_db.wp_table[i][j].corn.idx;
 }
 
 /* return the i,j coords of a corn given its index */
@@ -492,7 +500,7 @@ void strat_db_init(void)
 			}
 
 			/* corn */
-			idx = ijcoord_to_corn_idx(i, j);
+			idx = early_ijcoord_to_corn_idx(i, j);
 			if (idx >= 0) {
 				wp->type = WP_TYPE_CORN;
 				wp->present = 1;
