@@ -336,6 +336,38 @@ static void check_corn(void)
 	}
 }
 
+/* check opponent position */
+void check_opponent(void)
+{
+	int16_t x, y;
+	uint8_t i, j;
+
+	if (get_opponent_xy(&x, &y) < 0)
+		return;
+
+	/* check for oranges after 5 seconds */
+	if (time_get_s() > 5) {
+		if (mainboard.our_color == I2C_COLOR_YELLOW) {
+			if (y < 500 && x < 500)
+				strat_db.our_oranges_count = 0;
+			if (y < 500 && x > AREA_X - 500)
+				strat_db.opp_oranges_count = 0;
+		}
+		else {
+			if (y > AREA_Y - 500 && x < 500)
+				strat_db.our_oranges_count = 0;
+			if (y > AREA_Y - 500 && x > AREA_X - 500)
+				strat_db.opp_oranges_count = 0;
+		}
+	}
+
+	/* malus for some tomatoes and cobs, visited by opponent */
+	if (xycoord_to_ijcoord(&x, &y, &i, &j) < 0)
+		return;
+
+	strat_db.wp_table[i][j].opp_visited = 1;
+}
+
 /* called periodically (10ms) */
 void strat_event(void *dummy)
 {
@@ -345,6 +377,7 @@ void strat_event(void *dummy)
 
 	check_tomato();
 	check_corn();
+	check_opponent();
 
 	/* limit speed when opponent is near */
 	/* disabled for 2010, we are already slow :) */
@@ -360,7 +393,7 @@ static uint8_t robot_is_on_eject_line(void)
 	x = position_get_x_s16(&mainboard.pos);
 	y = position_get_y_s16(&mainboard.pos);
 
-	if (xycoord_to_ijcoord(&x, &y, &i, &j) < 0)
+	if (xycoord_to_ijcoord_not_corn(&x, &y, &i, &j) < 0)
 		return 0;
 
 	if (!wp_belongs_to_line(i, j, 5, LINE_UP) &&
@@ -384,7 +417,7 @@ static uint8_t eject_select_speed(void)
 		return 0; /* fast */
 	}
 
-	if (xycoord_to_ijcoord(&x, &y, &i, &j) < 0) {
+	if (xycoord_to_ijcoord_not_corn(&x, &y, &i, &j) < 0) {
 		DEBUG(E_USER_STRAT, "%s(): cannot find waypoint at %d,%d",
 		      __FUNCTION__, x, y);
 		return 1; /* slow */
@@ -566,7 +599,7 @@ uint8_t get_opp_oranges(void)
 	x = position_get_x_s16(&mainboard.pos);
 	y = position_get_y_s16(&mainboard.pos);
 
-	if (xycoord_to_ijcoord(&x, &y, &i, &j) < 0)
+	if (xycoord_to_ijcoord_not_corn(&x, &y, &i, &j) < 0)
 		return END_ERROR;
 
 	/* not on eject point */
@@ -623,7 +656,7 @@ uint8_t get_orphan_tomatoes(void)
 	x = position_get_x_s16(&mainboard.pos);
 	y = position_get_y_s16(&mainboard.pos);
 
-	if (xycoord_to_ijcoord(&x, &y, &i, &j) < 0)
+	if (xycoord_to_ijcoord_not_corn(&x, &y, &i, &j) < 0)
 		return END_ERROR;
 
 	/* not on eject point */

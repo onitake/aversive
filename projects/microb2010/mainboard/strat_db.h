@@ -90,10 +90,13 @@ struct strat_db {
 /* global structure storing the database */
 extern struct strat_db strat_db;
 
+/* return the nearest waypoint */
+int8_t xycoord_to_ijcoord(int16_t *xp, int16_t *yp, uint8_t *ip, uint8_t *jp);
+
 /* return the nearest waypoint that is not a corn: xp and yp contains
  * the input and output, and ip, jp are only outputs. return 0 on
  * success. */
-int8_t xycoord_to_ijcoord(int16_t *xp, int16_t *yp, uint8_t *ip, uint8_t *jp);
+int8_t xycoord_to_ijcoord_not_corn(int16_t *xp, int16_t *yp, uint8_t *ip, uint8_t *jp);
 
 /* convert i,j coords to x,y coords */
 int8_t ijcoord_to_xycoord(uint8_t i, uint8_t j, int16_t *x, int16_t *y);

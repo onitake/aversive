@@ -160,10 +160,42 @@ int8_t ijcoord_to_xycoord(uint8_t i, uint8_t j, int16_t *x, int16_t *y)
 	return 0;
 }
 
+/* return the nearest waypoint (any type) */
+int8_t xycoord_to_ijcoord(int16_t *xp, int16_t *yp, uint8_t *ip, uint8_t *jp)
+{
+	int16_t x, y;
+	uint8_t i, j;
+
+	x = *xp;
+	y = *yp;
+
+	x -= OFFSET_CORN_X;
+	x += (STEP_CORN_X/2);
+	i = x / STEP_CORN_X;
+
+	y = COLOR_Y(y); /* Y depends on color */
+	y -= OFFSET_CORN_Y;
+	y += STEP_CORN_Y/2;
+
+	if ((i & 1) == 1)
+		y -= STEP_CORN_Y/2;
+	j = y / STEP_CORN_Y;
+
+	if (ijcoord_to_xycoord(i, j, &x, &y) < 0)
+		return -1;
+
+	*xp = x;
+	*yp = y;
+	*ip = i;
+	*jp = j;
+
+	return 0;
+}
+
 /* return the nearest waypoint that is not a corn: xp and yp contains
  * the input and output, and ip, jp are only outputs. return 0 on
  * success. */
-int8_t xycoord_to_ijcoord(int16_t *xp, int16_t *yp, uint8_t *ip, uint8_t *jp)
+int8_t xycoord_to_ijcoord_not_corn(int16_t *xp, int16_t *yp, uint8_t *ip, uint8_t *jp)
 {
 	int16_t x, y;
 	uint8_t i, j;

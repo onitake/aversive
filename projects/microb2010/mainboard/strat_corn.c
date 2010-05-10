@@ -162,7 +162,7 @@ static uint8_t clitoid_select_speed(uint8_t num1, uint8_t dir1,
 	if (get_cob_count() >= 5)
 		return 0; /* fast */
 
-	if (xycoord_to_ijcoord(&x, &y, &i, &j) < 0) {
+	if (xycoord_to_ijcoord_not_corn(&x, &y, &i, &j) < 0) {
 		DEBUG(E_USER_STRAT, "%s(): cannot find waypoint at %d,%d",
 		      __FUNCTION__, x, y);
 		return 1;

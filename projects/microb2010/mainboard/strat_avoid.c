@@ -665,6 +665,7 @@ static int8_t get_path(const struct circuit *circuit,
 static int16_t get_score(uint32_t wcorn_retrieved,
 			 uint32_t ucorn_retrieved,
 			 uint16_t tomato_retrieved,
+			 uint16_t utomato_retrieved,
 			 uint8_t len, uint8_t opp_on_path)
 {
 	int16_t score = 0;
@@ -763,11 +764,12 @@ static int8_t evaluate_one_face(const struct circuit *circuit,
 	uint32_t wcorn_retrieved = 0; /* bit mask */
 	uint32_t ucorn_retrieved = 0; /* bit mask */
 	uint16_t tomato_retrieved = 0; /* bit mask */
+	uint16_t utomato_retrieved = 0; /* bit mask */
 	uint8_t opponent_on_path = 0;
 	uint8_t len = 0, found = 0;
 	uint8_t i, j, prev_i, prev_j;
 	uint8_t ni = 0, nj = 0;
-	uint8_t dir, color, idx;
+	uint8_t dir, color, idx, visited;
 	int8_t step = faceA ? 1 : -1;
 	int16_t x, y;
 	int32_t d, prev_d = 0;
@@ -840,17 +842,28 @@ static int8_t evaluate_one_face(const struct circuit *circuit,
 		/* is there a tomato ? */
 		if (strat_db.wp_table[i][j].type == WP_TYPE_TOMATO &&
 		    strat_db.wp_table[i][j].present) {
-			DPR("  TOMATO\n");
-			tomato_retrieved |= (1UL << strat_db.wp_table[i][j].tomato.idx);
+			if (strat_db.wp_table[i][j].opp_visited) {
+				DPR("  TOMATO (opp visited)\n");
+				utomato_retrieved |= (1UL << strat_db.wp_table[i][j].tomato.idx);
+			}
+			else {
+				DPR("  TOMATO\n");
+				tomato_retrieved |= (1UL << strat_db.wp_table[i][j].tomato.idx);
+			}
 		}
 
 		/* behind left */
 		if (wp_get_neigh(i, j, &ni, &nj, (dir + 2) % 6) == 0) {
 			color = get_corn_type(ni, nj);
 			idx = strat_db.wp_table[ni][nj].corn.idx;
-			if (color == I2C_COB_WHITE) {
+			visited = strat_db.wp_table[ni][nj].opp_visited;
+			if (color == I2C_COB_WHITE && !visited) {
 				DPR("  LEFT WCORN (%d)\n", idx);
 				wcorn_retrieved |= (1UL << idx);
+			}
+			else if (color == I2C_COB_WHITE && visited) {
+				DPR("  LEFT CORN visited (%d)\n", idx);
+				ucorn_retrieved |= (1UL << idx);
 			}
 			else if (color == I2C_COB_UNKNOWN) {
 				DPR("  LEFT UCORN (%d)\n", idx);
@@ -862,9 +875,14 @@ static int8_t evaluate_one_face(const struct circuit *circuit,
 		if (wp_get_neigh(i, j, &ni, &nj, (dir + 4) % 6) == 0) {
 			color = get_corn_type(ni, nj);
 			idx = strat_db.wp_table[ni][nj].corn.idx;
-			if (color == I2C_COB_WHITE) {
+			visited = strat_db.wp_table[ni][nj].opp_visited;
+			if (color == I2C_COB_WHITE && !visited) {
 				DPR("  RIGHT WCORN (%d)\n", idx);
 				wcorn_retrieved |= (1UL << idx);
+			}
+			else if (color == I2C_COB_WHITE && visited) {
+				DPR("  RIGHT CORN visited (%d)\n", idx);
+				ucorn_retrieved |= (1UL << idx);
 			}
 			else if (color == I2C_COB_UNKNOWN) {
 				DPR("  RIGHT UCORN (%d)\n", idx);
@@ -878,7 +896,8 @@ static int8_t evaluate_one_face(const struct circuit *circuit,
 
 	/* write score and exit */
 	*score = get_score(wcorn_retrieved, ucorn_retrieved,
-			   tomato_retrieved, len, opponent_on_path);
+			   tomato_retrieved, utomato_retrieved,
+			   len, opponent_on_path);
 	return 0;
 }
 
@@ -1004,7 +1023,7 @@ uint8_t strat_harvest_circuit(void)
 	x = position_get_x_s16(&mainboard.pos);
 	y = position_get_y_s16(&mainboard.pos);
 
-	if (xycoord_to_ijcoord(&x, &y, &i, &j) < 0) {
+	if (xycoord_to_ijcoord_not_corn(&x, &y, &i, &j) < 0) {
 		DEBUG(E_USER_STRAT, "%s(): cannot find waypoint at %d,%d",
 		      __FUNCTION__, x, y);
 		err = END_ERROR;
@@ -1096,7 +1115,7 @@ uint8_t strat_unblock(void)
 	x = posx;
 	y = posy;
 
-	if (xycoord_to_ijcoord(&x, &y, &i, &j) < 0)
+	if (xycoord_to_ijcoord_not_corn(&x, &y, &i, &j) < 0)
 		x = -1;
 	else if (strat_db.wp_table[i][j].on_circuit == 0)
 		x = -1;
