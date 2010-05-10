@@ -75,6 +75,10 @@ static volatile uint8_t strat_running = 0;
 volatile uint8_t strat_want_pack = 0;
 volatile uint8_t strat_lpack60 = 0;
 volatile uint8_t strat_rpack60 = 0;
+
+volatile uint8_t strat_opponent_lpack = 0;
+volatile uint8_t strat_opponent_rpack = 0;
+
 struct strat_conf strat_conf = {
 	.dump_enabled = 0,
 	.opp_orange = 90,
@@ -222,6 +226,7 @@ static void check_corn(void)
 	uint8_t lidx, ridx;
 	static uint8_t prev_check_time;
 	uint8_t cur_time;
+	uint8_t need_lpack, need_rpack;
 
 	/* read sensors from ballboard */
 	IRQ_LOCK(flags);
@@ -270,8 +275,10 @@ static void check_corn(void)
 	}
 
 	/* control the cobboard mode for left spickle */
+	need_lpack = get_cob_count() >= 5 || strat_want_pack ||
+		strat_lpack60 || strat_opponent_lpack;
 	if (lcob_near && strat_db.corn_table[lidx]->present) {
-		if (get_cob_count() >= 5 || strat_want_pack || strat_lpack60) {
+		if (need_lpack) {
 			/* nothing  */
 		}
 		else {
@@ -296,15 +303,17 @@ static void check_corn(void)
 	}
 	else {
 		/* no cob near us, we can pack or deploy freely */
-		if (get_cob_count() >= 5 || strat_want_pack || strat_lpack60)
+		if (need_lpack)
 			i2c_cobboard_pack_weak(I2C_LEFT_SIDE);
 		else
 			i2c_cobboard_deploy(I2C_LEFT_SIDE);
 	}
 
 	/* control the cobboard mode for right spickle */
+	need_rpack = get_cob_count() >= 5 || strat_want_pack ||
+		strat_rpack60 || strat_opponent_rpack;
 	if (rcob_near && strat_db.corn_table[ridx]->present) {
-		if (get_cob_count() >= 5 || strat_want_pack || strat_rpack60) {
+		if (need_rpack) {
 			/* nothing */
 		}
 		else {
@@ -329,7 +338,7 @@ static void check_corn(void)
 	}
 	else {
 		/* no cob near us, we can pack or deploy freely */
-		if (get_cob_count() >= 5 || strat_want_pack || strat_rpack60)
+		if (need_rpack)
 			i2c_cobboard_pack_weak(I2C_RIGHT_SIDE);
 		else
 			i2c_cobboard_deploy(I2C_RIGHT_SIDE);
@@ -339,30 +348,42 @@ static void check_corn(void)
 /* check opponent position */
 void check_opponent(void)
 {
-	int16_t x, y;
+	int16_t opp_x, opp_y;
+	int16_t opp_d, opp_a;
 	uint8_t i, j;
 
-	if (get_opponent_xy(&x, &y) < 0)
+	strat_opponent_lpack = 0;
+	strat_opponent_rpack = 0;
+
+	if (get_opponent_xyda(&opp_x, &opp_y, &opp_d, &opp_a) < 0)
 		return;
+
+	/* pack spickles if opponent too close */
+	if (opp_d < 600) {
+		if (opp_a > 45 && opp_a < 135)
+			strat_opponent_lpack = 1;
+		if (opp_a > 225 && opp_a < 315)
+			strat_opponent_rpack = 1;
+	}
 
 	/* check for oranges after 5 seconds */
 	if (time_get_s() > 5) {
 		if (mainboard.our_color == I2C_COLOR_YELLOW) {
-			if (y < 500 && x < 500)
+			if (opp_y < 500 && opp_x < 500)
 				strat_db.our_oranges_count = 0;
-			if (y < 500 && x > AREA_X - 500)
+			if (opp_y < 500 && opp_x > AREA_X - 500)
 				strat_db.opp_oranges_count = 0;
 		}
 		else {
-			if (y > AREA_Y - 500 && x < 500)
+			if (opp_y > AREA_Y - 500 && opp_x < 500)
 				strat_db.our_oranges_count = 0;
-			if (y > AREA_Y - 500 && x > AREA_X - 500)
+			if (opp_y > AREA_Y - 500 && opp_x > AREA_X - 500)
 				strat_db.opp_oranges_count = 0;
 		}
 	}
 
 	/* malus for some tomatoes and cobs, visited by opponent */
-	if (xycoord_to_ijcoord(&x, &y, &i, &j) < 0)
+	if (xycoord_to_ijcoord(&opp_x, &opp_y, &i, &j) < 0)
 		return;
 
 	strat_db.wp_table[i][j].opp_visited = 1;
@@ -375,9 +396,9 @@ void strat_event(void *dummy)
 	if (strat_running == 0)
 		return;
 
+	check_opponent();
 	check_tomato();
 	check_corn();
-	check_opponent();
 
 	/* limit speed when opponent is near */
 	/* disabled for 2010, we are already slow :) */
