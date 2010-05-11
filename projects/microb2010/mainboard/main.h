@@ -83,6 +83,12 @@
 #define ROBOT_HALF_LENGTH_REAR 120
 #define ROBOT_WIDTH 320
 
+#ifdef HOST_VERSION
+#define ROBOT_ANGLE_FRONT 0.
+#else
+#define ROBOT_ANGLE_FRONT 0.75 // 0.27
+#endif
+
 /* it is a 1024 imps -> 4096 because we see 1/4 period
  * and diameter: 55mm -> perimeter 134mm
  * dist_imp_mm = 4096/134 x 10 -> 304 */

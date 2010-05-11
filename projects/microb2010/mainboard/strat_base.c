@@ -143,18 +143,18 @@ uint8_t strat_goto_xy_force(int16_t x, int16_t y)
 }
 
 /* reset position */
-void strat_reset_pos(int16_t x, int16_t y, int16_t a)
+void strat_reset_pos(int16_t x, int16_t y, double a)
 {
-	int16_t posx = position_get_x_s16(&mainboard.pos);
-	int16_t posy = position_get_y_s16(&mainboard.pos);
-	int16_t posa = position_get_a_deg_s16(&mainboard.pos);
+	double posx = position_get_x_double(&mainboard.pos);
+	double posy = position_get_y_double(&mainboard.pos);
+	double posa = position_get_a_rad_double(&mainboard.pos);
 
 	if (x == DO_NOT_SET_POS)
 		x = posx;
 	if (y == DO_NOT_SET_POS)
 		y = posy;
 	if (a == DO_NOT_SET_POS)
-		a = posa;
+		a = DEG(posa);
 
 	/* some issues with blocking on simulator */
 #ifdef HOST_VERSION
@@ -217,7 +217,7 @@ uint8_t strat_calib(int16_t dist, uint8_t flags)
 	trajectory_d_rel(&mainboard.traj, dist);
 	pid_set_maximums(&mainboard.distance.pid, max_in, max_i, 4095);
 	pid_set_gains(&mainboard.angle.pid, 1, 0, 0);
-	time_wait_ms(300);
+	time_wait_ms(500);
 	strat_hardstop();
 
 #ifdef HOST_VERSION

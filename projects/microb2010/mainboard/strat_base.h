@@ -45,7 +45,7 @@ void strat_hardstop(void);
 #define DO_NOT_SET_POS -1000
 /* Reset position. If arg == DO_NOT_SET_POS, don't update value for
  * it. */
-void strat_reset_pos(int16_t x, int16_t y, int16_t a);
+void strat_reset_pos(int16_t x, int16_t y, double a);
 
 /* decrease gain on angle PID, and go forward until we reach the
  * border. */

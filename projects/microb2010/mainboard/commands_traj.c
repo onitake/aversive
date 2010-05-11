@@ -831,7 +831,7 @@ static void auto_position(void)
 		goto intr;
 	strat_reset_pos(ROBOT_WIDTH/2 + 100,
 			COLOR_Y(ROBOT_HALF_LENGTH_FRONT),
-			COLOR_A(-90));
+			COLOR_A(-90) + ROBOT_ANGLE_FRONT);
 	strat_hardstop();
 
 	trajectory_d_rel(&mainboard.traj, -180);
@@ -851,7 +851,7 @@ static void auto_position(void)
 		goto intr;
 	strat_reset_pos(ROBOT_HALF_LENGTH_FRONT,
 			DO_NOT_SET_POS,
-			180);
+			180 + ROBOT_ANGLE_FRONT);
 	strat_hardstop();
 
 	trajectory_d_rel(&mainboard.traj, -170);

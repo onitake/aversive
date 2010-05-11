@@ -48,16 +48,16 @@
 #define BRAKE_ON()      do { PORTJ |= 0xF0; } while(0)
 #define BRAKE_OFF()     do { PORTJ &= 0x0F; } while(0)
 
-#define LEFT_SPICKLE_ENCODER   ((void *)0)
-#define RIGHT_SPICKLE_ENCODER  ((void *)1)
+#define RIGHT_SPICKLE_ENCODER  ((void *)0)
+#define LEFT_SPICKLE_ENCODER   ((void *)1)
 #define SHOVEL_ENCODER         ((void *)2)
 
 #define SERVO_DOOR_PWM         ((void *)&gen.servo2)
 #define SERVO_CARRY_L_PWM      ((void *)&gen.servo1)
 #define SERVO_CARRY_R_PWM      ((void *)&gen.servo3)
 
-#define LEFT_SPICKLE_PWM       ((void *)&gen.pwm1_4A)
-#define RIGHT_SPICKLE_PWM      ((void *)&gen.pwm2_4B)
+#define RIGHT_SPICKLE_PWM      ((void *)&gen.pwm1_4A)
+#define LEFT_SPICKLE_PWM       ((void *)&gen.pwm2_4B)
 #define SHOVEL_PWM             ((void *)&gen.pwm3_1A)
 
 /** ERROR NUMS */
