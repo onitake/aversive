@@ -212,9 +212,9 @@ void microb_cs_init(void)
 				 RIGHT_ENCODER, IMP_COEF * 1.);
 #else
 	rs_set_left_ext_encoder(&mainboard.rs, encoders_spi_get_value,
-				LEFT_ENCODER, IMP_COEF * -1.012729);
+				LEFT_ENCODER, IMP_COEF * -1.011718);
 	rs_set_right_ext_encoder(&mainboard.rs, encoders_spi_get_value,
-				 RIGHT_ENCODER, IMP_COEF * 1.01370769);
+				 RIGHT_ENCODER, IMP_COEF * 1.012695);
 #endif
 	/* rs will use external encoders */
 	rs_set_flags(&mainboard.rs, RS_USE_EXT);
