@@ -105,6 +105,7 @@ static void cmd_event_parsed(void *parsed_result, void *data)
 			pwm_ng_set(ROLLER_PWM, 0);
 			pwm_ng_set(FORKTRANS_PWM, 0);
 			pwm_ng_set(FORKROT_PWM, 0);
+			pwm_ng_set(BEACON_PWM, 0);
 		}
 		ballboard.flags &= (~bit);
 	}

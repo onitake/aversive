@@ -45,6 +45,7 @@
 
 #include "main.h"
 #include "actuator.h"
+#include "beacon.h"
 
 int32_t encoders_spi_update_roller_speed(void *number)
 {
@@ -71,6 +72,8 @@ static void do_cs(void *dummy)
 			cs_manage(&ballboard.forktrans.cs);
 		if (ballboard.forkrot.on)
 			cs_manage(&ballboard.forkrot.cs);
+		if (ballboard.beacon.on)
+			cs_manage(&ballboard.beacon.cs);
 	}
 	if ((ballboard.flags & DO_BD) && (ballboard.flags & DO_POWER)) {
 		bd_manage_from_cs(&ballboard.forktrans.bd, &ballboard.forktrans.cs);
@@ -194,10 +197,27 @@ void microb_cs_init(void)
 	bd_set_speed_threshold(&ballboard.forkrot.bd, 150);
 	bd_set_current_thresholds(&ballboard.forkrot.bd, 500, 8000, 1000000, 200);
 
+	/* BEACON */
+
+	/* PID */
+	pid_init(&ballboard.beacon.pid);
+	pid_set_gains(&ballboard.beacon.pid, 80, 80, 250);
+	pid_set_maximums(&ballboard.beacon.pid, 0, 10000, 1500);
+	pid_set_out_shift(&ballboard.beacon.pid, 6);
+	pid_set_derivate_filter(&ballboard.beacon.pid, 6);
+
+	/* CS */
+	cs_init(&ballboard.beacon.cs);
+	cs_set_correct_filter(&ballboard.beacon.cs, pid_do_filter, &ballboard.beacon.pid);
+	cs_set_process_in(&ballboard.beacon.cs, pwm_ng_set, BEACON_PWM);
+	cs_set_process_out(&ballboard.beacon.cs, encoders_spi_update_beacon_speed, BEACON_ENCODER);
+	cs_set_consign(&ballboard.beacon.cs, 0);
+
 	/* set them on !! */
 	ballboard.roller.on = 1;
 	ballboard.forktrans.on = 1;
 	ballboard.forkrot.on = 0;
+	ballboard.beacon.on = 0;
 
 
 	scheduler_add_periodical_event_priority(do_cs, NULL,

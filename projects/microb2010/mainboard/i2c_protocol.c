@@ -299,6 +299,10 @@ void i2c_recvevent(uint8_t * buf, int8_t size)
 		tmp = ans->rcob;
 		if (tmp != I2C_COB_NONE)
 			ballboard.rcob = tmp;
+		ballboard.opponent_x = ans->opponent_x;
+		ballboard.opponent_y = ans->opponent_y;
+		ballboard.opponent_a = ans->opponent_a;
+		ballboard.opponent_d = ans->opponent_d;
 		break;
 	}
 
@@ -465,6 +469,14 @@ int8_t i2c_ballboard_set_mode(uint8_t mode)
 	struct i2c_cmd_ballboard_set_mode buf;
 	buf.hdr.cmd = I2C_CMD_BALLBOARD_SET_MODE;
 	buf.mode = mode;
+	return i2c_send_command(I2C_BALLBOARD_ADDR, (uint8_t*)&buf, sizeof(buf));
+}
+
+int8_t i2c_ballboard_set_beacon(uint8_t enable)
+{
+	struct i2c_cmd_ballboard_start_beacon buf;
+	buf.hdr.cmd = I2C_CMD_BALLBOARD_SET_BEACON;
+	buf.enable = enable;
 	return i2c_send_command(I2C_BALLBOARD_ADDR, (uint8_t*)&buf, sizeof(buf));
 }
 

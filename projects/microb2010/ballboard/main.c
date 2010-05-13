@@ -59,6 +59,7 @@
 #include "cs.h"
 #include "i2c_protocol.h"
 #include "state.h"
+#include "beacon.h"
 
 /* 0 means "programmed"
  * ---- with 16 Mhz quartz
@@ -214,7 +215,8 @@ int main(void)
 		      &PORTD, 5);
 	PWM_NG_INIT16(&gen.pwm3_1A, 1, A, 10, PWM_NG_MODE_SIGNED |
 		      PWM_NG_MODE_SIGN_INVERTED, &PORTD, 6);
-	PWM_NG_INIT16(&gen.pwm4_1B, 1, B, 10, PWM_NG_MODE_SIGNED,
+	PWM_NG_INIT16(&gen.pwm4_1B, 1, B, 10, PWM_NG_MODE_SIGNED |
+		      PWM_NG_MODE_SIGN_INVERTED,
 		      &PORTD, 7);
 
 
@@ -244,6 +246,11 @@ int main(void)
 	/* sensors, will also init hardware adc */
 	sensor_init();
 
+	/* beacon */
+	beacon_init();
+	scheduler_add_periodical_event_priority(beacon_calc, NULL, 
+						20000L / SCHEDULER_UNIT, 
+						BEACON_PRIO);
 	/* TIME */
 	time_init(TIME_PRIO);
 
@@ -256,6 +263,7 @@ int main(void)
 	sei();
 
 	actuator_init();
+	beacon_calibre_pos();
 
 	printf_P(PSTR("\r\n"));
 	printf_P(PSTR("Dass das Gluck deinen Haus setzt.\r\n"));

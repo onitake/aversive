@@ -48,6 +48,7 @@
 #include "main.h"
 #include "state.h"
 #include "sensor.h"
+#include "beacon.h"
 #include "actuator.h"
 
 void i2c_protocol_init(void)
@@ -78,6 +79,10 @@ void i2c_send_status(void)
 	ans.ball_count = state_get_ball_count();
 	ans.lcob = cob_detect_left();
 	ans.rcob = cob_detect_right();
+	ans.opponent_x = beacon.opponent_x;
+	ans.opponent_y = beacon.opponent_y;
+	ans.opponent_a = beacon.opponent_angle;
+	ans.opponent_d = beacon.opponent_dist;
 
 	i2c_send(I2C_ADD_MASTER, (uint8_t *) &ans,
 		 sizeof(ans), I2C_CTRL_GENERIC);
@@ -121,6 +126,19 @@ void i2c_recvevent(uint8_t * buf, int8_t size)
 			if (size != sizeof (*cmd))
 				goto error;
 			ballboard.our_color = cmd->color;
+			break;
+		}
+
+	case I2C_CMD_BALLBOARD_SET_BEACON:
+		{
+			struct i2c_cmd_ballboard_start_beacon *cmd = void_cmd;
+			if (size != sizeof (*cmd))
+				goto error;
+
+			if (cmd->enable)
+				beacon_start();
+			else
+				beacon_stop();
 			break;
 		}
 

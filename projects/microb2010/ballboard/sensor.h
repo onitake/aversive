@@ -30,8 +30,8 @@
 /* synchronize with sensor.c */
 #define S_HIGH_BARRIER 0
 #define S_LOW_BARRIER  1
-#define S_CAP3         2
-#define S_CAP4         3
+#define S_CAP3         2 /* TT balise */
+#define S_CAP4         3 /* INTR balise */
 #define S_R_IR         4
 #define S_R_US         5
 #define S_L_US         6

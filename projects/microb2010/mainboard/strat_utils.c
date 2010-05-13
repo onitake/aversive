@@ -274,34 +274,31 @@ uint8_t get_opponent_color(void)
 		return I2C_COLOR_YELLOW;
 }
 
-/* get the da pos of the opponent robot */
-int8_t get_opponent_da(int16_t *d, int16_t *a)
-{
-	uint8_t flags;
-	int16_t x;
-
-	IRQ_LOCK(flags);
-	*d = beaconboard.oppd;
-	*a = beaconboard.oppa;
-	x = beaconboard.oppx;
-	IRQ_UNLOCK(flags);
-	if (x == I2C_OPPONENT_NOT_THERE)
-		return -1;
-	return 0;
-}
-
 /* get the xy pos of the opponent robot */
 int8_t get_opponent_xy(int16_t *x, int16_t *y)
 {
 	uint8_t flags;
-
 	IRQ_LOCK(flags);
-	*x = beaconboard.oppx;
-	*y = beaconboard.oppy;
+	*x = ballboard.opponent_x;
+	*y = ballboard.opponent_y;
 	IRQ_UNLOCK(flags);
 	if (*x == I2C_OPPONENT_NOT_THERE)
 		return -1;
+	return 0;
+}
 
+/* get the da pos of the opponent robot */
+int8_t get_opponent_da(int16_t *d, int16_t *a)
+{
+	uint8_t flags;
+	int16_t x_tmp;
+	IRQ_LOCK(flags);
+	x_tmp = ballboard.opponent_x;
+	*d = ballboard.opponent_d;
+	*a = ballboard.opponent_a;
+	IRQ_UNLOCK(flags);
+	if (x_tmp == I2C_OPPONENT_NOT_THERE)
+		return -1;
 	return 0;
 }
 
@@ -309,16 +306,14 @@ int8_t get_opponent_xy(int16_t *x, int16_t *y)
 int8_t get_opponent_xyda(int16_t *x, int16_t *y, int16_t *d, int16_t *a)
 {
 	uint8_t flags;
-
 	IRQ_LOCK(flags);
-	*x = beaconboard.oppx;
-	*y = beaconboard.oppy;
-	*d = beaconboard.oppd;
-	*a = beaconboard.oppa;
+	*x = ballboard.opponent_x;
+	*y = ballboard.opponent_y;
+	*d = ballboard.opponent_d;
+	*a = ballboard.opponent_a;
 	IRQ_UNLOCK(flags);
 	if (*x == I2C_OPPONENT_NOT_THERE)
 		return -1;
-
 	return 0;
 }
 

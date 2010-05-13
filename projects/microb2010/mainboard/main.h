@@ -217,24 +217,16 @@ struct ballboard {
 	uint8_t ball_count;
 	uint8_t lcob;
 	uint8_t rcob;
-};
-
-/* state of beaconboard, sync'd through uart */
-struct beaconboard {
-	int16_t oppx;
-	int16_t oppy;
-	int16_t oppa;
-	int16_t oppd;
-	uint16_t posx;
-	uint16_t posy;
-	uint16_t posa; /* between 0 and 3600 */
+	int16_t opponent_x;
+	int16_t opponent_y;
+	int16_t opponent_a;
+	int16_t opponent_d;
 };
 
 extern struct genboard gen;
 extern struct mainboard mainboard;
 extern volatile struct cobboard cobboard;
 extern volatile struct ballboard ballboard;
-extern volatile struct beaconboard beaconboard;
 
 /* start the bootloader */
 void bootloader(void);

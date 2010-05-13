@@ -62,7 +62,6 @@
 #include "strat_db.h"
 #include "../common/i2c_commands.h"
 #include "i2c_protocol.h"
-#include "beacon.h"
 
 /**********************************************************/
 /* Traj_Speeds for trajectory_manager */
@@ -892,7 +891,6 @@ static void cmd_position_parsed(void * parsed_result, void * data)
 #ifndef HOST_VERSION
 		i2c_set_color(I2C_COBBOARD_ADDR, I2C_COLOR_BLUE);
 		i2c_set_color(I2C_BALLBOARD_ADDR, I2C_COLOR_BLUE);
-		beacon_set_color(I2C_COLOR_YELLOW);
 #endif
 		auto_position();
 	}
@@ -902,7 +900,6 @@ static void cmd_position_parsed(void * parsed_result, void * data)
 #ifndef HOST_VERSION
 		i2c_set_color(I2C_COBBOARD_ADDR, I2C_COLOR_YELLOW);
 		i2c_set_color(I2C_BALLBOARD_ADDR, I2C_COLOR_YELLOW);
-		beacon_set_color(I2C_COLOR_BLUE);
 #endif
 		auto_position();
 	}

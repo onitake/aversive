@@ -51,23 +51,26 @@
 #define ROLLER_ENCODER    ((void *)0)
 #define FORKTRANS_ENCODER ((void *)1)
 #define FORKROT_ENCODER   ((void *)2)
+#define BEACON_ENCODER    ((void *)3)
 
 #define ROLLER_PWM     ((void *)&gen.pwm1_4A)
 #define FORKTRANS_PWM  ((void *)&gen.pwm2_4B)
 #define FORKROT_PWM    ((void *)&gen.pwm3_1A)
-#define XXX_PWM        ((void *)&gen.pwm4_1B)
+#define BEACON_PWM     ((void *)&gen.pwm4_1B)
 
-#define BALL_PRESENT_SENSOR  2 /* XXX dummy example */
+#define BEACON_POS_SENSOR  2
 
 /** ERROR NUMS */
 #define E_USER_I2C_PROTO       195
 #define E_USER_SENSOR          196
 #define E_USER_ST_MACH         197
+#define E_USER_BEACON         198
 
 #define LED_PRIO           170
 #define TIME_PRIO          160
 #define ADC_PRIO           120
 #define CS_PRIO            100
+#define BEACON_PRIO	    80
 #define I2C_POLL_PRIO       20
 
 #define CS_PERIOD 5000L
@@ -122,6 +125,7 @@ struct ballboard {
         struct cs_block roller;
         struct cs_block forktrans;
         struct cs_block forkrot;
+        struct cs_block beacon;
 
 	/* robot status */
 	uint8_t our_color;

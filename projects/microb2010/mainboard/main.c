@@ -70,7 +70,6 @@
 #include "strat_db.h"
 #include "strat_avoid.h"
 #include "i2c_protocol.h"
-#include "beacon.h"
 
 
 /* 0 means "programmed"
@@ -89,7 +88,6 @@ struct genboard gen;
 struct mainboard mainboard;
 volatile struct cobboard cobboard;
 volatile struct ballboard ballboard;
-volatile struct beaconboard beaconboard;
 
 #ifndef HOST_VERSION
 /***********************/
@@ -192,9 +190,6 @@ int main(void)
 	ballboard.lcob = I2C_COB_NONE;
 	ballboard.rcob = I2C_COB_NONE;
 
-	beaconboard.oppx = I2C_OPPONENT_NOT_THERE;
-	beaconboard.posx = I2C_BEACON_NOT_FOUND;
-
 	/* UART */
 	uart_init();
 	uart_register_rx_event(CMDLINE_UART, emergency);
@@ -293,9 +288,6 @@ int main(void)
 
 	/* sensors, will also init hardware adc */
 	sensor_init();
-
-	/* beacon */
-	beacon_init();
 
 #ifndef HOST_VERSION
 	/* start i2c slave polling */

@@ -54,10 +54,12 @@ struct csb_list {
 prog_char csb_roller_str[] = "roller";
 prog_char csb_forktrans_str[] = "forktrans";
 prog_char csb_forkrot_str[] = "forkrot";
+prog_char csb_beacon_str[] = "beacon";
 struct csb_list csb_list[] = {
 	{ .name = csb_roller_str, .csb = &ballboard.roller },
 	{ .name = csb_forktrans_str, .csb = &ballboard.forktrans },
 	{ .name = csb_forkrot_str, .csb = &ballboard.forkrot },
+	{ .name = csb_beacon_str, .csb = &ballboard.beacon },
 };
 
 struct cmd_cs_result {
@@ -66,7 +68,7 @@ struct cmd_cs_result {
 };
 
 /* token to be used for all cs-related commands */
-prog_char str_csb_name[] = "roller#forktrans#forkrot";
+prog_char str_csb_name[] = "roller#forktrans#forkrot#beacon";
 parse_pgm_token_string_t cmd_csb_name_tok = TOKEN_STRING_INITIALIZER(struct cmd_cs_result, csname, str_csb_name);
 
 struct cs_block *cs_from_name(const char *name)

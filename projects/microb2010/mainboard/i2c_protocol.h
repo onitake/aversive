@@ -44,5 +44,6 @@ int8_t i2c_cobboard_autoharvest_nomove(uint8_t side);
 int8_t i2c_cobboard_deploy_nomove(uint8_t side);
 
 int8_t i2c_ballboard_set_mode(uint8_t mode);
+int8_t i2c_ballboard_set_beacon(uint8_t enable);
 
 #endif

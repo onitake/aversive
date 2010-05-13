@@ -98,6 +98,13 @@ struct i2c_cmd_ballboard_set_mode {
 	uint8_t mode;
 };
 
+#define I2C_CMD_BALLBOARD_SET_BEACON 0x04
+
+struct i2c_cmd_ballboard_start_beacon {
+	struct i2c_cmd_hdr hdr;
+	uint8_t enable;
+};
+
 /****/
 /* requests and their answers */
 /****/
@@ -156,6 +163,11 @@ struct i2c_ans_ballboard_status {
 #define I2C_BALLBOARD_STATUS_F_BUSY          0x01
 #define I2C_BALLBOARD_STATUS_F_EXCPT         0x02
 	uint8_t status;
+
+	int16_t opponent_x;
+	int16_t opponent_y;
+	int16_t opponent_a;
+	int16_t opponent_d;
 
 	uint8_t ball_count;
 
