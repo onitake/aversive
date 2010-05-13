@@ -501,6 +501,7 @@ static uint8_t strat_eject(void)
 	/* ball ejection */
 	if (get_ball_count() > 0) {
 		i2c_ballboard_set_mode(I2C_BALLBOARD_MODE_EJECT);
+		time_wait_ms(300);
 		trajectory_a_abs(&mainboard.traj, COLOR_A(70));
 		err = wait_traj_end(TRAJ_FLAGS_NO_NEAR);
 		if (!TRAJ_SUCCESS(err))
@@ -516,6 +517,10 @@ static uint8_t strat_eject(void)
 		WAIT_COND_OR_TIMEOUT(ballboard.status == I2C_BALLBOARD_STATUS_F_READY,
 				     2000);
 #endif
+	}
+	else {
+		/* to pack spickles */
+		time_wait_ms(300);
 	}
 
 	if (get_cob_count() > 0) {
@@ -904,7 +909,12 @@ uint8_t run_to_the_hills(uint8_t orange_color)
 	strat_hardstop();
 	i2c_ballboard_set_mode(I2C_BALLBOARD_MODE_TAKE_FORK);
 
-	time_wait_ms(1800);
+	time_wait_ms(1100);
+
+	trajectory_d_rel(&mainboard.traj, 15);
+	time_wait_ms(400);
+	strat_hardstop();
+	time_wait_ms(200);
 
 	/* reach top, go down */
 	trajectory_d_rel(&mainboard.traj, -HILL_LEN);

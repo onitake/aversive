@@ -49,7 +49,7 @@
 
 #define FORKROT_DEPLOYED -55000
 #define FORKROT_MID -33000
-#define FORKROT_PACKED   0
+#define FORKROT_PACKED   -4000
 
 void roller_on(void)
 {

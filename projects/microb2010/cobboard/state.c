@@ -294,6 +294,9 @@ static void state_do_harvest(uint8_t side)
 		shovel_down();
 		time_wait_ms(250);
 		shovel_up();
+		/* if eject command is received, force exit */
+		if (EJECT(state_mode))
+			return;
 	}
 
 	state_debug_wait_key_pressed();

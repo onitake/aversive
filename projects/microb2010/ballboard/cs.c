@@ -140,7 +140,7 @@ void microb_cs_init(void)
 	bd_init(&ballboard.roller.bd);
 #define ROLLER_SPEED_THRES (ROLLER_SPEED * 0.75)
 	bd_set_speed_threshold(&ballboard.roller.bd, ROLLER_SPEED_THRES);
-	bd_set_current_thresholds(&ballboard.roller.bd, 500, 1500, 1000000, 20);
+	bd_set_current_thresholds(&ballboard.roller.bd, 500, 1500, 1200000, 70);
 
 	/* ---- CS forktrans */
 	/* PID */

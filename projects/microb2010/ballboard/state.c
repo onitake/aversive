@@ -174,7 +174,7 @@ static void state_do_eject(void)
 			}
 
 			/* timeout */
-			if ((time_get_us2() - us) > 1000UL * 1000UL) {
+			if ((time_get_us2() - us) > 2000UL * 1000UL) {
 				STMCH_DEBUG("%s(): eject timeout", __FUNCTION__);
 				blocked = 1;
 				break;

@@ -93,7 +93,7 @@
  * and diameter: 55mm -> perimeter 134mm
  * dist_imp_mm = 4096/134 x 10 -> 304 */
 /* increase it to go further */
-#define IMP_ENCODERS 1024
+#define IMP_ENCODERS 1000
 #define WHEEL_DIAMETER_MM 42.9
 #define WHEEL_PERIM_MM (WHEEL_DIAMETER_MM * M_PI)
 #define IMP_COEF 10.

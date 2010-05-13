@@ -55,7 +55,7 @@
 #include "main.h"
 #include "strat_utils.h"
 
-#define BEACON_UART_NUM 0
+#define BEACON_UART_NUM 2
 
 #define INIT 0
 #define OPP0 1
@@ -69,6 +69,8 @@
 #define STA4 9
 #define STA5 10
 
+#define BEACON_ANGLE_OFFSET 449
+
 static volatile uint8_t opp_age = 0;
 static volatile int16_t opp_a = I2C_OPPONENT_NOT_THERE;
 static volatile int16_t opp_d = I2C_OPPONENT_NOT_THERE;
@@ -78,7 +80,7 @@ static volatile int16_t pos_x = I2C_BEACON_NOT_FOUND;
 static volatile int16_t pos_y = I2C_BEACON_NOT_FOUND;
 static volatile int16_t pos_a = I2C_BEACON_NOT_FOUND;
 
-#define BEACON_OFFSET (-50.)
+#define BEACON_POS_OFFSET (-50.)
 int8_t beacon_get_pos_double(double *x, double *y, double *a_rad)
 {
 	uint8_t flags;
@@ -98,8 +100,8 @@ int8_t beacon_get_pos_double(double *x, double *y, double *a_rad)
 	dtmpy = tmpy;
 	dtmpa = RAD((double)tmpa / 10.);
 
-	dtmpx += cos(dtmpa) * BEACON_OFFSET;
-	dtmpx += sin(dtmpa) * BEACON_OFFSET;
+	dtmpx += cos(dtmpa) * BEACON_POS_OFFSET;
+	dtmpx += sin(dtmpa) * BEACON_POS_OFFSET;
 
 	*x = dtmpx;
 	*y = dtmpy;
@@ -215,7 +217,7 @@ static void beacon_opponent_event(void)
 
 	/* if beacon is too old, remove it */
 	IRQ_LOCK(flags);
-	if (opp_age < 3)
+	if (opp_age < 50)
 		opp_age ++;
 	else {
 		beaconboard.oppx = I2C_OPPONENT_NOT_THERE;
@@ -227,6 +229,9 @@ static void beacon_opponent_event(void)
 	id = opp_d;
 	IRQ_UNLOCK(flags);
 
+	ia = (ia + BEACON_ANGLE_OFFSET);
+	if (ia > 3600)
+		ia -= 3600;
 	fa = ia;
 	fa = RAD(fa);
 	fd = id;
@@ -238,7 +243,7 @@ static void beacon_opponent_event(void)
 	IRQ_LOCK(flags);
 	beaconboard.oppx = ix;
 	beaconboard.oppy = iy;
-	beaconboard.oppa = ia;
+	beaconboard.oppa = ia / 10;
 	beaconboard.oppd = id;
 	IRQ_UNLOCK(flags);
 #endif
