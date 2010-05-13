@@ -196,6 +196,27 @@ robotsim_i2c(uint8_t addr, uint8_t *buf, uint8_t size)
 	return 0;
 }
 
+static void beacon_update(void)
+{
+       uint8_t flags;
+       int16_t oppx, oppy;
+       double oppa, oppd;
+
+       IRQ_LOCK(flags);
+       if (ballboard.opponent_x == I2C_OPPONENT_NOT_THERE) {
+               IRQ_UNLOCK(flags);
+               return;
+       }
+       oppx = ballboard.opponent_x;
+       oppy = ballboard.opponent_y;
+       abs_xy_to_rel_da(oppx, oppy, &oppd, &oppa);
+       ballboard.opponent_a = DEG(oppa);
+       if (ballboard.opponent_a < 0)
+               ballboard.opponent_a += 360;
+       ballboard.opponent_d = oppd;
+       IRQ_UNLOCK(flags);
+}
+
 /* must be called periodically */
 void robotsim_update(void)
 {
@@ -219,6 +240,8 @@ void robotsim_update(void)
 
 	int oppx, oppy;
 	double oppa, oppd;
+
+	beacon_update();
 
 	/* time shift the command */
 	l_pwm_shift[i] = l_pwm;
@@ -245,12 +268,12 @@ void robotsim_update(void)
 		if (sscanf(cmd, "opp %d %d", &oppx, &oppy) == 2) {
 			abs_xy_to_rel_da(oppx, oppy, &oppd, &oppa);
 			IRQ_LOCK(flags);
-			beaconboard.oppx = oppx;
-			beaconboard.oppy = oppy;
-			beaconboard.oppa = DEG(oppa);
-			if (beaconboard.oppa < 0)
-				beaconboard.oppa += 360;
-			beaconboard.oppd = oppd;
+			ballboard.opponent_x = oppx;
+			ballboard.opponent_y = oppy;
+			ballboard.opponent_a = DEG(oppa);
+			if (ballboard.opponent_a < 0)
+				ballboard.opponent_a += 360;
+			ballboard.opponent_d = oppd;
 			IRQ_UNLOCK(flags);
 		}
 	}

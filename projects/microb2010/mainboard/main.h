@@ -76,7 +76,7 @@
 #define MATCH_TIME 89
 
 /* decrease track to decrease angle */
-#define EXT_TRACK_MM 304.61875
+#define EXT_TRACK_MM 305.1097108
 #define VIRTUAL_TRACK_MM EXT_TRACK_MM
 
 #define ROBOT_HALF_LENGTH_FRONT 130

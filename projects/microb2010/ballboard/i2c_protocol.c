@@ -161,6 +161,10 @@ void i2c_recvevent(uint8_t * buf, int8_t size)
 			if (size != sizeof (*cmd))
 				goto error;
 
+			beacon.robot_x = cmd->x;
+			beacon.robot_y = cmd->y;
+			beacon.robot_angle = cmd->a;
+
 			i2c_send_status();
 			break;
 		}

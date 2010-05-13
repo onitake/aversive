@@ -150,6 +150,11 @@ struct i2c_ans_cobboard_status {
 
 struct i2c_req_ballboard_status {
 	struct i2c_cmd_hdr hdr;
+
+	/* position sent by mainboard */
+	int16_t x;
+	int16_t y;
+	int16_t a;
 };
 
 #define I2C_ANS_BALLBOARD_STATUS 0x83

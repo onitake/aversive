@@ -379,6 +379,10 @@ static int8_t i2c_req_ballboard_status(void)
 	struct i2c_req_ballboard_status buf;
 
 	buf.hdr.cmd = I2C_REQ_BALLBOARD_STATUS;
+	/* robot position */
+	buf.x = position_get_x_s16(&mainboard.pos);
+	buf.y = position_get_y_s16(&mainboard.pos);
+	buf.a = position_get_a_deg_s16(&mainboard.pos);
 	return i2c_send(I2C_BALLBOARD_ADDR, (uint8_t*)&buf,
 			sizeof(buf), I2C_CTRL_GENERIC);
 }

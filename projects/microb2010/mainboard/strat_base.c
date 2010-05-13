@@ -382,6 +382,8 @@ void strat_start(void)
 	strat_exit();
 }
 
+uint8_t xxxdebug = 0;
+
 /* return true if we have to brake due to an obstacle */
 uint8_t strat_obstacle(void)
 {
@@ -389,12 +391,25 @@ uint8_t strat_obstacle(void)
 	int16_t opp_x, opp_y, opp_d, opp_a;
 
 	/* too slow */
-	if (ABS(mainboard.speed_d) < 150)
+	if (ABS(mainboard.speed_d) < 0) {
+		if (xxxdebug != 1) {
+			DEBUG(E_USER_STRAT, "XXX too slow");
+			xxxdebug = 1;
+		}
 		return 0;
+	}
 
 	/* no opponent detected */
-	if (get_opponent_xyda(&opp_x, &opp_y, &opp_d, &opp_a))
+	if (get_opponent_xyda(&opp_x, &opp_y, &opp_d, &opp_a)) {
+		if (xxxdebug != 2) {
+			DEBUG(E_USER_STRAT, "XXX no opp");
+			DEBUG(E_USER_STRAT, "opponent d=%d, a=%d "
+			      "x=%d y=%d (speed_d=%d)",
+			      opp_d, opp_a, opp_x, opp_y, mainboard.speed_d);
+			xxxdebug = 2;
+		}
 		return 0;
+	}
 
 	/* save obstacle position */
 	opponent_obstacle.x = opp_x;
@@ -402,24 +417,48 @@ uint8_t strat_obstacle(void)
 	opponent_obstacle.d = opp_d;
 	opponent_obstacle.a = opp_a;
 
-	if (!is_in_area(opp_x, opp_y, 250))
+	if (!is_in_area(opp_x, opp_y, 250)) {
+		if (xxxdebug != 3) {
+			DEBUG(E_USER_STRAT, "XXX not in area");
+			DEBUG(E_USER_STRAT, "opponent d=%d, a=%d "
+			      "x=%d y=%d (speed_d=%d)",
+			      opp_d, opp_a, opp_x, opp_y, mainboard.speed_d);
+			xxxdebug = 3;
+		}
 		return 0;
+	}
 
 	/* sensor are temporarily disabled */
-	if (sensor_obstacle_is_disabled())
+	if (sensor_obstacle_is_disabled()) {
+		if (xxxdebug != 4) {
+			DEBUG(E_USER_STRAT, "XXX disabled");
+			DEBUG(E_USER_STRAT, "opponent d=%d, a=%d "
+			      "x=%d y=%d (speed_d=%d)",
+			      opp_d, opp_a, opp_x, opp_y, mainboard.speed_d);
+			xxxdebug = 4;
+		}
 		return 0;
+	}
 
 	/* relative position */
 	x_rel = cos(RAD(opp_a)) * (double)opp_d;
 	y_rel = sin(RAD(opp_a)) * (double)opp_d;
 
 	/* opponent too far */
-	if (opp_d > 650)
+	if (opp_d > 650) {
+		if (xxxdebug != 5) {
+			DEBUG(E_USER_STRAT, "XXX too far");
+			DEBUG(E_USER_STRAT, "opponent d=%d, a=%d "
+			      "x=%d y=%d (speed_d=%d)",
+			      opp_d, opp_a, opp_x, opp_y, mainboard.speed_d);
+			xxxdebug = 5;
+		}
 		return 0;
+	}
 
 	/* opponent is in front of us */
-	if ((mainboard.speed_d > 0 && opp_d < 500 && (opp_a > 325 || opp_a < 35)) &&
-	    (mainboard.speed_d > 0 && opp_d < 650 && (opp_a > 340 || opp_a < 20))) {
+	if ((mainboard.speed_d >= 0 && opp_d < 500 && (opp_a > 315 || opp_a < 45)) ||
+	    (mainboard.speed_d >= 0 && opp_d < 650 && (opp_a > 330 || opp_a < 30))) {
 		DEBUG(E_USER_STRAT, "opponent front d=%d, a=%d "
 		      "xrel=%d yrel=%d (speed_d=%d)",
 		      opp_d, opp_a, x_rel, y_rel, mainboard.speed_d);
@@ -427,12 +466,20 @@ uint8_t strat_obstacle(void)
 		return 1;
 	}
 	/* opponent is behind us */
-	if ((mainboard.speed_d < 0 && opp_d < 500 && (opp_a < 215 && opp_a > 145)) &&
-	    (mainboard.speed_d < 0 && opp_d < 650 && (opp_a < 200 && opp_a > 160))) {
+	if ((mainboard.speed_d < 0 && opp_d < 500 && (opp_a < 225 && opp_a > 135)) ||
+	    (mainboard.speed_d < 0 && opp_d < 650 && (opp_a < 210 && opp_a > 150))) {
 		DEBUG(E_USER_STRAT, "opponent behind d=%d, a=%d xrel=%d yrel=%d",
 		      opp_d, opp_a, x_rel, y_rel);
 		sensor_obstacle_disable();
 		return 1;
+	}
+
+	if (xxxdebug != 6) {
+		DEBUG(E_USER_STRAT, "XXX not in cone");
+		DEBUG(E_USER_STRAT, "opponent d=%d, a=%d "
+		      "x=%d y=%d (speed_d=%d)",
+		      opp_d, opp_a, opp_x, opp_y, mainboard.speed_d);
+		xxxdebug = 6;
 	}
 
 	return 0;
