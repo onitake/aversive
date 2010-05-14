@@ -234,6 +234,9 @@ static void check_corn(void)
 	static uint8_t prev_check_time;
 	uint8_t cur_time;
 	uint8_t need_lpack, need_rpack;
+	int16_t l_xspickle, l_yspickle;
+	int16_t r_xspickle, r_yspickle;
+	uint8_t l_y_too_high_pack = 0, r_y_too_high_pack = 0;
 
 	/* read sensors from ballboard */
 	IRQ_LOCK(flags);
@@ -263,26 +266,33 @@ static void check_corn(void)
 	}
 
 	/* detect cob on left side */
-	lcob_near = corn_is_near(&lidx, I2C_LEFT_SIDE);
+	lcob_near = corn_is_near(&lidx, I2C_LEFT_SIDE,
+				 &l_xspickle, &l_yspickle);
 	if (lcob_near && lcob != I2C_COB_NONE) {
 		if (strat_db.corn_table[lidx]->corn.color == I2C_COB_UNKNOWN)
 			DEBUG(E_USER_STRAT, "lcob %s %d",
 			      lcob == I2C_COB_WHITE ? "white" : "black", lidx);
 		corn_set_color(strat_db.corn_table[lidx], lcob);
 	}
+	if (!__y_is_more_than(l_yspickle, 600))
+		l_y_too_high_pack = 1;
 
 	/* detect cob on right side */
-	rcob_near = corn_is_near(&ridx, I2C_RIGHT_SIDE);
+	rcob_near = corn_is_near(&ridx, I2C_RIGHT_SIDE,
+				 &r_xspickle, &r_yspickle);
 	if (rcob_near && rcob != I2C_COB_NONE) {
 		if (strat_db.corn_table[ridx]->corn.color == I2C_COB_UNKNOWN)
 			DEBUG(E_USER_STRAT, "rcob %s %d",
 			      rcob == I2C_COB_WHITE ? "white" : "black", ridx);
 		corn_set_color(strat_db.corn_table[ridx], rcob);
 	}
+	if (!__y_is_more_than(r_yspickle, 600))
+		r_y_too_high_pack = 1;
 
 	/* control the cobboard mode for left spickle */
 	need_lpack = get_cob_count() >= 5 || strat_want_pack ||
-		strat_lpack60 || strat_opponent_lpack;
+		strat_lpack60 || strat_opponent_lpack || l_y_too_high_pack;
+
 	if (lcob_near && strat_db.corn_table[lidx]->present) {
 		if (need_lpack) {
 			/* nothing  */
@@ -319,7 +329,7 @@ static void check_corn(void)
 
 	/* control the cobboard mode for right spickle */
 	need_rpack = get_cob_count() >= 5 || strat_want_pack ||
-		strat_rpack60 || strat_opponent_rpack;
+		strat_rpack60 || strat_opponent_rpack || r_y_too_high_pack;
 	if (rcob_near && strat_db.corn_table[ridx]->present) {
 		if (need_rpack) {
 			/* nothing */

@@ -70,7 +70,8 @@
 static volatile uint8_t clitoid_slow = 0;
 
 /* return 1 if there is a corn near, and fill the index ptr */
-int8_t corn_is_near(uint8_t *corn_idx, uint8_t side)
+int8_t corn_is_near(uint8_t *corn_idx, uint8_t side,
+		    int16_t *xspickle, int16_t *yspickle)
 {
 	/* XXX to be checked */
 #define SENSOR_CORN_DIST  225
@@ -92,6 +93,8 @@ int8_t corn_is_near(uint8_t *corn_idx, uint8_t side)
 	}
 	x_corn_int = x_corn;
 	y_corn_int = y_corn;
+	*xspickle = x_corn_int;
+	*yspickle = y_corn_int;
 
 	wp = xycoord_to_corn_idx(&x_corn_int, &y_corn_int);
 	if (wp == NULL)
@@ -300,7 +303,7 @@ static int8_t strat_calc_clitoid(uint8_t num1, uint8_t dir1,
 		}
 		else {
 			beta_deg = 0;
-			*pack_spickles = I2C_RIGHT_SIDE;
+			*pack_spickles = I2C_LEFT_SIDE;
 		}
 	}
 	/* double 90 deg for half turn -- not used */

@@ -33,7 +33,8 @@ struct line_2pts {
 };
 
 /* there is a corn near */
-int8_t corn_is_near(uint8_t *corn_idx, uint8_t side);
+int8_t corn_is_near(uint8_t *corn_idx, uint8_t side,
+		    int16_t *xspickle, int16_t *yspickle);
 
 /* go from line num1,dir1 to line num2,dir2. Uses trjectory flags
  * specified as argument and return END_xxx condition */

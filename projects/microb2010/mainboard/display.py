@@ -418,6 +418,8 @@ while True:
                 fw.write("l")
             elif k == "r":
                 fw.write("r")
+            elif k == "b":
+                fw.write("b")
             elif k == "c":
                 robot_trail_list = []
             elif k == "x":

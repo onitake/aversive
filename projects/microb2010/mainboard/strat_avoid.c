@@ -552,7 +552,7 @@ int16_t linedir2angle(uint8_t dir)
 	case LINE_R_UP:
 		return COLOR_A(30);
 	case LINE_R_DOWN:
-		return COLOR_A(-90);
+		return COLOR_A(-30);
 	case LINE_L_UP:
 		return COLOR_A(150);
 	case LINE_L_DOWN:
@@ -560,6 +560,25 @@ int16_t linedir2angle(uint8_t dir)
 	default:
 		return 0;
 	}
+}
+
+int16_t get_nearest_dir_angle(int16_t a)
+{
+	uint8_t dir, min_dir = 0;
+	int16_t min_diff = 0x7FFF, diff;
+
+	for (dir = LINE_UP; dir <= LINE_R_UP; dir++) {
+		diff = abs(linedir2angle(dir) - a);
+		if (diff > 360)
+			diff -= 360;
+		if (diff > 360)
+			diff -= 360;
+		if (diff < min_diff) {
+			min_diff = diff;
+			min_dir = dir;
+		}
+	}
+	return linedir2angle(min_dir);
 }
 
 /* return true if a waypoint belongs to a line */
@@ -1107,8 +1126,8 @@ const struct xy_point unblock_pts[] = {
 /* try to unblock in any situation */
 uint8_t strat_unblock(void)
 {
-	int16_t x, y, posx, posy;
-	uint8_t i, j, k;
+	int16_t x, y, posx, posy, posa;
+	uint8_t i, j, k, cpt;
 	uint16_t old_dspeed, old_aspeed;
 	uint8_t err;
 	uint16_t d_min = 0x7FFF, d;
@@ -1120,6 +1139,8 @@ uint8_t strat_unblock(void)
 	strat_get_speed(&old_dspeed, &old_aspeed);
 
 	strat_hardstop();
+	posa = position_get_a_deg_s16(&mainboard.pos);
+
 	strat_set_speed(SPEED_DIST_SLOW, SPEED_ANGLE_SLOW);
 	posx = position_get_x_s16(&mainboard.pos);
 	posy = position_get_y_s16(&mainboard.pos);
@@ -1148,10 +1169,32 @@ uint8_t strat_unblock(void)
 	DEBUG(E_USER_STRAT, "%s() unblock point is %d,%d",
 	      __FUNCTION__, x, y);
 
-	/* XXX if opponent is too close, go back, or wait ? */
+	for (cpt = 0; cpt < 2; cpt++) {
 
-	/* go to nearest waypoint */
-	trajectory_goto_xy_abs(&mainboard.traj, x, y);
+		/* go to nearest waypoint */
+		trajectory_goto_xy_abs(&mainboard.traj, x, y);
+		err = wait_traj_end(TRAJ_FLAGS_NO_NEAR);
+		if (err == END_TIMER)
+			return err;
+
+		if (TRAJ_SUCCESS(err))
+			break;
+
+		if (cpt == 1)
+			break;
+
+		/* aie... do a S */
+		trajectory_d_a_rel(&mainboard.traj, 100, 20);
+		err = wait_traj_end(TRAJ_FLAGS_NO_NEAR);
+		trajectory_d_a_rel(&mainboard.traj, 100, -20);
+		err = wait_traj_end(TRAJ_FLAGS_NO_NEAR);
+		trajectory_d_a_rel(&mainboard.traj, -100, -20);
+		err = wait_traj_end(TRAJ_FLAGS_NO_NEAR);
+		trajectory_d_a_rel(&mainboard.traj, -100, 20);
+		err = wait_traj_end(TRAJ_FLAGS_NO_NEAR);
+	}
+
+	trajectory_a_abs(&mainboard.traj, get_nearest_dir_angle(posa));
 	err = wait_traj_end(TRAJ_FLAGS_NO_NEAR);
 	if (err == END_TIMER)
 		return err;

@@ -19,6 +19,8 @@
  *
  */
 
+extern uint8_t robotsim_blocking;
+
 int8_t robotsim_i2c(uint8_t addr, uint8_t *buf, uint8_t size);
 void robotsim_update(void);
 void robotsim_pwm(void *arg, int32_t val);

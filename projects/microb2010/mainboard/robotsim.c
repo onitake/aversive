@@ -54,6 +54,8 @@
 #include "strat_utils.h"
 #include "main.h"
 
+uint8_t robotsim_blocking = 0;
+
 static int32_t l_pwm, r_pwm;
 static int32_t l_enc, r_enc;
 
@@ -264,6 +266,8 @@ void robotsim_update(void)
 		pertl = 1;
 	else if (cmd[0] == 'r')
 		pertr = 1;
+	else if (cmd[0] == 'b')
+		robotsim_blocking = 1;
 	if (cmd[0] == 'o') {
 		if (sscanf(cmd, "opp %d %d", &oppx, &oppy) == 2) {
 			abs_xy_to_rel_da(oppx, oppy, &oppd, &oppa);

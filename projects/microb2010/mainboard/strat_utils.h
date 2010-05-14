@@ -78,6 +78,8 @@ uint8_t robot_is_in_area(int16_t margin);
 uint8_t robot_is_near_disc(void);
 uint8_t y_is_more_than(int16_t y);
 uint8_t x_is_more_than(int16_t x);
+uint8_t __y_is_more_than(int16_t posy, int16_t y);
+uint8_t __x_is_more_than(int16_t posx, int16_t x);
 int16_t fast_sin(int16_t deg);
 int16_t fast_cos(int16_t deg);
 uint8_t get_color(void);

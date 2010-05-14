@@ -184,11 +184,8 @@ uint8_t robot_is_in_area(int16_t margin)
 
 /* return 1 or 0 depending on which side of a line (y=cste) is the
  * robot. works in yellow or blue color. */
-uint8_t y_is_more_than(int16_t y)
+uint8_t __y_is_more_than(int16_t posy, int16_t y)
 {
-	int16_t posy;
-
-	posy = position_get_y_s16(&mainboard.pos);
 	if (mainboard.our_color == I2C_COLOR_YELLOW) {
 		if (posy > y)
 			return 1;
@@ -205,15 +202,30 @@ uint8_t y_is_more_than(int16_t y)
 
 /* return 1 or 0 depending on which side of a line (x=cste) is the
  * robot. works in yellow or blue color. */
-uint8_t x_is_more_than(int16_t x)
+uint8_t __x_is_more_than(int16_t posx, int16_t x)
 {
-	int16_t posx;
-
-	posx = position_get_x_s16(&mainboard.pos);
 	if (posx > x)
 		return 1;
 	else
 		return 0;
+}
+
+/* return 1 or 0 depending on which side of a line (y=cste) is the
+ * robot. works in yellow or blue color. */
+uint8_t y_is_more_than(int16_t y)
+{
+	int16_t posy;
+	posy = position_get_y_s16(&mainboard.pos);
+	return __y_is_more_than(posy, y);
+}
+
+/* return 1 or 0 depending on which side of a line (x=cste) is the
+ * robot. works in yellow or blue color. */
+uint8_t x_is_more_than(int16_t x)
+{
+	int16_t posx;
+	posx = position_get_x_s16(&mainboard.pos);
+	return __x_is_more_than(posx, x);
 }
 
 int16_t sin_table[] = {

@@ -59,9 +59,13 @@
 #include "strat.h"
 #include "sensor.h"
 #include "i2c_protocol.h"
+#include "robotsim.h"
 
 /* true if we want to interrupt a trajectory */
 static uint8_t traj_intr=0;
+
+/* to debug state of strat_obstacle() */
+static uint8_t strat_obstacle_debug = 0;
 
 /* filled when a END_OBSTACLE is returned */
 struct opponent_obstacle opponent_obstacle;
@@ -382,7 +386,6 @@ void strat_start(void)
 	strat_exit();
 }
 
-uint8_t xxxdebug = 0;
 
 /* return true if we have to brake due to an obstacle */
 uint8_t strat_obstacle(void)
@@ -391,22 +394,19 @@ uint8_t strat_obstacle(void)
 	int16_t opp_x, opp_y, opp_d, opp_a;
 
 	/* too slow */
-	if (ABS(mainboard.speed_d) < 0) {
-		if (xxxdebug != 1) {
-			DEBUG(E_USER_STRAT, "XXX too slow");
-			xxxdebug = 1;
+	if (ABS(mainboard.speed_d) < 100) {
+		if (strat_obstacle_debug != 1) {
+			DEBUG(E_USER_STRAT, "disable opp, too slow");
+			strat_obstacle_debug = 1;
 		}
 		return 0;
 	}
 
 	/* no opponent detected */
-	if (get_opponent_xyda(&opp_x, &opp_y, &opp_d, &opp_a)) {
-		if (xxxdebug != 2) {
-			DEBUG(E_USER_STRAT, "XXX no opp");
-			DEBUG(E_USER_STRAT, "opponent d=%d, a=%d "
-			      "x=%d y=%d (speed_d=%d)",
-			      opp_d, opp_a, opp_x, opp_y, mainboard.speed_d);
-			xxxdebug = 2;
+	if (get_opponent_xyda(&opp_x, &opp_y, &opp_d, &opp_a) < 0) {
+		if (strat_obstacle_debug != 2) {
+			DEBUG(E_USER_STRAT, "no opponent found");
+			strat_obstacle_debug = 2;
 		}
 		return 0;
 	}
@@ -418,24 +418,24 @@ uint8_t strat_obstacle(void)
 	opponent_obstacle.a = opp_a;
 
 	if (!is_in_area(opp_x, opp_y, 250)) {
-		if (xxxdebug != 3) {
-			DEBUG(E_USER_STRAT, "XXX not in area");
-			DEBUG(E_USER_STRAT, "opponent d=%d, a=%d "
+		if (strat_obstacle_debug != 3) {
+			DEBUG(E_USER_STRAT,
+			      "opponent not in area : d=%d, a=%d "
 			      "x=%d y=%d (speed_d=%d)",
 			      opp_d, opp_a, opp_x, opp_y, mainboard.speed_d);
-			xxxdebug = 3;
+			strat_obstacle_debug = 3;
 		}
 		return 0;
 	}
 
 	/* sensor are temporarily disabled */
 	if (sensor_obstacle_is_disabled()) {
-		if (xxxdebug != 4) {
-			DEBUG(E_USER_STRAT, "XXX disabled");
-			DEBUG(E_USER_STRAT, "opponent d=%d, a=%d "
+		if (strat_obstacle_debug != 4) {
+			DEBUG(E_USER_STRAT,
+			      "sensor are disabled: opponent d=%d, a=%d "
 			      "x=%d y=%d (speed_d=%d)",
 			      opp_d, opp_a, opp_x, opp_y, mainboard.speed_d);
-			xxxdebug = 4;
+			strat_obstacle_debug = 4;
 		}
 		return 0;
 	}
@@ -446,12 +446,11 @@ uint8_t strat_obstacle(void)
 
 	/* opponent too far */
 	if (opp_d > 650) {
-		if (xxxdebug != 5) {
-			DEBUG(E_USER_STRAT, "XXX too far");
-			DEBUG(E_USER_STRAT, "opponent d=%d, a=%d "
+		if (strat_obstacle_debug != 5) {
+			DEBUG(E_USER_STRAT, "opponent too far d=%d, a=%d "
 			      "x=%d y=%d (speed_d=%d)",
 			      opp_d, opp_a, opp_x, opp_y, mainboard.speed_d);
-			xxxdebug = 5;
+			strat_obstacle_debug = 5;
 		}
 		return 0;
 	}
@@ -474,12 +473,11 @@ uint8_t strat_obstacle(void)
 		return 1;
 	}
 
-	if (xxxdebug != 6) {
-		DEBUG(E_USER_STRAT, "XXX not in cone");
-		DEBUG(E_USER_STRAT, "opponent d=%d, a=%d "
+	if (strat_obstacle_debug != 6) {
+		DEBUG(E_USER_STRAT, "opponent not in cone d=%d, a=%d "
 		      "x=%d y=%d (speed_d=%d)",
 		      opp_d, opp_a, opp_x, opp_y, mainboard.speed_d);
-		xxxdebug = 6;
+		strat_obstacle_debug = 6;
 	}
 
 	return 0;
@@ -549,6 +547,12 @@ uint8_t test_traj_end(uint8_t why)
 		return END_OBSTACLE;
 	}
 
+#ifdef HOST_VERSION
+	if (robotsim_blocking) {
+		robotsim_blocking = 0;
+		return END_BLOCKING;
+	}
+#endif
 	return 0;
 }
 
