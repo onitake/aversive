@@ -27,6 +27,9 @@ void roller_reverse(void);
 
 void fork_deploy(void);
 void fork_pack(void);
-void fork_mid(void);
+void fork_mid1(void);
+void fork_mid2(void);
+void fork_eject(void);
+uint8_t fork_is_packed(void);
 
 void actuator_init(void);

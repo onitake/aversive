@@ -46,8 +46,8 @@
 #define SHOVEL_DOWN 100
 #define SHOVEL_MID  4500
 #define SHOVEL_UP   11300
-#define SHOVEL_KICKSTAND_UP   12800
-#define SHOVEL_KICKSTAND_DOWN 10000
+#define SHOVEL_KICKSTAND_UP   13400
+#define SHOVEL_KICKSTAND_DOWN 10400
 
 static int32_t shovel_k1 = 1000;
 static int32_t shovel_k2 = 20;
@@ -140,9 +140,9 @@ void shovel_up(void)
 {
 	shovel_current_limit_enable(0);
 	if (state_get_cob_count() <= 1)
-		quadramp_set_1st_order_vars(&cobboard.shovel.qr, 1000, 2500);
+		quadramp_set_1st_order_vars(&cobboard.shovel.qr, 700, 2500);
 	else
-		quadramp_set_1st_order_vars(&cobboard.shovel.qr, 2000, 2500);
+		quadramp_set_1st_order_vars(&cobboard.shovel.qr, 1000, 2500);
 	quadramp_set_2nd_order_vars(&cobboard.shovel.qr, 80, 15);
 	cs_set_consign(&cobboard.shovel.cs, SHOVEL_UP);
 }
@@ -173,6 +173,11 @@ uint8_t shovel_is_up(void)
 uint8_t shovel_is_down(void)
 {
 	return shovel_is_at_pos(SHOVEL_DOWN);
+}
+
+uint8_t shovel_is_mid(void)
+{
+	return shovel_is_at_pos(SHOVEL_MID);
 }
 
 void shovel_init(void)

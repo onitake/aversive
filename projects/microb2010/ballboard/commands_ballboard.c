@@ -380,13 +380,15 @@ static void cmd_fork_parsed(void *parsed_result,
 		fork_deploy();
 	else if (!strcmp_P(res->arg1, PSTR("pack")))
 		fork_pack();
-	else if (!strcmp_P(res->arg1, PSTR("middle")))
-		fork_mid();
+	else if (!strcmp_P(res->arg1, PSTR("mid1")))
+		fork_mid1();
+	else if (!strcmp_P(res->arg1, PSTR("mid2")))
+		fork_mid2();
 }
 
 prog_char str_fork_arg0[] = "fork";
 parse_pgm_token_string_t cmd_fork_arg0 = TOKEN_STRING_INITIALIZER(struct cmd_fork_result, arg0, str_fork_arg0);
-prog_char str_fork_arg1[] = "deploy#pack#middle";
+prog_char str_fork_arg1[] = "deploy#pack#mid1#mid2";
 parse_pgm_token_string_t cmd_fork_arg1 = TOKEN_STRING_INITIALIZER(struct cmd_fork_result, arg1, str_fork_arg1);
 
 prog_char help_fork[] = "move fork";

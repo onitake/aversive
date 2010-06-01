@@ -223,6 +223,20 @@ static void check_tomato(void)
 #endif
 }
 
+static void remove_cob(uint8_t idx)
+{
+	if (strat_db.corn_table[idx]->corn.color == I2C_COB_BLACK)
+		return;
+
+	if (strat_db.corn_table[idx]->time_removed == -1) {
+		strat_db.corn_table[idx]->time_removed = time_get_s();
+#ifdef HOST_VERSION
+		cobboard.cob_count ++;
+		printf("add cob %d\n", idx);
+#endif
+	}
+}
+
 /* mark corn as not present and give correct commands to the cobboard
  * for spickles */
 static void check_corn(void)
@@ -274,7 +288,7 @@ static void check_corn(void)
 			      lcob == I2C_COB_WHITE ? "white" : "black", lidx);
 		corn_set_color(strat_db.corn_table[lidx], lcob);
 	}
-	if (!__y_is_more_than(l_yspickle, 600))
+	if (cur_time > 5 && !__y_is_more_than(l_yspickle, 600))
 		l_y_too_high_pack = 1;
 
 	/* detect cob on right side */
@@ -286,37 +300,38 @@ static void check_corn(void)
 			      rcob == I2C_COB_WHITE ? "white" : "black", ridx);
 		corn_set_color(strat_db.corn_table[ridx], rcob);
 	}
-	if (!__y_is_more_than(r_yspickle, 600))
+	if (cur_time > 5 && !__y_is_more_than(r_yspickle, 600))
 		r_y_too_high_pack = 1;
+
+	/* re-enable white cob */
+	if (lcob == I2C_COB_WHITE && lcob_near &&
+	    strat_db.corn_table[lidx]->present == 0) {
+		strat_db.corn_table[lidx]->present = 1;
+		strat_db.corn_table[lidx]->time_removed = -1;
+	}
+	if (rcob == I2C_COB_WHITE && rcob_near &&
+	    strat_db.corn_table[ridx]->present == 0) {
+		strat_db.corn_table[ridx]->present = 1;
+		strat_db.corn_table[ridx]->time_removed = -1;
+	}
 
 	/* control the cobboard mode for left spickle */
 	need_lpack = get_cob_count() >= 5 || strat_want_pack ||
 		strat_lpack60 || strat_opponent_lpack || l_y_too_high_pack;
 
-	if (lcob_near && strat_db.corn_table[lidx]->present) {
+	if (lcob_near &&
+	    (strat_db.corn_table[lidx]->present ||
+	     strat_db.corn_table[lidx]->time_removed == -1)) {
 		if (need_lpack) {
 			/* nothing  */
 		}
 		else {
 			/* deploy spickle and harvest white ones */
-			if (strat_db.corn_table[lidx]->corn.color == I2C_COB_WHITE) {
+			if (strat_db.corn_table[lidx]->corn.color == I2C_COB_WHITE)
 				i2c_cobboard_autoharvest_nomove(I2C_LEFT_SIDE);
-				if (strat_db.corn_table[lidx]->time_removed == -1
-#ifndef HOST_VERSION
-				    && cobboard.status == I2C_COBBOARD_STATUS_LBUSY
-#endif
-				    ) {
-					strat_db.corn_table[lidx]->time_removed = time_get_s();
-#ifdef HOST_VERSION
-					cobboard.cob_count ++;
-					printf("add cob %d\n", lidx);
-#else
-					strat_db.corn_table[lidx]->present = 0;
-#endif
-				}
-			}
 			else
 				i2c_cobboard_deploy_nomove(I2C_LEFT_SIDE);
+			remove_cob(lidx);
 		}
 	}
 	else {
@@ -330,30 +345,19 @@ static void check_corn(void)
 	/* control the cobboard mode for right spickle */
 	need_rpack = get_cob_count() >= 5 || strat_want_pack ||
 		strat_rpack60 || strat_opponent_rpack || r_y_too_high_pack;
-	if (rcob_near && strat_db.corn_table[ridx]->present) {
+	if (rcob_near &&
+	    (strat_db.corn_table[ridx]->present ||
+	     strat_db.corn_table[ridx]->time_removed == -1)) {
 		if (need_rpack) {
 			/* nothing */
 		}
 		else {
 			/* deploy spickle and harvest white ones */
-			if (strat_db.corn_table[ridx]->corn.color == I2C_COB_WHITE) {
+			if (strat_db.corn_table[ridx]->corn.color == I2C_COB_WHITE)
 				i2c_cobboard_autoharvest_nomove(I2C_RIGHT_SIDE);
-				if (strat_db.corn_table[ridx]->time_removed == -1
-#ifndef HOST_VERSION
-				    && cobboard.status == I2C_COBBOARD_STATUS_RBUSY
-#endif
-				    ) {
-					strat_db.corn_table[ridx]->time_removed = time_get_s();
-#ifdef HOST_VERSION
-					cobboard.cob_count ++;
-					printf("add cob %d\n", ridx);
-#else
-					strat_db.corn_table[ridx]->present = 0;
-#endif
-				}
-			}
 			else
 				i2c_cobboard_deploy_nomove(I2C_RIGHT_SIDE);
+			remove_cob(ridx);
 		}
 	}
 	else {
@@ -522,8 +526,6 @@ static uint8_t strat_eject(void)
 #ifdef HOST_VERSION
 		time_wait_ms(2000);
 #else
-		WAIT_COND_OR_TIMEOUT(ballboard.status == I2C_BALLBOARD_STATUS_F_BUSY,
-				     2000);
 		WAIT_COND_OR_TIMEOUT(ballboard.status == I2C_BALLBOARD_STATUS_F_READY,
 				     2000);
 #endif
@@ -533,7 +535,9 @@ static uint8_t strat_eject(void)
 		time_wait_ms(300);
 	}
 
-	if (get_cob_count() > 0) {
+	if (get_cob_count() > 0 ||
+	    cobboard.status == I2C_COBBOARD_STATUS_LBUSY ||
+	    cobboard.status == I2C_COBBOARD_STATUS_RBUSY) {
 		/* half turn */
 		trajectory_a_abs(&mainboard.traj, COLOR_A(-110));
 		err = wait_traj_end(END_INTR|END_TRAJ);
@@ -574,7 +578,8 @@ static uint8_t strat_beginning(uint8_t do_initturn)
 
 	if (do_initturn) {
 		//strat_set_speed(600, 60);
-		strat_set_speed(450, 50);
+		//strat_set_speed(450, 50);
+		strat_set_speed(350, 40);
 		trajectory_d_a_rel(&mainboard.traj, 1000, COLOR_A(20));
 		err = WAIT_COND_OR_TRAJ_END(trajectory_angle_finished(&mainboard.traj),
 					    TRAJ_FLAGS_STD);
@@ -919,15 +924,15 @@ uint8_t run_to_the_hills(uint8_t orange_color)
 	strat_hardstop();
 	i2c_ballboard_set_mode(I2C_BALLBOARD_MODE_TAKE_FORK);
 
-	time_wait_ms(1100);
+	time_wait_ms(500);
 
 	trajectory_d_rel(&mainboard.traj, 15);
-	time_wait_ms(400);
+	time_wait_ms(700);
 	strat_hardstop();
 	time_wait_ms(200);
 
 	/* reach top, go down */
-	trajectory_d_rel(&mainboard.traj, -HILL_LEN);
+	trajectory_d_a_rel(&mainboard.traj, -HILL_LEN, -2);
 
 	if (orange_color == our_color)
 		err = WAIT_COND_OR_TRAJ_END(position_get_x_s16(&mainboard.pos) <
@@ -949,9 +954,17 @@ uint8_t run_to_the_hills(uint8_t orange_color)
 					    TRAJ_FLAGS_SMALL_DIST);
 
 	DEBUG(E_USER_STRAT, "deploy support balls");
-	strat_set_acc(ad, aa);
-	strat_set_speed(SPEED_DIST_FAST, SPEED_ANGLE_FAST);
 	support_balls_deploy();
+
+	if (orange_color == I2C_COLOR_YELLOW) {
+		strat_set_acc(ad, aa);
+		strat_set_speed(SPEED_DIST_FAST, SPEED_ANGLE_FAST);
+	}
+	else {
+		strat_set_acc(ad, 0.4);
+		strat_set_speed(SPEED_DIST_SLOW, SPEED_ANGLE_SLOW);
+		trajectory_d_a_rel(&mainboard.traj, -500, 20);
+	}
 
 	/* wait to be near the wall */
 	if (orange_color == our_color)
@@ -961,6 +974,9 @@ uint8_t run_to_the_hills(uint8_t orange_color)
 		err = WAIT_COND_OR_TRAJ_END(position_get_x_s16(&mainboard.pos) >
 					    AREA_X - 300,
 					    TRAJ_FLAGS_SMALL_DIST);
+
+	strat_set_acc(ad, aa);
+	strat_set_speed(SPEED_DIST_FAST, SPEED_ANGLE_FAST);
 
 	/* restore BD coefs */
 	bd_set_current_thresholds(&mainboard.distance.bd, 500, 8000, 1000000, 20);
@@ -984,6 +1000,7 @@ uint8_t run_to_the_hills(uint8_t orange_color)
 
 	trajectory_d_rel(&mainboard.traj, -250);
 	err = wait_traj_end(TRAJ_FLAGS_NO_NEAR);
+#if 0
 	if (orange_color == our_color)
 		trajectory_a_abs(&mainboard.traj, 180);
 	else
@@ -1005,7 +1022,7 @@ uint8_t run_to_the_hills(uint8_t orange_color)
 
 	trajectory_d_rel(&mainboard.traj, -250);
 	err = wait_traj_end(TRAJ_FLAGS_NO_NEAR);
-
+#endif
 	/* revert acceleration and speed */
 	pid_set_gains(&mainboard.angle.pid, p, i, d);
 	pid_set_maximums(&mainboard.distance.pid, max_in, max_i, max_out);

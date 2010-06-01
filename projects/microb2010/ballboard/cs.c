@@ -82,6 +82,7 @@ static void do_cs(void *dummy)
 					 cs_get_filtered_feedback(&ballboard.roller.cs),
 					 cs_get_out(&ballboard.roller.cs));
 
+#if 0
 		/* urgent case: stop power on blocking */
 		if (ballboard.flags & DO_ERRBLOCKING) {
 			if (bd_get(&ballboard.forktrans.bd) ||
@@ -90,6 +91,7 @@ static void do_cs(void *dummy)
 				ballboard.flags &= ~(DO_POWER | DO_ERRBLOCKING);
 			}
 		}
+#endif
 	}
 	if (ballboard.flags & DO_POWER)
 		BRAKE_OFF();
@@ -181,8 +183,8 @@ void microb_cs_init(void)
 
 	/* QUADRAMP */
 	quadramp_init(&ballboard.forkrot.qr);
-	quadramp_set_1st_order_vars(&ballboard.forkrot.qr, 200, 800); /* set speed */
-	quadramp_set_2nd_order_vars(&ballboard.forkrot.qr, 20, 20); /* set accel */
+	quadramp_set_1st_order_vars(&ballboard.forkrot.qr, 1000, 500); /* set speed */
+	quadramp_set_2nd_order_vars(&ballboard.forkrot.qr, 100, 20); /* set accel */
 
 	/* CS */
 	cs_init(&ballboard.forkrot.cs);

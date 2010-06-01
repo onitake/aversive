@@ -70,6 +70,7 @@ static uint8_t cob_count;
 #define KICKSTAND_DOWN(mode)  ((mode) == I2C_COBBOARD_MODE_KICKSTAND_DOWN)
 
 uint8_t state_debug = 0;
+static uint8_t state_cob_partial = 0;
 
 uint8_t state_get_cob_count(void)
 {
@@ -96,6 +97,15 @@ static uint8_t state_no_cob_inside(void)
 {
 	return !sensor_get(S_COB_INSIDE_L) &&
 		!sensor_get(S_COB_INSIDE_R);
+}
+
+static uint8_t state_cob_inside_enhanced(void)
+{
+	if (sensor_get(S_COB_INSIDE_L))
+		state_cob_partial = 1;
+	if (sensor_get(S_COB_INSIDE_R))
+		state_cob_partial = 1;
+	return state_cob_inside();
 }
 
 static uint8_t state_spicklemode_deployed(uint8_t side)
@@ -214,6 +224,8 @@ uint8_t state_get_status(void)
 /* harvest cobs from area */
 static void state_do_harvest(uint8_t side)
 {
+	uint8_t i = 0;
+
 	/* if there is no cob, return */
 	if (cob_falling_edge(side) == 0)
 		return;
@@ -232,11 +244,15 @@ static void state_do_harvest(uint8_t side)
 	cobroller_on(side);
 
 	/* check that cob is correctly in place */
-	if (WAIT_COND_OR_TIMEOUT(state_cob_inside(), 750) == 0) {
-		if (state_no_cob_inside()) {
+	state_cob_partial = 0;
+	if (WAIT_COND_OR_TIMEOUT(state_cob_inside_enhanced(), 750) == 0) {
+		if (state_no_cob_inside() && state_cob_partial == 0) {
 			STMCH_DEBUG("no cob");
 			return;
 		}
+		else if (state_no_cob_inside() && state_cob_partial == 1)
+			goto cont;
+
 		STMCH_DEBUG("bad cob state");
 
 		/* while cob is not correctly placed try to extract
@@ -256,6 +272,9 @@ static void state_do_harvest(uint8_t side)
 			time_wait_ms(250);
 			shovel_down();
 			time_wait_ms(250);
+
+			if (EJECT(state_mode))
+				return;
 		}
 
 		STMCH_DEBUG("cob removed");
@@ -265,6 +284,7 @@ static void state_do_harvest(uint8_t side)
 		}
 	}
 
+ cont:
 	/* cob is inside, switch off roller */
 	cobroller_off(side);
 	cob_count ++;
@@ -289,14 +309,40 @@ static void state_do_harvest(uint8_t side)
 	/* store it */
 	shovel_up();
 
+	i = 0;
 	while (WAIT_COND_OR_TIMEOUT(shovel_is_up(), 600) == 0) {
 		STMCH_DEBUG("shovel blocked");
 		shovel_down();
-		time_wait_ms(250);
-		shovel_up();
+
+		if (i == 4)
+			break;
+
 		/* if eject command is received, force exit */
 		if (EJECT(state_mode))
 			return;
+
+		time_wait_ms(250);
+		shovel_up();
+		i ++;
+	}
+
+	/* bad state, try to eject to cobs */
+	if (i == 4) {
+		servo_door_open();
+		shovel_mid();
+
+		while (WAIT_COND_OR_TIMEOUT(shovel_is_mid(), 600) == 0) {
+			STMCH_DEBUG("ejecting cobs");
+
+			shovel_down();
+			time_wait_ms(250);
+			if (state_no_cob_inside()) {
+				servo_door_close();
+				cob_count = 0;
+				return;
+			}
+			shovel_mid();
+		}
 	}
 
 	state_debug_wait_key_pressed();

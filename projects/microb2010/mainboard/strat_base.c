@@ -456,8 +456,8 @@ uint8_t strat_obstacle(void)
 	}
 
 	/* opponent is in front of us */
-	if ((mainboard.speed_d >= 0 && opp_d < 500 && (opp_a > 315 || opp_a < 45)) ||
-	    (mainboard.speed_d >= 0 && opp_d < 650 && (opp_a > 330 || opp_a < 30))) {
+	if ((mainboard.speed_d >= 0 && opp_d < 600 && (opp_a > 315 || opp_a < 45)) ||
+	    (mainboard.speed_d >= 0 && opp_d < 800 && (opp_a > 330 || opp_a < 30))) {
 		DEBUG(E_USER_STRAT, "opponent front d=%d, a=%d "
 		      "xrel=%d yrel=%d (speed_d=%d)",
 		      opp_d, opp_a, x_rel, y_rel, mainboard.speed_d);
@@ -465,8 +465,8 @@ uint8_t strat_obstacle(void)
 		return 1;
 	}
 	/* opponent is behind us */
-	if ((mainboard.speed_d < 0 && opp_d < 500 && (opp_a < 225 && opp_a > 135)) ||
-	    (mainboard.speed_d < 0 && opp_d < 650 && (opp_a < 210 && opp_a > 150))) {
+	if ((mainboard.speed_d < 0 && opp_d < 600 && (opp_a < 225 && opp_a > 135)) ||
+	    (mainboard.speed_d < 0 && opp_d < 800 && (opp_a < 210 && opp_a > 150))) {
 		DEBUG(E_USER_STRAT, "opponent behind d=%d, a=%d xrel=%d yrel=%d",
 		      opp_d, opp_a, x_rel, y_rel);
 		sensor_obstacle_disable();

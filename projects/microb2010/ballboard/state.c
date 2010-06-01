@@ -166,9 +166,15 @@ static void state_do_eject(void)
 		blocked = 0;
 
 		while (1) {
+			/* move fork during ball ejection */
+			if ((us % 600) < 300)
+				fork_eject();
+			else
+				fork_pack();
 
 			/* no more balls (sensor is heavily filtered) */
-			if (!sensor_get(S_LOW_BARRIER)) {
+			if (!sensor_get(S_LOW_BARRIER) &&
+			    !sensor_get(S_HIGH_BARRIER)) {
 				STMCH_DEBUG("%s(): no more balls", __FUNCTION__);
 				break;
 			}
@@ -186,6 +192,7 @@ static void state_do_eject(void)
 				break;
 			}
 		}
+		fork_pack();
 
 		if (!blocked)
 			break;
@@ -246,8 +253,21 @@ void state_machine(void)
 
 		case TAKE_FORK:
 			roller_off();
-			fork_mid();
-			time_wait_ms(1300);
+			fork_mid1();
+			time_wait_ms(666);
+			fork_mid2();
+			time_wait_ms(666);
+			while (1) {
+				uint8_t packed;
+
+				fork_pack();
+				packed = WAIT_COND_OR_TIMEOUT(fork_is_packed(),
+							      500);
+				if (packed)
+					break;
+				fork_mid2();
+				time_wait_ms(200);
+			}
 			state_mode = OFF;
 			break;
 

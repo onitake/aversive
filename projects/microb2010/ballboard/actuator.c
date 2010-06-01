@@ -48,7 +48,9 @@
 #define ROLLER_REVERSE ROLLER_SPEED
 
 #define FORKROT_DEPLOYED -55000
-#define FORKROT_MID -33000
+#define FORKROT_MID1 -31000
+#define FORKROT_MID2 -27000
+#define FORKROT_EJECT   -12000
 #define FORKROT_PACKED   -4000
 
 void roller_on(void)
@@ -76,9 +78,35 @@ void fork_pack(void)
 	cs_set_consign(&ballboard.forkrot.cs, FORKROT_PACKED);
 }
 
-void fork_mid(void)
+void fork_mid1(void)
 {
-	cs_set_consign(&ballboard.forkrot.cs, FORKROT_MID);
+	cs_set_consign(&ballboard.forkrot.cs, FORKROT_MID1);
+}
+
+void fork_mid2(void)
+{
+	cs_set_consign(&ballboard.forkrot.cs, FORKROT_MID2);
+}
+
+void fork_eject(void)
+{
+	cs_set_consign(&ballboard.forkrot.cs, FORKROT_EJECT);
+}
+
+static uint8_t fork_is_at_pos(int32_t pos)
+{
+	int32_t diff;
+	diff = pos - encoders_spi_get_value(FORKROT_ENCODER);
+	if (diff < 0)
+		diff = -diff;
+	if (diff < 500)
+		return 1;
+	return 0;
+}
+
+uint8_t fork_is_packed(void)
+{
+	return fork_is_at_pos(FORKROT_PACKED);
 }
 
 void actuator_init(void)

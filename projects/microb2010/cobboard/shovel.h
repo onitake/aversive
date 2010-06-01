@@ -37,5 +37,6 @@ void shovel_kickstand_down(void);
 
 uint8_t shovel_is_up(void);
 uint8_t shovel_is_down(void);
+uint8_t shovel_is_mid(void);
 
 #endif /* _SHOVEL_H_ */
