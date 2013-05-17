@@ -139,9 +139,9 @@ CANNOT_READ=0
 for f in ${FUSE_LIST}
 do
 	rm -f $f 2> /dev/null
-	echo 0x00 > ${f}_new
-	${AVRDUDE} ${DELAY} -p ${MCU} -P `echo ${AVRDUDE_PORT} | sed 's,",,g'` \
-		-c ${AVRDUDE_PROGRAMMER} -U ${f}:r:${f}:i
+	echo 0xff > ${f}_new # default for each bit is 1 (unprogrammed)
+	${AVRDUDE} ${DELAY} -p ${MCU} -P `echo ${AVRDUDE_PORT} | \
+		sed 's,",,g'` -c ${AVRDUDE_PROGRAMMER} -U ${f}:r:${f}:i
 	if [ ! -f $f ]; then
 		CANNOT_READ=1
 	fi
@@ -210,10 +210,11 @@ do
 		1)
 			NEW_VAL=$((1 << $BIT | `cat ${FUSE}_new`))
 			printf "0x%x\n" ${NEW_VAL} > ${FUSE}_new
-			# <<$ fix syntax coloration
 			echo "    get 1 (unprogrammed)"
 			;;
 		0)
+			NEW_VAL=$((~(1 << $BIT) & `cat ${FUSE}_new`))
+			printf "0x%x\n" ${NEW_VAL} > ${FUSE}_new
 			echo "    get 0 (programmed)"
 			;;
 		*)
