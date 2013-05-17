@@ -2,16 +2,18 @@
 
 # bit $1 is set in $2 (8 bits)
 bit_is_set() {
-	return $[ $[ $2 / $[ ( 1 << $1 ) ] ] % 2 ]
-			# <<$ fix syntax coloration
+	if [ $(($2 & $((1 << $1)))) -eq 0 ]; then
+		return 0
+	else
+		return 1
+	fi
 }
 
 # $1 = name
 # $2 = value
 disp_fuse() {
-	echo -n "$1:"
-	echo -n -e "\t"
-	let bit=7
+	echo -n "$1: "
+	bit=7
 	while [ $bit -ge 0 ]; do
 		NAME=`cut -d ' ' -f 2- ${MCU_DESC_FILE} | grep "^$bit $1" | cut -d ' ' -f 3`
 		if [ -z "$NAME" ]; then
@@ -22,7 +24,7 @@ disp_fuse() {
 			echo -n "$NAME=$bitval"
 		fi
 		echo -n " "
-		let bit=$bit-1
+		bit=$(($bit-1))
 	done
 	echo
 }
@@ -36,7 +38,7 @@ intel2hex() {
 # $1 filename
 hex2intel() {
 	printf ":01000000%.2X" `cat $1` > $1.tmp
-	printf "%.2X\n" $[ 0xFF - `cat $1` ] >> $1.tmp
+	printf "%.2X\n" $((0xFF - `cat $1`)) >> $1.tmp
 	echo ":00000001FF" >> $1.tmp
 	mv $1.tmp $1
 }
@@ -177,7 +179,7 @@ echo
 echo
 
 NB_LINE=`wc -l ${MCU_DESC_FILE} | cut -d ' ' -f 1`
-SEQ_END=$[ ${NB_LINE} - 1 ]
+SEQ_END=$((${NB_LINE} - 1))
 
 for i in `seq 0 ${SEQ_END}`
 do
@@ -206,7 +208,8 @@ do
 
 	case $ans in
 		1)
-			printf "0x%x\n" $[ $[ ( 1 << $BIT ) ] + `cat ${FUSE}_new` ] > ${FUSE}_new
+			NEW_VAL=$((1 << $BIT | `cat ${FUSE}_new`))
+			printf "0x%x\n" ${NEW_VAL} > ${FUSE}_new
 			# <<$ fix syntax coloration
 			echo "    get 1 (unprogrammed)"
 			;;
@@ -243,8 +246,12 @@ do
 	case $ans in
 		y|Y)
 			for f in ${FUSE_LIST}; do
+				echo "$f = $(cat ${f}_new)"
 				hex2intel ${f}_new
 				PORT=`echo ${AVRDUDE_PORT} | sed 's,",,g'`
+				echo -n "${AVRDUDE} -p ${MCU} -P ${PORT} "
+				echo -n "-c ${AVRDUDE_PROGRAMMER} "
+				echo "-U ${f}:w:${f}_new:i ${DELAY}"
 				${AVRDUDE} -p ${MCU} -P ${PORT} \
 					-c ${AVRDUDE_PROGRAMMER} \
 					-U ${f}:w:${f}_new:i ${DELAY}
