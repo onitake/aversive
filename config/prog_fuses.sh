@@ -145,6 +145,7 @@ do
 	if [ ! -f $f ]; then
 		CANNOT_READ=1
 	fi
+	sleep 1
 done
 
 echo
@@ -256,6 +257,7 @@ do
 				${AVRDUDE} -p ${MCU} -P ${PORT} \
 					-c ${AVRDUDE_PROGRAMMER} \
 					-U ${f}:w:${f}_new:i ${DELAY}
+				sleep 1
 			done
 			exit 0
 			;;
