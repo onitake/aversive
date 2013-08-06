@@ -44,5 +44,5 @@ int uart_send_9bits(uint8_t num, int c)
 			while(uart_send_9bits_nowait(num, c) == -1);
 		}
 	}
-	return c;
+	return 0;
 }

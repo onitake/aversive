@@ -25,7 +25,7 @@
 #include <uart_defs.h>
 #include <uart_private.h>
 
-int uart_send_9bits_nowait(int c)
+int uart_send_9bits_nowait(uint8_t num, int c)
 {
 	uint8_t flags;
 	IRQ_LOCK(flags);
@@ -36,7 +36,7 @@ int uart_send_9bits_nowait(int c)
 		if (*uart_regs[num].ucsra & (1<<UDRE)) {
 			uart_set_udr_9bits(c);
 			IRQ_UNLOCK(flags);
-			return c;
+			return 0;
 		}
 		else {
 			IRQ_UNLOCK(flags);
@@ -61,5 +61,5 @@ int uart_send_9bits_nowait(int c)
 	}
 
 	IRQ_UNLOCK(flags);
-	return (int)c;
+	return 0;
 }

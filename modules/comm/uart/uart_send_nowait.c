@@ -41,7 +41,7 @@ int uart_send_nowait(uint8_t num, char c)
 		if (*uart_regs[num].ucsra & (1<<UDRE)) {
 			uart_set_udr(num, c);
 			IRQ_UNLOCK(flags);
-			return (int)c;
+			return 0;
 		}
 		else {
 			IRQ_UNLOCK(flags);
@@ -65,5 +65,5 @@ int uart_send_nowait(uint8_t num, char c)
 	}
 
 	IRQ_UNLOCK(flags);
-	return (int)c;
+	return 0;
 }
