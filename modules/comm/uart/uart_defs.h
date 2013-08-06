@@ -61,7 +61,7 @@
 #endif
 #endif
 
-#ifndef UDR0
+#if !defined(UDR0) && defined(UDR)
 #define UDR0 UDR
 #endif
 #ifndef UCSR0A
@@ -79,53 +79,104 @@
 #ifndef UBRR0H
 #define UBRR0H UBRRH
 #endif
-#ifndef U2X 
+#if !defined(U2X) && defined(U2X0)
 #define U2X U2X0
 #endif
-#ifndef UCSZ0 
+#if !defined(UCSZ0) && defined(UCSZ00)
 #define UCSZ0 UCSZ00
 #endif
-#ifndef UCSZ1 
+#if !defined(UCSZ1) && defined(UCSZ01)
 #define UCSZ1 UCSZ01
 #endif
-#ifndef UCSZ2 
+#if !defined(UCSZ2) && defined(UCSZ02)
 #define UCSZ2 UCSZ02
 #endif
-#ifndef UPM0 
+#if !defined(UPM0) && defined(UPM00)
 #define UPM0 UPM00
 #endif
-#ifndef UPM1 
+#if !defined(UPM1) && defined(UPM01)
 #define UPM1 UPM01
 #endif
-#ifndef USBS 
+#if !defined(USBS) && defined(USBS0)
 #define USBS USBS0
 #endif
-#ifndef TXEN 
+#if !defined(TXEN) && defined(TXEN0)
 #define TXEN TXEN0
 #endif
-#ifndef TXCIE 
+#if !defined(TXCIE) && defined(TXCIE0)
 #define TXCIE TXCIE0
 #endif
-#ifndef RXEN 
+#if !defined(RXEN) && defined(RXEN0)
 #define RXEN RXEN0
 #endif
-#ifndef RXCIE 
+#if !defined(RXCIE) && defined(RXCIE0)
 #define RXCIE RXCIE0
 #endif
-#ifndef TXC 
+#if !defined(TXC) && defined(TXC0)
 #define TXC TXC0
 #endif
-#ifndef RXC 
+#if !defined(RXC) && defined(RXC0)
 #define RXC RXC0
 #endif
-#ifndef RXB8
+#if !defined(RXB8) && defined(RXB80)
 #define RXB8 RXB80
 #endif
-#ifndef UDRIE
+#if !defined(UDRIE) && defined(UDRIE0)
 #define UDRIE UDRIE0
 #endif
-#ifndef UDRE
+#if !defined(UDRE) && defined(UDRE0)
 #define UDRE UDRE0
+#endif
+#if !defined(U2X) && defined(U2X1)
+#define U2X U2X1
+#endif
+#if !defined(UCSZ1) && defined(UCSZ10)
+#define UCSZ0 UCSZ10
+#endif
+#if !defined(UCSZ1) && defined(UCSZ11)
+#define UCSZ1 UCSZ11
+#endif
+#if !defined(UCSZ2) && defined(UCSZ12)
+#define UCSZ2 UCSZ12
+#endif
+#if !defined(UPM1) && defined(UPM10)
+#define UPM0 UPM10
+#endif
+#if !defined(UPM1) && defined(UPM11)
+#define UPM1 UPM11
+#endif
+#if !defined(USBS) && defined(USBS1)
+#define USBS USBS1
+#endif
+#if !defined(TXEN) && defined(TXEN1)
+#define TXEN TXEN1
+#endif
+#if !defined(TXCIE) && defined(TXCIE1)
+#define TXCIE TXCIE1
+#endif
+#if !defined(RXEN) && defined(RXEN1)
+#define RXEN RXEN1
+#endif
+#if !defined(RXCIE) && defined(RXCIE1)
+#define RXCIE RXCIE1
+#endif
+#if !defined(TXC) && defined(TXC1)
+#define TXC TXC1
+#endif
+#if !defined(RXC) && defined(RXC1)
+#define RXC RXC1
+#endif
+#if !defined(RXB8) && defined(RXB81)
+#define RXB8 RXB81
+#endif
+#if !defined(UDRIE) && defined(UDRIE1)
+#define UDRIE UDRIE1
+#endif
+#if !defined(UDRIE) && defined(UDRIE1)
+#define UDRIE UDRIE1
+#endif
+#if !defined(UDRE) && defined(UDRE1)
+#define UDRE UDRE1
 #endif
 
 /* makes functions more generic, we associate USR and UCR with UCSRA
@@ -163,9 +214,11 @@
 
 
 /* if the signal USART is defined, the uC has a USART. */
-#if ( defined SIG_USART0_RECV ) || ( defined SIG_USART_RECV ) 
+#if ( defined SIG_USART0_RECV ) || ( defined SIG_USART_RECV )
 #define UART_IS_USART 1
 #elif (defined USART_UDRE_vect) || (defined USART_TXC_vect) || (defined USART_RXC_vect)
+#define UART_IS_USART 1
+#elif (defined USART1_UDRE_vect) || (defined USART1_TXC_vect) || (defined USART1_RXC_vect)
 #define UART_IS_USART 1
 #else
 #define UART_IS_USART 0

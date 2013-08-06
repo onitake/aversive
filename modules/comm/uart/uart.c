@@ -85,7 +85,13 @@ const struct regs uart_regs[UART_HW_NUM] = {
  */
 #ifdef UART0_COMPILE
 #ifndef SIG_UART0_DATA
+#if defined(USART_UDRE_vect)
+#define SIG_UART0_DATA USART_UDRE_vect
+#elif defined(USART0_UDRE_vect)
+#define SIG_UART0_DATA USART0_UDRE_vect
+#elif defined(SIG_USART0_DATA)
 #define SIG_UART0_DATA SIG_USART0_DATA
+#endif
 #endif
 SIGNAL(SIG_UART0_DATA)
 {
@@ -94,7 +100,11 @@ SIGNAL(SIG_UART0_DATA)
 #endif
 #ifdef UART1_COMPILE
 #ifndef SIG_UART1_DATA
+#if defined(USART1_UDRE_vect)
+#define SIG_UART1_DATA USART1_UDRE_vect
+#elif defined(SIG_USART1_DATA)
 #define SIG_UART1_DATA SIG_USART1_DATA
+#endif
 #endif
 SIGNAL(SIG_UART1_DATA)
 {
@@ -103,7 +113,11 @@ SIGNAL(SIG_UART1_DATA)
 #endif
 #ifdef UART2_COMPILE
 #ifndef SIG_UART2_DATA
+#if defined(USART2_UDRE_vect)
+#define SIG_UART2_DATA USART2_UDRE_vect
+#elif defined(SIG_USART2_DATA)
 #define SIG_UART2_DATA SIG_USART2_DATA
+#endif
 #endif
 SIGNAL(SIG_UART2_DATA)
 {
@@ -112,7 +126,11 @@ SIGNAL(SIG_UART2_DATA)
 #endif
 #ifdef UART3_COMPILE
 #ifndef SIG_UART3_DATA
+#if defined(USART3_UDRE_vect)
+#define SIG_UART3_DATA USART3_UDRE_vect
+#elif defined(SIG_USART3_DATA)
 #define SIG_UART3_DATA SIG_USART3_DATA
+#endif
 #endif
 SIGNAL(SIG_UART3_DATA)
 {
@@ -128,7 +146,13 @@ static void uart_recv_next_char(uint8_t num);
  */
 #ifdef UART0_COMPILE
 #ifndef SIG_UART0_RECV
+#if defined(USART_RX_vect)
+#define SIG_UART0_RECV USART_RX_vect
+#elif defined(USART0_RX_vect)
+#define SIG_UART0_RECV USART0_RX_vect
+#elif defined(SIG_USART0_RECV)
 #define SIG_UART0_RECV SIG_USART0_RECV
+#endif
 #endif
 SIGNAL(SIG_UART0_RECV)
 {
@@ -137,7 +161,11 @@ SIGNAL(SIG_UART0_RECV)
 #endif
 #ifdef UART1_COMPILE
 #ifndef SIG_UART1_RECV
+#if defined(USART1_RX_vect)
+#define SIG_UART1_RECV USART1_RX_vect
+#elif defined(SIG_USART1_RECV)
 #define SIG_UART1_RECV SIG_USART1_RECV
+#endif
 #endif
 SIGNAL(SIG_UART1_RECV)
 {
@@ -146,7 +174,11 @@ SIGNAL(SIG_UART1_RECV)
 #endif
 #ifdef UART2_COMPILE
 #ifndef SIG_UART2_RECV
+#if defined(USART2_RX_vect)
+#define SIG_UART2_RECV USART2_RX_vect
+#elif defined(SIG_USART2_RECV)
 #define SIG_UART2_RECV SIG_USART2_RECV
+#endif
 #endif
 SIGNAL(SIG_UART2_RECV)
 {
@@ -155,7 +187,11 @@ SIGNAL(SIG_UART2_RECV)
 #endif
 #ifdef UART3_COMPILE
 #ifndef SIG_UART3_RECV
+#if defined(USART3_RX_vect)
+#define SIG_UART3_RECV USART3_RX_vect
+#elif defined(SIG_USART3_RECV)
 #define SIG_UART3_RECV SIG_USART3_RECV
+#endif
 #endif
 SIGNAL(SIG_UART3_RECV)
 {

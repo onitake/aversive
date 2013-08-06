@@ -1,6 +1,6 @@
-/*  
+/*
  *  Copyright Droids Corporation, Microb Technology, Eirbot (2005)
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -44,7 +44,7 @@ int uart0_dev_recv_nowait(__attribute__((unused)) FILE *f)
 int uart0_dev_recv(__attribute__((unused)) FILE *f)
 {
 	return uart_recv(0);
-}                                                                            
+}
 #endif
 
 #ifdef UART1_COMPILE
@@ -66,7 +66,7 @@ int uart1_dev_recv_nowait(__attribute__((unused)) FILE *f)
 int uart1_dev_recv(__attribute__((unused)) FILE *f)
 {
 	return uart_recv(1);
-}                                                                            
+}
 #endif
 
 #ifdef UART2_COMPILE
@@ -88,7 +88,7 @@ int uart2_dev_recv_nowait(__attribute__((unused)) FILE *f)
 int uart2_dev_recv(__attribute__((unused)) FILE *f)
 {
 	return uart_recv(2);
-}                                                                            
+}
 #endif
 
 #ifdef UART3_COMPILE
@@ -110,5 +110,5 @@ int uart3_dev_recv_nowait(__attribute__((unused)) FILE *f)
 int uart3_dev_recv(__attribute__((unused)) FILE *f)
 {
 	return uart_recv(3);
-}                                                                            
+}
 #endif
