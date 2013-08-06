@@ -72,7 +72,7 @@
 #define KEY_WRIGHT 20
 #define KEY_HELP 21
 
-extern const prog_char * vt100_commands[] PROGMEM;
+extern const char * const PROGMEM vt100_commands[];
 
 enum vt100_parser_state {
 	VT100_INIT,

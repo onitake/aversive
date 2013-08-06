@@ -32,9 +32,9 @@
 #include <cirbuf.h>
 #include "rdline.h"
 
-static void rdline_puts_P(struct rdline * rdl, const prog_char * buf);
+static void rdline_puts_P(struct rdline * rdl, const char * buf);
 static void rdline_miniprintf_P(struct rdline * rdl, 
-				const prog_char * buf, uint8_t val);
+				const char * buf, uint8_t val);
 
 #ifdef CONFIG_MODULE_RDLINE_HISTORY
 static void rdline_remove_old_history_item(struct rdline * rdl);
@@ -543,7 +543,7 @@ char * rdline_get_history_item(struct rdline * rdl, uint8_t i) {return NULL;}
 /* STATIC USEFUL FUNCS */
 
 static void 
-rdline_puts_P(struct rdline * rdl, const prog_char * buf)
+rdline_puts_P(struct rdline * rdl, const char * buf)
 {
 	char c;
 	while ( (c=pgm_read_byte(buf++)) != '\0' ) {
@@ -553,7 +553,7 @@ rdline_puts_P(struct rdline * rdl, const prog_char * buf)
 
 /* a very very basic printf with one arg and one format 'u' */
 static void 
-rdline_miniprintf_P(struct rdline * rdl, const prog_char * buf, uint8_t val)
+rdline_miniprintf_P(struct rdline * rdl, const char * buf, uint8_t val)
 {
 	char c, started=0, div=100;
 

@@ -24,18 +24,11 @@ struct token_num {
 	struct token_num_data num_data;
 };
 typedef struct token_num parse_token_num_t;
-struct token_num_pgm {
-	struct token_hdr hdr;
-	struct token_num_data num_data;
-} PROGMEM;
-typedef struct token_num_pgm parse_pgm_token_num_t;
 
 extern struct token_ops token_num_ops;
 
-int8_t parse_num(parse_pgm_token_hdr_t * tk, 
-		 const char * srcbuf, void * res);
-int8_t get_help_num(parse_pgm_token_hdr_t * tk, 
-		    char * dstbuf, uint8_t size);
+int8_t parse_num(PGM_P tk, const char * srcbuf, void * res);
+int8_t get_help_num(PGM_P tk, char * dstbuf, uint8_t size);
 
 #define TOKEN_NUM_INITIALIZER(structure, field, numtype)   \
 {							   \

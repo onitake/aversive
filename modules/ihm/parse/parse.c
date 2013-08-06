@@ -85,16 +85,16 @@ nb_common_chars(const char * s1, const char * s2)
  * tokens, else the number of matched tokens, else -1.
  */
 static int8_t
-match_inst(parse_pgm_inst_t *inst, const char * buf, uint8_t nb_match_token, 
+match_inst(PGM_P inst, const char * buf, uint8_t nb_match_token, 
 	   void * result_buf)
 {
 	uint8_t token_num=0;
-	parse_pgm_token_hdr_t * token_p;
+	PGM_P token_p;
 	uint8_t i=0;
 	int8_t n = 0;
 	struct token_hdr token_hdr;
 
-	token_p = (parse_pgm_token_hdr_t *)pgm_read_pgmptr(&inst->tokens[token_num]);
+	token_p = pgm_read_pgmptr(inst + sizeof(struct inst));
 	if (token_p)
 		memcpy_P(&token_hdr, token_p, sizeof(token_hdr));
 	
@@ -118,7 +118,8 @@ match_inst(parse_pgm_inst_t *inst, const char * buf, uint8_t nb_match_token,
 		buf += n;
 		
 		token_num ++;
-		token_p = (parse_pgm_token_hdr_t *)pgm_read_pgmptr(&inst->tokens[token_num]);
+		token_p = pgm_read_pgmptr(inst + sizeof(struct inst) +
+					  token_num * sizeof(PGM_P));
 		if (token_p)
 			memcpy_P(&token_hdr, token_p, sizeof(token_hdr));
 	}
@@ -155,10 +156,10 @@ match_inst(parse_pgm_inst_t *inst, const char * buf, uint8_t nb_match_token,
 
 
 int8_t
-parse(parse_pgm_ctx_t ctx[], const char * buf)
+parse(PGM_P ctx, const char * buf)
 {
 	uint8_t inst_num=0;
-	parse_pgm_inst_t * inst;
+	PGM_P inst;
 	const char * curbuf;
 	char result_buf[256]; /* XXX align, size zé in broblém */
 	void (*f)(void *, void *) = NULL;
@@ -210,7 +211,7 @@ parse(parse_pgm_ctx_t ctx[], const char * buf)
 #endif
 
 	/* parse it !! */
-	inst = (parse_pgm_inst_t *)pgm_read_pgmptr(ctx+inst_num);
+	inst = pgm_read_pgmptr(ctx + inst_num * sizeof(PGM_P));
 	while (inst) {
 		debug_printf("INST\n");
 
@@ -230,8 +231,8 @@ parse(parse_pgm_ctx_t ctx[], const char * buf)
 			/* if end of buf -> there is no garbage after inst */
 			if (isendofline(*curbuf) || iscomment(*curbuf)) {
 				if (!f) {
-					memcpy_P(&f, &inst->f, sizeof(f));
-					memcpy_P(&data, &inst->data, sizeof(data));
+					memcpy_P(&f, inst + offsetof(parse_inst_t, f), sizeof(f));
+					memcpy_P(&data, inst + offsetof(parse_inst_t, data), sizeof(data));
 				}
 				else {
 					/* more than 1 inst matches */
@@ -244,7 +245,7 @@ parse(parse_pgm_ctx_t ctx[], const char * buf)
 		}
 			
 		inst_num ++;
-		inst = (parse_pgm_inst_t *)pgm_read_pgmptr(ctx+inst_num);
+		inst = pgm_read_pgmptr(ctx + inst_num * sizeof(PGM_P));
 	}
 	
 	/* call func */
@@ -262,13 +263,13 @@ parse(parse_pgm_ctx_t ctx[], const char * buf)
 }
 
 int8_t 
-complete(parse_pgm_ctx_t ctx[], const char *buf, int16_t *state, 
+complete(PGM_P ctx, const char *buf, int16_t *state, 
 	 char *dst, uint8_t size)
 {
 	const char * incomplete_token = buf;
 	uint8_t inst_num = 0;
-	parse_pgm_inst_t *inst;
-	parse_pgm_token_hdr_t *token_p;
+	PGM_P inst;
+	PGM_P token_p;
 	struct token_hdr token_hdr;
 	char tmpbuf[64], completion_buf[64];
 	uint8_t incomplete_token_len;
@@ -279,7 +280,7 @@ complete(parse_pgm_ctx_t ctx[], const char *buf, int16_t *state,
 	uint8_t nb_completable;
 	uint8_t nb_non_completable;
 	int16_t local_state=0;
-	prog_char *help_str;
+	PGM_P help_str;
 
 	debug_printf("%s called\n", __FUNCTION__);
 	/* count the number of complete token to parse */
@@ -299,14 +300,15 @@ complete(parse_pgm_ctx_t ctx[], const char *buf, int16_t *state,
 		nb_completable = 0;
 		nb_non_completable = 0;
 		
-		inst = (parse_pgm_inst_t *)pgm_read_pgmptr(ctx+inst_num);
+		inst = pgm_read_pgmptr(ctx + inst_num * sizeof(PGM_P));
 		while (inst) {
 			/* parse the first tokens of the inst */
 			if (nb_token && match_inst(inst, buf, nb_token, NULL))
 				goto next;
 			
 			debug_printf("instruction match \n");
-			token_p = (parse_pgm_token_hdr_t *) pgm_read_pgmptr(&inst->tokens[nb_token]);
+			token_p = pgm_read_pgmptr(inst + sizeof(struct inst) +
+						  sizeof(PGM_P) * nb_token);
 			if (token_p)
 				memcpy_P(&token_hdr, token_p, sizeof(token_hdr));
 
@@ -342,7 +344,7 @@ complete(parse_pgm_ctx_t ctx[], const char *buf, int16_t *state,
 			}		
 		next:
 			inst_num ++;
-			inst = (parse_pgm_inst_t *)pgm_read_pgmptr(ctx+inst_num);
+			inst = pgm_read_pgmptr(ctx + inst_num * sizeof(PGM_P));
 		}
 
 		debug_printf("total choices %d for this completion\n", nb_completable);
@@ -372,15 +374,16 @@ complete(parse_pgm_ctx_t ctx[], const char *buf, int16_t *state,
 	debug_printf("Multiple choice STATE=%d\n", *state);
 
 	inst_num = 0;
-	inst = (parse_pgm_inst_t *)pgm_read_pgmptr(ctx+inst_num);
+	inst = pgm_read_pgmptr(ctx + inst_num * sizeof(PGM_P));
 	while (inst) {
 		/* we need to redo it */
-		inst = (parse_pgm_inst_t *)pgm_read_pgmptr(ctx+inst_num);
+		inst = pgm_read_pgmptr(ctx + inst_num * sizeof(PGM_P));
 		
 		if (nb_token && match_inst(inst, buf, nb_token, NULL))
 			goto next2;
 		
-		token_p = (parse_pgm_token_hdr_t *)pgm_read_pgmptr(&inst->tokens[nb_token]);
+		token_p = pgm_read_pgmptr(inst + sizeof(struct inst) +
+					  sizeof(PGM_P) * nb_token);
 		if (token_p)
 			memcpy_P(&token_hdr, token_p, sizeof(token_hdr));
 
@@ -396,7 +399,7 @@ complete(parse_pgm_ctx_t ctx[], const char *buf, int16_t *state,
 			(*state)++;
 			if (token_p && token_hdr.ops->get_help) {
 				token_hdr.ops->get_help(token_p, tmpbuf, sizeof(tmpbuf));
-				help_str = (prog_char *) pgm_read_pgmptr(&inst->help_str);
+				help_str = pgm_read_pgmptr(inst + offsetof(struct inst, help_str));
 				if (help_str)
 					snprintf_P(dst, size, PSTR("[%s]: "PGMS_FMT""), tmpbuf, help_str);
 				else
@@ -424,7 +427,7 @@ complete(parse_pgm_ctx_t ctx[], const char *buf, int16_t *state,
 				l=snprintf(dst, size, "%s", tmpbuf);
 				if (l>=0 && token_hdr.ops->get_help) {
 					token_hdr.ops->get_help(token_p, tmpbuf, sizeof(tmpbuf));
-					help_str = (prog_char *) pgm_read_pgmptr(&inst->help_str);
+					help_str = pgm_read_pgmptr(inst + offsetof(struct inst, help_str));
 					if (help_str)
 						snprintf_P(dst+l, size-l, PSTR("[%s]: "PGMS_FMT), tmpbuf, help_str);
 					else
@@ -436,7 +439,7 @@ complete(parse_pgm_ctx_t ctx[], const char *buf, int16_t *state,
 		}
 	next2:
 		inst_num ++;
-		inst = (parse_pgm_inst_t *)pgm_read_pgmptr(ctx+inst_num);
+		inst = pgm_read_pgmptr(ctx + inst_num * sizeof(PGM_P));
 	}
 	return 0;
 }

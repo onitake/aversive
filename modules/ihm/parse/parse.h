@@ -46,12 +46,6 @@ struct token_hdr {
 };
 typedef struct token_hdr parse_token_hdr_t;
 
-struct token_hdr_pgm {
-	struct token_ops *ops;
-	uint8_t offset;
-} PROGMEM;
-typedef struct token_hdr_pgm parse_pgm_token_hdr_t;
-
 /**
  * A token is defined by this structure.
  *
@@ -73,13 +67,13 @@ typedef struct token_hdr_pgm parse_pgm_token_hdr_t;
  */
 struct token_ops {
 	/** parse(token ptr, buf, res pts) */
-	int8_t (*parse)(parse_pgm_token_hdr_t *, const char *, void *);
+	int8_t (*parse)(PGM_P, const char *, void *);
 	/** return the num of possible choices for this token */
-	int8_t (*complete_get_nb)(parse_pgm_token_hdr_t *);
+	int8_t (*complete_get_nb)(PGM_P);
 	/** return the elt x for this token (token, idx, dstbuf, size) */
-	int8_t (*complete_get_elt)(parse_pgm_token_hdr_t *, int8_t, char *, uint8_t);
+	int8_t (*complete_get_elt)(PGM_P, int8_t, char *, uint8_t);
 	/** get help for this token (token, dstbuf, size) */
-	int8_t (*get_help)(parse_pgm_token_hdr_t *, char *, uint8_t);
+	int8_t (*get_help)(PGM_P, char *, uint8_t);
 };	
 
 /**
@@ -91,26 +85,17 @@ struct inst {
 	/* f(parsed_struct, data) */
 	void (*f)(void *, void *);
 	void * data;
-	char * help_str;
-	prog_void * tokens[];
+	const char * help_str;
+	PGM_P tokens[];
 };
 typedef struct inst parse_inst_t;
-struct inst_pgm {
-	/* f(parsed_struct, data) */
-	void (*f)(void *, void *);
-	void * data;
-	char * help_str;
-	prog_void * tokens[];
-} PROGMEM;
-typedef struct inst_pgm parse_pgm_inst_t;
 
 /**
  * A context is identified by its name, and contains a list of
  * instruction 
  *
  */
-typedef parse_pgm_inst_t * parse_ctx_t;
-typedef PROGMEM parse_ctx_t parse_pgm_ctx_t;
+typedef const parse_inst_t * parse_ctx_t;
 
 /**
  * Try to parse a buffer according to the specified context. The
@@ -119,7 +104,7 @@ typedef PROGMEM parse_ctx_t parse_pgm_ctx_t;
  * calls the associated function (defined in the context) and returns
  * 0 (PARSE_SUCCESS).
  */
-int8_t parse(parse_pgm_ctx_t ctx[], const char * buf);
+int8_t parse(PGM_P ctx, const char * buf);
 
 /**
  * complete() must be called with *state==0.
@@ -136,7 +121,7 @@ int8_t parse(parse_pgm_ctx_t ctx[], const char * buf);
  * The returned dst buf ends with \0.
  * 
  */
-int8_t complete(parse_pgm_ctx_t ctx[], const char *buf, int16_t *state, 
+int8_t complete(PGM_P ctx, const char *buf, int16_t *state, 
 		char *dst, uint8_t size);
 
 

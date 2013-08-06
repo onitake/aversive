@@ -53,16 +53,16 @@ enum num_parse_state_t {
 };
 
 /* Keep it sync with enum in .h */
-static const prog_char help1[] = "UINT8";
-static const prog_char help2[] = "UINT16";
-static const prog_char help3[] = "UINT32";
-static const prog_char help4[] = "INT8";
-static const prog_char help5[] = "INT16";
-static const prog_char help6[] = "INT32";
+static const char PROGMEM help1[] = "UINT8";
+static const char PROGMEM help2[] = "UINT16";
+static const char PROGMEM help3[] = "UINT32";
+static const char PROGMEM help4[] = "INT8";
+static const char PROGMEM help5[] = "INT16";
+static const char PROGMEM help6[] = "INT32";
 #ifndef CONFIG_MODULE_PARSE_NO_FLOAT
-static const prog_char help7[] = "FLOAT";
+static const char PROGMEM help7[] = "FLOAT";
 #endif
-static const prog_char * num_help[] = {
+static PGM_P num_help[] = {
 	help1, help2, help3, help4,
 	help5, help6,
 #ifndef CONFIG_MODULE_PARSE_NO_FLOAT
@@ -84,8 +84,8 @@ add_to_res(uint8_t c, uint32_t * res, uint8_t base)
 
 
 /* parse an int or a float */
-int8_t 
-parse_num(parse_pgm_token_hdr_t * tk, const char * srcbuf, void * res)
+int8_t
+parse_num(PGM_P tk, const char * srcbuf, void * res)
 {
 	struct token_num_data nd;
 	enum num_parse_state_t st = START;
@@ -419,8 +419,8 @@ parse_num(parse_pgm_token_hdr_t * tk, const char * srcbuf, void * res)
 
 
 /* parse an int or a float */
-int8_t 
-get_help_num(parse_pgm_token_hdr_t * tk, char * dstbuf, uint8_t size)
+int8_t
+get_help_num(PGM_P tk, char * dstbuf, uint8_t size)
 {
 	struct token_num_data nd;
 
