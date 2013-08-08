@@ -64,7 +64,7 @@
 #define RDLINE_HISTORY_MAX_LINE 64
 
 enum rdline_status {
-	RDLINE_INIT,
+	RDLINE_STOPPED,
 	RDLINE_RUNNING,
 };
 
