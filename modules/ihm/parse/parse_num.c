@@ -16,12 +16,16 @@
 #define U16_MAX 0xFFFF
 #define U32_MIN 0x00000000
 #define U32_MAX 0xFFFFFFFF
+#define U64_MIN 0x0000000000000000
+#define U64_MAX 0xFFFFFFFFFFFFFFFF
 #define S08_MIN 0x80
 #define S08_MAX 0x7F
 #define S16_MIN 0x8000
 #define S16_MAX 0x7FFF
 #define S32_MIN 0x80000000
 #define S32_MAX 0x7FFFFFFF
+#define S64_MIN 0x8000000000000000
+#define S64_MAX 0x7FFFFFFFFFFFFFFF
 
 
 struct token_ops token_num_ops = {
@@ -56,25 +60,27 @@ enum num_parse_state_t {
 static const char PROGMEM help1[] = "UINT8";
 static const char PROGMEM help2[] = "UINT16";
 static const char PROGMEM help3[] = "UINT32";
-static const char PROGMEM help4[] = "INT8";
-static const char PROGMEM help5[] = "INT16";
-static const char PROGMEM help6[] = "INT32";
+static const char PROGMEM help4[] = "UINT64";
+static const char PROGMEM help5[] = "INT8";
+static const char PROGMEM help6[] = "INT16";
+static const char PROGMEM help7[] = "INT32";
+static const char PROGMEM help8[] = "INT64";
 #ifndef CONFIG_MODULE_PARSE_NO_FLOAT
-static const char PROGMEM help7[] = "FLOAT";
+static const char PROGMEM help9[] = "FLOAT";
 #endif
 static PGM_P num_help[] = {
 	help1, help2, help3, help4,
-	help5, help6,
+	help5, help6, help7, help8,
 #ifndef CONFIG_MODULE_PARSE_NO_FLOAT
-	help7,
+	help9,
 #endif
 };
 
-static inline int8_t 
-add_to_res(uint8_t c, uint32_t * res, uint8_t base)
+static inline int8_t
+add_to_res(uint8_t c, uint64_t * res, uint8_t base)
 {
 	/* overflow */
-	if ( (U32_MAX - c) / base < *res ) {
+	if ( (U64_MAX - c) / base < *res ) {
 		return -1;
 	}
 
@@ -91,7 +97,7 @@ parse_num(PGM_P tk, const char * srcbuf, void * res)
 	enum num_parse_state_t st = START;
 	const char * buf = srcbuf;
 	char c = *buf;
-	uint32_t res1=0, res2=0, res3=1;
+	uint64_t res1=0, res2=0, res3=1;
 
 	memcpy_P(&nd, &((struct token_num *)tk)->num_data, sizeof(nd));
 
@@ -296,8 +302,8 @@ parse_num(PGM_P tk, const char * srcbuf, void * res)
 			
 		}
 
-		/* XXX uint32_t et %d */
-		debug_printf("(%d)  (%d)  (%d)\n", res1, res2, res3);
+		debug_printf("(%d)  (%d)  (%d)\n",
+			     (int)res1, (int)res2, (int)res3);
 
 		buf ++;
 		c = *buf;
@@ -328,6 +334,11 @@ parse_num(PGM_P tk, const char * srcbuf, void * res)
 				*(int32_t *)res = (int32_t) res1;
 			return (buf-srcbuf);
 		}
+		else if ( nd.type == INT64 && res1 <= S64_MAX ) {
+			if (res)
+				*(int64_t *)res = (int64_t) res1;
+			return (buf-srcbuf);
+		}
 		else if ( nd.type == UINT8 && res1 <= U08_MAX ) {
 			if (res)
 				*(uint8_t *)res = (uint8_t) res1;
@@ -341,6 +352,11 @@ parse_num(PGM_P tk, const char * srcbuf, void * res)
 		else if ( nd.type == UINT32 ) {
 			if (res)
 				*(uint32_t *)res = (uint32_t) res1;
+			return (buf-srcbuf);
+		}
+		else if ( nd.type == UINT64 ) {
+			if (res)
+				*(uint64_t *)res = (uint64_t) res1;
 			return (buf-srcbuf);
 		}
 #ifndef CONFIG_MODULE_PARSE_NO_FLOAT
@@ -369,6 +385,11 @@ parse_num(PGM_P tk, const char * srcbuf, void * res)
 		else if ( nd.type == INT32 && res1 <= (uint32_t)S32_MAX + 1 ) {
 			if (res)
 				*(int32_t *)res = - (int32_t) res1;
+			return (buf-srcbuf);
+		}
+		else if ( nd.type == INT64 && res1 <= (uint64_t)S64_MAX + 1 ) {
+			if (res)
+				*(int64_t *)res = - (int64_t) res1;
 			return (buf-srcbuf);
 		}
 #ifndef CONFIG_MODULE_PARSE_NO_FLOAT

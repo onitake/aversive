@@ -7,9 +7,11 @@ enum numtype {
 	UINT8 = 0,
 	UINT16,
 	UINT32,
+	UINT64,
 	INT8,
 	INT16,
 	INT32,
+	INT64,
 #ifndef CONFIG_MODULE_PARSE_NO_FLOAT
 	FLOAT,
 #endif
