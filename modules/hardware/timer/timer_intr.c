@@ -30,123 +30,119 @@
 
 #include <timer_config.h>
 
-volatile timer_callback_t timer_OV_callback_table[SIG_OVERFLOW_TOTAL_NUM];
-volatile timer_callback_t timer_OC_callback_table[SIG_OUTPUT_COMPARE_TOTAL_NUM];
+volatile timer_callback_t timer_callback_table[_VECTORS_SIZE/4];
 
 /*************************/
 
-#if defined TIMER0_ENABLED && defined SIG_OVERFLOW0
-DEFINE_OV_INTR(SIG_OVERFLOW0)
+#if defined TIMER0_ENABLED && defined TIMER0_OVF_vect
+DEFINE_OV_INTR(TIMER0_OVF_vect)
 #endif
 
-#if defined TIMER0_ENABLED && defined SIG_OUTPUT_COMPARE0
-DEFINE_OC_INTR(SIG_OUTPUT_COMPARE0)
+#if defined TIMER0_ENABLED && defined TIMER0_COMP_vect_id
+DEFINE_OC_INTR(TIMER0_COMP_vect_id)
 #endif
 
-#if defined TIMER0_ENABLED && defined SIG_OUTPUT_COMPARE0A
-DEFINE_OC_INTR(SIG_OUTPUT_COMPARE0A)
+#if defined TIMER0_ENABLED && defined TIMER0_COMPA_vect
+DEFINE_OC_INTR(TIMER0_COMPA_vect)
 #endif
 
-#if defined TIMER0_ENABLED && defined SIG_OUTPUT_COMPARE0B
-DEFINE_OC_INTR(SIG_OUTPUT_COMPARE0B)
-#endif
-
-/*************************/
-
-#if defined TIMER1_ENABLED && defined SIG_OVERFLOW1
-DEFINE_OV_INTR(SIG_OVERFLOW1)
-#endif
-
-#if defined TIMER1A_ENABLED && defined SIG_OUTPUT_COMPARE1A
-DEFINE_OC_INTR(SIG_OUTPUT_COMPARE1A)
-#endif
-
-#if defined TIMER1B_ENABLED && defined SIG_OUTPUT_COMPARE1B
-DEFINE_OC_INTR(SIG_OUTPUT_COMPARE1B)
-#endif
-
-#if defined TIMER1C_ENABLED && defined SIG_OUTPUT_COMPARE1C
-DEFINE_OC_INTR(SIG_OUTPUT_COMPARE1C)
+#if defined TIMER0_ENABLED && defined TIMER0_COMPB_vect
+DEFINE_OC_INTR(TIMER0_COMPB_vect)
 #endif
 
 /*************************/
 
-#if defined TIMER2_ENABLED && defined SIG_OVERFLOW2
-DEFINE_OV_INTR(SIG_OVERFLOW2)
+#if defined TIMER1_ENABLED && defined TIMER1_OVF_vect
+DEFINE_OV_INTR(TIMER1_OVF_vect)
 #endif
 
-#if defined TIMER2_ENABLED && defined SIG_OUTPUT_COMPARE2
-DEFINE_OC_INTR(SIG_OUTPUT_COMPARE2)
+#if defined TIMER1A_ENABLED && defined TIMER1_COMPA_vect
+DEFINE_OC_INTR(TIMER1_COMPA_vect)
 #endif
 
-#if defined TIMER2_ENABLED && defined SIG_OUTPUT_COMPARE2A
-DEFINE_OC_INTR(SIG_OUTPUT_COMPARE2A)
+#if defined TIMER1B_ENABLED && defined TIMER1_COMPB_vect
+DEFINE_OC_INTR(TIMER1_COMPB_vect)
 #endif
 
-#if defined TIMER2_ENABLED && defined SIG_OUTPUT_COMPARE2B
-DEFINE_OC_INTR(SIG_OUTPUT_COMPARE2B)
-#endif
-
-/*************************/
-
-#if defined TIMER3_ENABLED && defined SIG_OVERFLOW3
-DEFINE_OV_INTR(SIG_OVERFLOW3)
-#endif
-
-#if defined TIMER3A_ENABLED && defined SIG_OUTPUT_COMPARE3A
-DEFINE_OC_INTR(SIG_OUTPUT_COMPARE3A)
-#endif
-
-#if defined TIMER3B_ENABLED && defined SIG_OUTPUT_COMPARE3B
-DEFINE_OC_INTR(SIG_OUTPUT_COMPARE3B)
-#endif
-
-#if defined TIMER3C_ENABLED && defined SIG_OUTPUT_COMPARE3C
-DEFINE_OC_INTR(SIG_OUTPUT_COMPARE3C)
+#if defined TIMER1C_ENABLED && defined TIMER1_COMPC_vect
+DEFINE_OC_INTR(TIMER1_COMPC_vect)
 #endif
 
 /*************************/
 
-#if defined TIMER4_ENABLED && defined SIG_OVERFLOW4
-DEFINE_OV_INTR(SIG_OVERFLOW4)
+#if defined TIMER2_ENABLED && defined TIMER2_OVF_vect
+DEFINE_OV_INTR(TIMER2_OVF_vect)
 #endif
 
-#if defined TIMER4A_ENABLED && defined SIG_OUTPUT_COMPARE4A
-DEFINE_OC_INTR(SIG_OUTPUT_COMPARE4A)
+#if defined TIMER2_ENABLED && defined TIMER2_COMP_vect_id
+DEFINE_OC_INTR(TIMER2_COMP_vect_id)
 #endif
 
-#if defined TIMER4B_ENABLED && defined SIG_OUTPUT_COMPARE4B
-DEFINE_OC_INTR(SIG_OUTPUT_COMPARE4B)
+#if defined TIMER2_ENABLED && defined TIMER2_COMPA_vect
+DEFINE_OC_INTR(TIMER2_COMPA_vect)
 #endif
 
-#if defined TIMER4C_ENABLED && defined SIG_OUTPUT_COMPARE4C
-DEFINE_OC_INTR(SIG_OUTPUT_COMPARE4C)
+#if defined TIMER2_ENABLED && defined TIMER2_COMPB_vect
+DEFINE_OC_INTR(TIMER2_COMPB_vect)
 #endif
 
 /*************************/
 
-#if defined TIMER5_ENABLED && defined SIG_OVERFLOW5
-DEFINE_OV_INTR(SIG_OVERFLOW5)
+#if defined TIMER3_ENABLED && defined TIMER3_OVF_vect
+DEFINE_OV_INTR(TIMER3_OVF_vect)
 #endif
 
-#if defined TIMER5A_ENABLED && defined SIG_OUTPUT_COMPARE5A
-DEFINE_OC_INTR(SIG_OUTPUT_COMPARE5A)
+#if defined TIMER3A_ENABLED && defined TIMER3_COMPA_vect
+DEFINE_OC_INTR(TIMER3_COMPA_vect)
 #endif
 
-#if defined TIMER5B_ENABLED && defined SIG_OUTPUT_COMPARE5B
-DEFINE_OC_INTR(SIG_OUTPUT_COMPARE5B)
+#if defined TIMER3B_ENABLED && defined TIMER3_COMPB_vect
+DEFINE_OC_INTR(TIMER3_COMPB_vect)
 #endif
 
-#if defined TIMER5C_ENABLED && defined SIG_OUTPUT_COMPARE5C
-DEFINE_OC_INTR(SIG_OUTPUT_COMPARE5C)
+#if defined TIMER3C_ENABLED && defined TIMER3_COMPC_vect
+DEFINE_OC_INTR(TIMER3_COMPC_vect)
+#endif
+
+/*************************/
+
+#if defined TIMER4_ENABLED && defined TIMER4_OVF_vect
+DEFINE_OV_INTR(TIMER4_OVF_vect)
+#endif
+
+#if defined TIMER4A_ENABLED && defined TIMER4_COMPA_vect
+DEFINE_OC_INTR(TIMER4_COMPA_vect)
+#endif
+
+#if defined TIMER4B_ENABLED && defined TIMER4_COMPB_vect
+DEFINE_OC_INTR(TIMER4_COMPB_vect)
+#endif
+
+#if defined TIMER4C_ENABLED && defined TIMER4_COMPC_vect
+DEFINE_OC_INTR(TIMER4_COMPC_vect)
+#endif
+
+/*************************/
+
+#if defined TIMER5_ENABLED && defined TIMER5_OVF_vect
+DEFINE_OV_INTR(TIMER5_OVF_vect)
+#endif
+
+#if defined TIMER5A_ENABLED && defined TIMER5_COMPA_vect
+DEFINE_OC_INTR(TIMER5_COMPA_vect)
+#endif
+
+#if defined TIMER5B_ENABLED && defined TIMER5_COMPB_vect
+DEFINE_OC_INTR(TIMER5_COMPB_vect)
+#endif
+
+#if defined TIMER5C_ENABLED && defined TIMER5_COMPC_vect
+DEFINE_OC_INTR(TIMER5_COMPC_vect)
 #endif
 
 /*************************/
 
 void timer_intr_init(void)
 {
-	memset((void*)timer_OV_callback_table, 0, sizeof(timer_OV_callback_table));
-	memset((void*)timer_OC_callback_table, 0, sizeof(timer_OC_callback_table));
+	memset((void*)timer_callback_table, 0, sizeof(timer_callback_table));
 }
-
-

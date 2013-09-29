@@ -30,7 +30,7 @@
 #include <timer_config.h>
 
 
-#if defined TIMER0_ENABLED && defined SIG_OVERFLOW0
-DEFINE_REGISTER_OV_INTR(0)
+#if defined TIMER0_ENABLED && defined TIMER0_OVF_vect
+DEFINE_REGISTER_OV_INTR(0, TIMER0_OVF_vect)
 #endif
 

@@ -352,6 +352,9 @@ i2c_reset(void)
 int8_t i2c_recv(uint8_t dest_add, uint8_t size, uint8_t ctrl)
 {
 #ifndef CONFIG_MODULE_I2C_MASTER
+	(void)dest_add;
+	(void)size;
+	(void)ctrl;
 	return -EINVAL;
 #else
 	uint8_t flags;
@@ -535,7 +538,10 @@ void i2c_debug(void)
  * Interrupt routing for I2C. Refer to datasheets for more
  * informations.
  */
-SIGNAL(SIG_2WIRE_SERIAL)
+#if !defined(TWI_vect) && defined(SIG_2WIRE_SERIAL)
+#define TWI_vect SIG_2WIRE_SERIAL
+#endif
+SIGNAL(TWI_vect)
 {
 	uint8_t hard_status;
 	uint8_t command = (1<<TWINT) | (1<<TWEN) | (1<<TWIE);

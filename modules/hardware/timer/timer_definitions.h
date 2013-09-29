@@ -59,27 +59,27 @@ void timer##x##_set(uint16_t t)					 	 		 \
 #define DEFINE_OV_INTR(x)                               \
 SIGNAL(x)                                               \
 {                                                       \
-	if(timer_OV_callback_table[x##_NUM])            \
-		timer_OV_callback_table[x##_NUM]();     \
+	if(timer_callback_table[x##_num])            \
+		timer_callback_table[x##_num]();     \
 }
 
 
 #define DEFINE_OC_INTR(x)                               \
 SIGNAL(x)                                               \
 {                                                       \
-	if(timer_OC_callback_table[x##_NUM])            \
-		timer_OC_callback_table[x##_NUM]();     \
+	if(timer_callback_table[x##_num])            \
+		timer_callback_table[x##_num]();     \
 }
 
 
-#define DEFINE_REGISTER_OV_INTR(x)                                  \
+#define DEFINE_REGISTER_OV_INTR(x, vector)			    \
 								    \
 void timer##x##_register_OV_intr(void (*func)(void))		    \
 {								    \
 	uint8_t flags;						    \
 								    \
 	IRQ_LOCK(flags);					    \
-	timer_OV_callback_table[SIG_OVERFLOW##x##_NUM] = func;	    \
+	timer_callback_table[vector##_num] = func;		    \
 	if (func) {						    \
 		TOIE##x##_REG |= (1<<TOIE##x);  		    \
 	}							    \
@@ -90,14 +90,14 @@ void timer##x##_register_OV_intr(void (*func)(void))		    \
 }
 
 
-#define DEFINE_REGISTER_OC_INTR_AT_TICS(x)                           		\
+#define DEFINE_REGISTER_OC_INTR_AT_TICS(x, vector)				\
 								     		\
 void timer##x##_register_OC_intr_at_tics(void (*func)(void), uint16_t t)	\
 {								     		\
 	uint8_t flags;						     		\
 								     		\
 	IRQ_LOCK(flags);					     		\
-	timer_OC_callback_table[SIG_OUTPUT_COMPARE##x##_NUM] = func; 		\
+	timer_callback_table[vector##_num] = func;			\
 	if (func) {						     		\
 		OCIE##x##_REG |= (1<<OCIE##x);  		     		\
 		OCR##x = t;					     		\
@@ -109,7 +109,7 @@ void timer##x##_register_OC_intr_at_tics(void (*func)(void), uint16_t t)	\
 }
 
 
-#define DEFINE_REGISTER_OC_INTR_IN_US(x,y)                           		\
+#define DEFINE_REGISTER_OC_INTR_IN_US(x,y,vector)				\
 								     		\
 int8_t timer##y##_register_OC_intr_in_us(void (*func)(void), uint16_t t)	\
 {								     		\
@@ -118,7 +118,7 @@ int8_t timer##y##_register_OC_intr_in_us(void (*func)(void), uint16_t t)	\
 								     		\
 	IRQ_LOCK(flags);					     		\
 	if (! func) {						     		\
-		timer_OC_callback_table[SIG_OUTPUT_COMPARE##y##_NUM] = func; 	\
+		timer_callback_table[vector##_num] = func;			\
 		OCIE##y##_REG &= (uint8_t)(~(1<<OCIE##y));	     		\
 		IRQ_UNLOCK(flags);                                           	\
 		return 0;					     		\
@@ -131,7 +131,7 @@ int8_t timer##y##_register_OC_intr_in_us(void (*func)(void), uint16_t t)	\
 	}							     		\
 								     		\
 	OCR##y = TCNT##x + tics;					     	\
-	timer_OC_callback_table[SIG_OUTPUT_COMPARE##y##_NUM] = func; 		\
+	timer_callback_table[vector##_num] = func;				\
 	OCIE##y##_REG |= (1<<OCIE##y);  		     			\
 	IRQ_UNLOCK(flags);                                           		\
 	return 0;                                           			\

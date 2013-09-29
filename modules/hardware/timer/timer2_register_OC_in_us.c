@@ -30,7 +30,7 @@
 #include <timer_config.h>
 
 
-#if defined TIMER2_ENABLED && defined SIG_OUTPUT_COMPARE2
-DEFINE_REGISTER_OC_INTR_IN_US(2,2)
+#if defined TIMER2_ENABLED && defined TIMER2_COMP_vect_id
+DEFINE_REGISTER_OC_INTR_IN_US(2,2,TIMER2_COMP_vect)
 #endif
 

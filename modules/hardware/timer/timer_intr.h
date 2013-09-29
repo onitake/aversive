@@ -23,8 +23,7 @@
 
 typedef void (*timer_callback_t)(void);
 
-extern volatile timer_callback_t timer_OV_callback_table[SIG_OVERFLOW_TOTAL_NUM];
-extern volatile timer_callback_t timer_OC_callback_table[SIG_OUTPUT_COMPARE_TOTAL_NUM];
+extern volatile timer_callback_t timer_callback_table[_VECTORS_SIZE/4];
 
 /* initialisation of callback table */
 void timer_intr_init(void);
