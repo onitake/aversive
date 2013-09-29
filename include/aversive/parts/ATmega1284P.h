@@ -1179,8 +1179,8 @@
 #define XCK_BIT 0
 #define T0_PORT PORTB
 #define T0_BIT 0
-#define PCINT9_PORT PORTB
-#define PCINT9_BIT 0
+#define PCINT8_PORT PORTB
+#define PCINT8_BIT 0
 
 #define T1_PORT PORTB
 #define T1_BIT 1
