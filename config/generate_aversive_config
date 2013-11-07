@@ -35,6 +35,7 @@ MODULES_LIST="CONFIG_MODULE_BRUSHLESS_3PHASE_DIGITAL_HALL,/devices/brushless_mot
               CONFIG_MODULE_SCHEDULER,base/scheduler
               CONFIG_MODULE_SPI,comm/spi
               CONFIG_MODULE_CC2420,devices/radio/cc2420
+              CONFIG_MODULE_XBEE,devices/radio/xbee
               CONFIG_MODULE_UART,comm/uart
               CONFIG_MODULE_I2C,comm/i2c
               CONFIG_MODULE_MF2_CLIENT,comm/mf2_client

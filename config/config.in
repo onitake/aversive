@@ -435,6 +435,14 @@ dep_bool 'CC2420 Radio Device (IEEE 802.15.4) (VERY EXPERIMENTAL)' CONFIG_MODULE
 dep_bool '  |-- Create Default CC2420 config' CONFIG_MODULE_CC2420_CREATE_CONFIG \
 	$CONFIG_MODULE_CC2420
 
+bool 'Xbee Device' CONFIG_MODULE_XBEE
+
+dep_bool '  |-- Enable xbee stats' CONFIG_MODULE_XBEE_STATS \
+	$CONFIG_MODULE_XBEE
+
+dep_bool '  |-- Embed help strings in program memory' CONFIG_MODULE_XBEE_ATCMD_HELP \
+	$CONFIG_MODULE_XBEE
+
 endmenu # radio
 
 

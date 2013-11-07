@@ -193,6 +193,16 @@ CONFIG_MODULE_CC2420
   in wireless sensors.
   This modules requires SPI to be activated.
 
+CONFIG_MODULE_XBEE
+  This modules implements the protocol to use a xbee radio chip.
+  It currently only supports xbee868.
+
+CONFIG_MODULE_XBEE_STATS
+  Enable xbee statistics (takes ~100 bytes per device).
+
+CONFIG_MODULE_XBEE_ATCMD_HELP
+  Embed help strings of AT commands in program memory.
+
 CONFIG_MODULE_MENU
   The menu module provides some helpers to create a human-machine
   interface that uses a tree-organized static menu.
