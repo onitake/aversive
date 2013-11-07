@@ -70,7 +70,7 @@ CONFIG_MODULE_SCHEDULER_CREATE_CONFIG
   Create a scheduler_config.h file if it does not exist, with a default
   configuration.
 
-CONFIG_MODULE_SCHEDULER_TIMER0
+CONFIG_MODULE_SCHEDULER_USE_TIMERS
   Use either the hardware/timer module, the timer0 or a manual call 
   for the to call the scheduler. The generic timer module support 
   many archs and timers. If you don't enable it, you must use TIMER0 
