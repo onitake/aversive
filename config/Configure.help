@@ -79,6 +79,14 @@ CONFIG_MODULE_SCHEDULER_USE_TIMERS
   macro has to be defined in configuration file.
 
 
+CONFIG_MODULE_CALLOUT
+  The 'callout' module is another timer manager that aims to replace the
+  scheduler module. The management of timers can be done either from an
+  asynchronous interruption or from the main program. This module is
+  able to handle priorities between timers and allow to reschedule
+  a timer later if its priority is too low.
+
+
 CONFIG_TIME
   This module can be used to get a human readable time. It uses the
   scheduler module. Its goal is not to be very precise, but just

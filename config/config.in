@@ -162,6 +162,8 @@ choice 'Scheduler config' "use_timer_module CONFIG_MODULE_SCHEDULER_USE_TIMERS\
 
 fi
 
+bool 'Callout' CONFIG_MODULE_CALLOUT
+
 #### TIME
 dep_bool 'Time' CONFIG_MODULE_TIME \
 	$CONFIG_MODULE_SCHEDULER
