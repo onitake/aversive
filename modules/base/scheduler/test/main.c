@@ -52,29 +52,30 @@ void supp(void * nothing)
 
 int main(void)
 {
-#ifndef HOST_VERSION
+#ifdef HOST_VERSION
+	hostsim_uart_init();
+	hostsim_ittimer_add(scheduler_interrupt, 1 * 1000 * 1000); /* 1ms period */
+	hostsim_ittimer_enable(100); /* 100 us */
+#else
 	uart_init();
 	fdevopen(uart0_dev_send, uart0_dev_recv);
-	sei();
-#else
-	int i;
-#endif
-	printf("init\n");
 
 #ifdef CONFIG_MODULE_TIMER
 	timer_init();
 #endif
+#endif
+
 	scheduler_init();
 	printf("init2\n");
 	wait_ms(2000);
 	printf("init3\n");
 
-#ifdef HOST_VERSION
-	hostsim_init();
-#endif
+	sei();
 
-	event_id = scheduler_add_periodical_event_priority(f1, NULL, 500000l/SCHEDULER_UNIT, 200);
-	scheduler_add_periodical_event_priority(f2, NULL, 500000l/SCHEDULER_UNIT, 100);
+	event_id = scheduler_add_periodical_event_priority(f1, NULL,
+		500000l/SCHEDULER_UNIT, 200);
+	scheduler_add_periodical_event_priority(f2, NULL,
+		500000l/SCHEDULER_UNIT, 100);
 	scheduler_add_periodical_event(f3, NULL, 1000000l/SCHEDULER_UNIT);
 
 	scheduler_add_single_event(supp, NULL, 5000000l/SCHEDULER_UNIT);
@@ -83,5 +84,3 @@ int main(void)
 
 	return 0;
 }
-
-

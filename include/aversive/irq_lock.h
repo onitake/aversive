@@ -46,12 +46,16 @@
 #include <hostsim.h>
 
 /* we must use 'flags' to avoid a warning */
-#define IRQ_UNLOCK(flags) do { flags=0; /* hostsim_lock(); */ } while(0)
-#define IRQ_LOCK(flags) do { flags=0; /* hostsim_unlock(); */ } while(0)
+#define cli() do { hostsim_cli(); } while(0)
+#define sei() do { hostsim_sei(); } while(0)
+#define IRQ_LOCK(flags) do { flags = hostsim_irq_save(); } while(0)
+#define IRQ_UNLOCK(flags) do { hostsim_irq_restore(flags); } while(0)
 #define GLOBAL_IRQ_ARE_MASKED() hostsim_islocked()
 #else
-#define IRQ_UNLOCK(flags) do { flags=0; } while(0)
-#define IRQ_LOCK(flags) do { flags=0; } while(0)
+#define cli() do {} while(0)
+#define sei() do {} while(0)
+#define IRQ_LOCK(flags) do { (void)flags; } while(0)
+#define IRQ_UNLOCK(flags) do { (void)flags; } while(0)
 #define GLOBAL_IRQ_ARE_MASKED() (0)
 #endif /* CONFIG_MODULE_HOSTSIM */
 

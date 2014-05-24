@@ -20,13 +20,44 @@
  *
  */
 
-/* initialize / exit hostsim framework */
-int hostsim_init(void);
-int hostsim_exit(void);
+#include <stdint.h>
+
+/* initialize hostsim uart framework */
+int hostsim_uart_init(void);
+
+/* exit hostsim framework (should be called when program exits) */
+int hostsim_uart_exit(void);
 
 /* replacement for wait_ms() */
 void host_wait_ms(int ms);
 
-void hostsim_lock(void);
-void hostsim_unlock(void);
-int hostsim_islocked(void);
+/* allow irq */
+void hostsim_sei(void);
+
+/* lock irq */
+void hostsim_cli(void);
+
+/* lock emulated IRQ and return the previous state */
+uint8_t hostsim_irq_save(void);
+
+/* restore the state given as parameter  */
+void hostsim_irq_restore(uint8_t flags);
+
+/* return 1 if emulated IRQ are locked */
+uint8_t hostsim_irq_locked(void);
+
+/* Add a new timer: loaded at init and cannot be unloaded. The resolution is
+ * specified later in hostsim_ittimer_enable(). If a value lower than the
+ * resolution is given, the timer handler will be called several times from the
+ * signal handler.  However it's not advised as some callbacks can be lost the
+ * signal occurs when irq are locked.
+ *
+ * This function must be called before hostsim_ittimer_enable(). Once
+ * hostsim_ittimer_enable() is called, no timer should be added. */
+struct hostsim_ittimer *hostsim_ittimer_add(void (*handler)(void),
+	unsigned period_ns);
+
+/* enable loaded ittimers
+ * 'timer_resolution_us' is the resolution of timer events that can be
+ * loaded. The advised value is 100 (us). */
+int hostsim_ittimer_enable(unsigned timer_resolution_us);

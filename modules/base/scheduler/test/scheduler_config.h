@@ -56,6 +56,7 @@
    define the period here */
 #ifdef CONFIG_MODULE_SCHEDULER_MANUAL
 
+/* scheduler period in us */
 #define SCHEDULER_UNIT_FLOAT 1000.0
 #define SCHEDULER_UNIT 1000UL
 

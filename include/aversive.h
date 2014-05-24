@@ -219,8 +219,6 @@ do {				     \
 #else /* HOST_VERSION */
 #define nop() do {} while(0)
 #define nothing() do {} while(0)
-#define cli() do {} while(0)
-#define sei() do {} while(0)
 #define reset() exit(1)
 #endif /* HOST_VERSION */
 
