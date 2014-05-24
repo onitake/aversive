@@ -98,10 +98,10 @@ static int8_t uart_set_nbits_parity(int8_t num, struct uart_config * u)
 {
 	/* number of bit in the frame */
 	if (u->nbits == 8)
-		*uart_regs[num].ucsrb &= ~(1 << CHR9);
+		*uart_regs[num].ucsrb &= ~(1 << UCSZ2);
 #ifdef CONFIG_MODULE_UART_9BITS
 	else if (u->nbits == 9)
-		*uart_regs[num].ucsrb |= (1 << CHR9);
+		*uart_regs[num].ucsrb |= (1 << UCSZ2);
 #endif
 	else
 		return ENOTSUP;

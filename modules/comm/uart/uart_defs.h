@@ -44,23 +44,6 @@
 #endif
 
 
-/* For arch with only one UART, we consider that UART0 = UART */
-#if !defined(SIG_UART0_DATA) && !defined(SIG_USART0_DATA)
-#if defined SIG_UART_DATA
-#define SIG_UART0_DATA SIG_UART_DATA
-#elif defined SIG_USART_DATA
-#define SIG_UART0_DATA SIG_USART_DATA
-#endif
-#endif
-
-#if !defined(SIG_UART0_RECV) && !defined(SIG_USART0_RECV)
-#if defined SIG_UART_RECV
-#define SIG_UART0_RECV  SIG_UART_RECV
-#elif defined SIG_USART_RECV
-#define SIG_UART0_RECV  SIG_USART_RECV
-#endif
-#endif
-
 #if !defined(UDR0) && defined(UDR)
 #define UDR0 UDR
 #endif
@@ -214,14 +197,10 @@
 
 
 /* if the signal USART is defined, the uC has a USART. */
-#if ( defined SIG_USART0_RECV ) || ( defined SIG_USART_RECV )
-#define UART_IS_USART 1
-#elif (defined USART_UDRE_vect) || (defined USART_TXC_vect) || (defined USART_RXC_vect)
-#define UART_IS_USART 1
-#elif (defined USART1_UDRE_vect) || (defined USART1_TXC_vect) || (defined USART1_RXC_vect)
-#define UART_IS_USART 1
-#else
+#if defined(UART_TX_vect)
 #define UART_IS_USART 0
+#else
+#define UART_IS_USART 1
 #endif
 
 /* if the U2X macro is defined, the uC has the U2X option. */

@@ -84,55 +84,55 @@ const struct regs uart_regs[UART_HW_NUM] = {
  * there is no new data in the transmit buffer.
  */
 #ifdef UART0_COMPILE
-#ifndef SIG_UART0_DATA
+#ifndef USART0_UDRE_vect
 #if defined(USART_UDRE_vect)
-#define SIG_UART0_DATA USART_UDRE_vect
-#elif defined(USART0_UDRE_vect)
-#define SIG_UART0_DATA USART0_UDRE_vect
+#define USART0_UDRE_vect USART_UDRE_vect
 #elif defined(SIG_USART0_DATA)
-#define SIG_UART0_DATA SIG_USART0_DATA
+#define USART0_UDRE_vect SIG_USART0_DATA
+#elif defined(SIG_UART0_DATA)
+#define USART0_UDRE_vect SIG_UART0_DATA
 #endif
 #endif
-SIGNAL(SIG_UART0_DATA)
+SIGNAL(USART0_UDRE_vect)
 {
 	uart_send_next_char(0);
 }
 #endif
 #ifdef UART1_COMPILE
-#ifndef SIG_UART1_DATA
-#if defined(USART1_UDRE_vect)
-#define SIG_UART1_DATA USART1_UDRE_vect
-#elif defined(SIG_USART1_DATA)
-#define SIG_UART1_DATA SIG_USART1_DATA
+#ifndef USART1_UDRE_vect
+#if defined(SIG_USART1_DATA)
+#define USART1_UDRE_vect SIG_USART1_DATA
+#elif defined(SIG_UART1_DATA)
+#define USART1_UDRE_vect SIG_UART1_DATA
 #endif
 #endif
-SIGNAL(SIG_UART1_DATA)
+SIGNAL(USART1_UDRE_vect)
 {
 	uart_send_next_char(1);
 }
 #endif
 #ifdef UART2_COMPILE
-#ifndef SIG_UART2_DATA
-#if defined(USART2_UDRE_vect)
-#define SIG_UART2_DATA USART2_UDRE_vect
-#elif defined(SIG_USART2_DATA)
-#define SIG_UART2_DATA SIG_USART2_DATA
+#ifndef USART2_UDRE_vect
+#if defined(SIG_USART2_DATA)
+#define USART2_UDRE_vect SIG_USART2_DATA
+#elif defined(SIG_UART2_DATA)
+#define USART2_UDRE_vect SIG_UART2_DATA
 #endif
 #endif
-SIGNAL(SIG_UART2_DATA)
+SIGNAL(USART2_UDRE_vect)
 {
 	uart_send_next_char(2);
 }
 #endif
 #ifdef UART3_COMPILE
-#ifndef SIG_UART3_DATA
-#if defined(USART3_UDRE_vect)
-#define SIG_UART3_DATA USART3_UDRE_vect
-#elif defined(SIG_USART3_DATA)
-#define SIG_UART3_DATA SIG_USART3_DATA
+#ifndef USART3_UDRE_vect
+#if defined(SIG_USART3_DATA)
+#define USART3_UDRE_vect SIG_USART3_DATA
+#elif defined(SIG_UART3_DATA)
+#define USART3_UDRE_vect SIG_UART3_DATA
 #endif
 #endif
-SIGNAL(SIG_UART3_DATA)
+SIGNAL(USART3_UDRE_vect)
 {
 	uart_send_next_char(3);
 }
@@ -145,55 +145,55 @@ static void uart_recv_next_char(uint8_t num);
  * a new unread data in the reception buffer.
  */
 #ifdef UART0_COMPILE
-#ifndef SIG_UART0_RECV
+#ifndef USART0_RX_vect
 #if defined(USART_RX_vect)
-#define SIG_UART0_RECV USART_RX_vect
-#elif defined(USART0_RX_vect)
-#define SIG_UART0_RECV USART0_RX_vect
+#define USART0_RX_vect USART_RX_vect
 #elif defined(SIG_USART0_RECV)
-#define SIG_UART0_RECV SIG_USART0_RECV
+#define USART0_RX_vect SIG_USART0_RECV
+#elif defined(SIG_UART0_RECV)
+#define USART0_RX_vect SIG_UART0_RECV
 #endif
 #endif
-SIGNAL(SIG_UART0_RECV)
+SIGNAL(USART0_RX_vect)
 {
 	uart_recv_next_char(0);
 }
 #endif
 #ifdef UART1_COMPILE
-#ifndef SIG_UART1_RECV
-#if defined(USART1_RX_vect)
-#define SIG_UART1_RECV USART1_RX_vect
-#elif defined(SIG_USART1_RECV)
-#define SIG_UART1_RECV SIG_USART1_RECV
+#ifndef USART1_RX_vect
+#if defined(SIG_USART1_RECV)
+#define USART1_RX_vect SIG_USART1_RECV
+#elif defined(SIG_UART1_RECV)
+#define USART1_RX_vect SIG_UART1_RECV
 #endif
 #endif
-SIGNAL(SIG_UART1_RECV)
+SIGNAL(USART1_RX_vect)
 {
 	uart_recv_next_char(1);
 }
 #endif
 #ifdef UART2_COMPILE
-#ifndef SIG_UART2_RECV
-#if defined(USART2_RX_vect)
-#define SIG_UART2_RECV USART2_RX_vect
-#elif defined(SIG_USART2_RECV)
-#define SIG_UART2_RECV SIG_USART2_RECV
+#ifndef USART2_RX_vect
+#if defined(SIG_USART2_RECV)
+#define USART2_RX_vect SIG_USART2_RECV
+#elif defined(SIG_UART2_RECV)
+#define USART2_RX_vect SIG_UART2_RECV
 #endif
 #endif
-SIGNAL(SIG_UART2_RECV)
+SIGNAL(USART2_RX_vect)
 {
 	uart_recv_next_char(2);
 }
 #endif
 #ifdef UART3_COMPILE
-#ifndef SIG_UART3_RECV
-#if defined(USART3_RX_vect)
-#define SIG_UART3_RECV USART3_RX_vect
-#elif defined(SIG_USART3_RECV)
-#define SIG_UART3_RECV SIG_USART3_RECV
+#ifndef USART3_RX_vect
+#if defined(SIG_USART3_RECV)
+#define USART3_RX_vect SIG_USART3_RECV
+#elif defined(SIG_UART3_RECV)
+#define USART3_RX_vect SIG_UART3_RECV
 #endif
 #endif
-SIGNAL(SIG_UART3_RECV)
+SIGNAL(USART3_RX_vect)
 {
 	uart_recv_next_char(3);
 }
