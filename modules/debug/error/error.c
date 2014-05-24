@@ -1,6 +1,6 @@
-/*  
+/*
  *  Copyright Droids Corporation, Microb Technology, Eirbot (2005)
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -41,9 +41,13 @@ void error_init(void)
 }
 
 
-struct error error_generate(uint8_t num, uint8_t severity, PGM_P t, 
-			    PGM_P f, uint16_t l) {
-	struct error e;      
+struct error error_generate(uint8_t num, uint8_t severity, PGM_P t,
+			    PGM_P f, uint16_t l)
+{
+	struct error e;
+
+	(void)f;
+	(void)l;
 
 	e.err_num = num;
 	e.severity = severity;
