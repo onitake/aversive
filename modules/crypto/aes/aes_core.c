@@ -42,6 +42,7 @@
 # endif
 #endif
 #include <assert.h>
+#include <stdint.h>
 
 #include <aversive.h>
 #include "aes_locl.h"
@@ -70,7 +71,7 @@ Td4[x] = Si[x].[01, 01, 01, 01];
 
 
 #ifdef USE_PGMMEM
-prog_uint32_t Te0_[256] = {
+uint32_t Te0_[256] = {
 #else
 static const uint32_t Te0_[256] = {
 #endif
@@ -152,7 +153,7 @@ static inline uint32_t Te0(int i)
 #endif
 
 #ifdef USE_PGMMEM
-prog_uint8_t Te4_[256] = {
+uint8_t Te4_[256] = {
 #else
 static const u8 Te4_[256] = {
 #endif
@@ -234,7 +235,7 @@ static inline u8 Te4(int i)
 
 
 #ifdef USE_PGMMEM
-prog_uint32_t Td0_[256] = {
+uint32_t Td0_[256] = {
 #else
 static const uint32_t Td0_[256] = {
 #endif
@@ -315,7 +316,7 @@ static inline uint32_t Td0(int i)
 #endif
 
 #ifdef USE_PGMMEM
-prog_uint8_t Td4_[256] = {
+uint8_t Td4_[256] = {
 #else
 static const u8 Td4_[256] = {
 #endif
