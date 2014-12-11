@@ -23,7 +23,7 @@
 #include <aversive/wait.h>
 #include <stdio.h>
 #include <uart.h>
-//#include <timer.h>
+#include <timer.h>
 #include <hostsim.h>
 
 uint8_t event_id;
