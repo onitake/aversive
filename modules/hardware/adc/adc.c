@@ -82,7 +82,12 @@ void adc_register_event(void (*f)(int16_t))
  * Interrupt function, other interrupts are disabled during its
  * execution.
  */
-SIGNAL(SIG_ADC)
+#ifndef ADC_vect
+#if defined(SIG_ADC)
+#define ADC_vect SIG_ADC
+#endif
+#endif
+SIGNAL(ADC_vect)
 {
 	int16_t result;
 

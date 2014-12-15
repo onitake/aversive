@@ -145,55 +145,73 @@ static void uart_recv_next_char(uint8_t num);
  * a new unread data in the reception buffer.
  */
 #ifdef UART0_COMPILE
-#ifndef USART0_RX_vect
-#if defined(USART_RX_vect)
-#define USART0_RX_vect USART_RX_vect
-#elif defined(SIG_USART0_RECV)
-#define USART0_RX_vect SIG_USART0_RECV
+#ifndef USART0_RXC_vect
+#if defined(USART_RXC_vect)
+#define USART0_RXC_vect USART_RXC_vect
+#elif defined(USART_RX_vect)
+#define USART0_RXC_vect USART_RX_vect
+#elif defined(USART0_RX_vect)
+#define USART0_RXC_vect USART0_RX_vect
+#else
+#if defined(SIG_USART0_RECV)
+#define USART0_RXC_vect SIG_USART0_RECV
 #elif defined(SIG_UART0_RECV)
-#define USART0_RX_vect SIG_UART0_RECV
+#define USART0_RXC_vect SIG_UART0_RECV
 #endif
 #endif
-SIGNAL(USART0_RX_vect)
+#endif
+SIGNAL(USART0_RXC_vect)
 {
 	uart_recv_next_char(0);
 }
 #endif
 #ifdef UART1_COMPILE
-#ifndef USART1_RX_vect
+#ifndef USART1_RXC_vect
+#if defined(USART1_RX_vect)
+#define USART1_RXC_vect USART1_RX_vect
+#else
 #if defined(SIG_USART1_RECV)
-#define USART1_RX_vect SIG_USART1_RECV
+#define USART1_RXC_vect SIG_USART1_RECV
 #elif defined(SIG_UART1_RECV)
-#define USART1_RX_vect SIG_UART1_RECV
+#define USART1_RXC_vect SIG_UART1_RECV
 #endif
 #endif
-SIGNAL(USART1_RX_vect)
+#endif
+SIGNAL(USART1_RXC_vect)
 {
 	uart_recv_next_char(1);
 }
 #endif
 #ifdef UART2_COMPILE
-#ifndef USART2_RX_vect
+#ifndef USART2_RXC_vect
+#if defined(USART2_RX_vect)
+#define USART2_RXC_vect USART2_RX_vect
+#else
 #if defined(SIG_USART2_RECV)
-#define USART2_RX_vect SIG_USART2_RECV
+#define USART2_RXC_vect SIG_USART2_RECV
 #elif defined(SIG_UART2_RECV)
-#define USART2_RX_vect SIG_UART2_RECV
+#define USART2_RXC_vect SIG_UART2_RECV
 #endif
 #endif
-SIGNAL(USART2_RX_vect)
+#endif
+SIGNAL(USART2_RXC_vect)
 {
 	uart_recv_next_char(2);
 }
 #endif
 #ifdef UART3_COMPILE
-#ifndef USART3_RX_vect
+#ifndef USART3_RXC_vect
+#if defined(USART3_RX_vect)
+#define USART3_RXC_vect USART3_RX_vect
+#else
 #if defined(SIG_USART3_RECV)
 #define USART3_RX_vect SIG_USART3_RECV
 #elif defined(SIG_UART3_RECV)
 #define USART3_RX_vect SIG_UART3_RECV
 #endif
 #endif
-SIGNAL(USART3_RX_vect)
+#endif
+SIGNAL(USART3_RXC_vect)
 {
 	uart_recv_next_char(3);
 }
