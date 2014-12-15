@@ -102,7 +102,7 @@ int main(void)
 #ifdef HOST_VERSION        
 	scanf("%c",&c);
 #else
-        c=uart0_recv();
+        c=uart_recv(0);
 #endif
         m=menu_default_update(m, c);
     }

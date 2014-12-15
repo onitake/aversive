@@ -53,9 +53,9 @@ void interrupt(void)
   
   // prints the string
   if (buf[buf_index] == 0)
-    uart0_send(' ');
+    uart_send(0, ' ');
   else
-    uart0_send(buf[buf_index++]);
+    uart_send(0, buf[buf_index++]);
 
 }
 
@@ -77,7 +77,7 @@ int test_int_show(void)
   wait_ms(500);
 
   // should be replaced by the scheduler
-  uart0_register_tx_event((void *) interrupt);
+  uart_register_tx_event(0, (void *) interrupt);
 
   // start characters
   printf("\n");
