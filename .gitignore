@@ -1,0 +1,12 @@
+*.o
+*.a
+*.elf
+*.hex
+*.bin
+*.eep
+*.old
+*~
+.aversive_conf
+autoconf.h
+compiler_files
+lxdialog
