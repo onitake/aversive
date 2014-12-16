@@ -181,6 +181,11 @@ if grep "CONFIG_AVARICE_PROG_MKII=y" $1 > /dev/null 2> /dev/null
     echo "AVARICE_PROGRAMMER = mkII" >> $2
 fi
 
+if grep "CONFIG_AVARICE_PROG_DRAGON=y" $1 > /dev/null 2> /dev/null
+    then
+    echo "AVARICE_PROGRAMMER = dragon" >> $2
+fi
+
 echo -n "AVARICE_PORT = " >> $2
 echo `grep "CONFIG_AVARICE_PORT" $1 | sed s,CONFIG_AVARICE_PORT=,,` >> $2
 
