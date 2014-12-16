@@ -30,15 +30,15 @@
 #include <timer_config.h>
 
 
-#if defined TIMER4A_ENABLED && defined TIMER4_COMP_vect_idA
+#if defined TIMER4A_ENABLED && defined TIMER4_COMPA_vect
 DEFINE_REGISTER_OC_INTR_IN_US(4,4A,TIMER4_COMPA_vect)
 #endif
 
-#if defined TIMER4B_ENABLED && defined TIMER4_COMP_vect_idB
+#if defined TIMER4B_ENABLED && defined TIMER4_COMPB_vect
 DEFINE_REGISTER_OC_INTR_IN_US(4,4B,TIMER4_COMPB_vect)
 #endif
 
-#if defined TIMER4C_ENABLED && defined TIMER4_COMP_vect_idC
+#if defined TIMER4C_ENABLED && defined TIMER4_COMPC_vect
 DEFINE_REGISTER_OC_INTR_IN_US(4,4C,TIMER4_COMPC_vect)
 #endif
 

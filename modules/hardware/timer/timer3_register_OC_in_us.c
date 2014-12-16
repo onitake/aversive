@@ -30,15 +30,15 @@
 #include <timer_config.h>
 
 
-#if defined TIMER3A_ENABLED && defined TIMER3_COMP_vect_idA
+#if defined TIMER3A_ENABLED && defined TIMER3_COMPA_vect
 DEFINE_REGISTER_OC_INTR_IN_US(3,3A,TIMER3_COMPA_vect)
 #endif
 
-#if defined TIMER3B_ENABLED && defined TIMER3_COMP_vect_idB
+#if defined TIMER3B_ENABLED && defined TIMER3_COMPB_vect
 DEFINE_REGISTER_OC_INTR_IN_US(3,3B,TIMER3_COMPB_vect)
 #endif
 
-#if defined TIMER3C_ENABLED && defined TIMER3_COMP_vect_idC
+#if defined TIMER3C_ENABLED && defined TIMER3_COMPC_vect
 DEFINE_REGISTER_OC_INTR_IN_US(3,3C,TIMER3_COMPC_vect)
 #endif
 
