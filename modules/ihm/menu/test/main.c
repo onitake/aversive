@@ -30,6 +30,10 @@
 #include <uart.h>
 #include <menu.h>
 
+#ifdef HOST_VERSION
+#include <hostsim.h>
+#endif
+
 int myparam=0;
 
 void f(void * data)

@@ -27,6 +27,10 @@
 #include <quadramp.h>
 #include <control_system_manager.h>
 
+#ifdef HOST_VERSION
+#include <hostsim.h>
+#endif
+
 #define MAX_SPEED 10000
 static int32_t motor_speed=0;
 static int32_t motor_pos=0;
