@@ -61,11 +61,12 @@ void scheduler_init(void)
 
 
 #ifdef CONFIG_MODULE_SCHEDULER_TIMER0
+#ifndef TIMER0_OVF_vect
 #if defined(SIG_OVERFLOW0)
-SIGNAL(SIG_OVERFLOW0)
-#else
-SIGNAL(TIMER0_OVF_vect)
+#define TIMER0_OVF_vect SIG_OVERFLOW0
 #endif
+#endif
+SIGNAL(TIMER0_OVF_vect)
 {
 	scheduler_interrupt();
 }
