@@ -538,8 +538,10 @@ void i2c_debug(void)
  * Interrupt routing for I2C. Refer to datasheets for more
  * informations.
  */
-#if !defined(TWI_vect) && defined(SIG_2WIRE_SERIAL)
+#ifndef TWI_vect
+#if defined(SIG_2WIRE_SERIAL)
 #define TWI_vect SIG_2WIRE_SERIAL
+#endif
 #endif
 SIGNAL(TWI_vect)
 {
