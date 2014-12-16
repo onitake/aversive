@@ -108,12 +108,7 @@ endif
 LDFLAGS += $(MATH_LIB)
 
 
-# AVRDUDE does not know the ATMEGA1281 for now, consider it a 128.
-ifeq ($(MCU),atmega1281)
-AVRDUDE_MCU = atmega128
-else
 AVRDUDE_MCU = $(MCU)
-endif
 
 AVRDUDE_WRITE_FLASH = -U flash:w:$(TARGET).$(FORMAT_EXTENSION)
 #AVRDUDE_WRITE_EEPROM = -U eeprom:w:$(TARGET).eep
