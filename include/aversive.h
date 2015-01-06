@@ -241,9 +241,7 @@ do {				     \
 #define FALSE 0
 #define TRUE 1
 #define False FALSE
-#define false FALSE
 #define True TRUE
-#define true TRUE
 
 
 /** DDR and PINS from port adress */
