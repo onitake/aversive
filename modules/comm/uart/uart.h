@@ -75,7 +75,7 @@ extern struct cirbuf g_rx_fifo[UART_HW_NUM];
  * Initialisation function. This function puts the registers of the
  * microcontroler in a correct state in order to use the uart.  It
  * uses the configuration file <uart_config.h> ; this function is
- * equivalent to call uartX_setconf(NULL) for each uart.
+ * equivalent to call uart_setconf(X, NULL) for each uart X.
  */
 void uart_init(void);
 
