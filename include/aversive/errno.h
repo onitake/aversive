@@ -35,6 +35,22 @@
 /* from avr-libc, does not define a lots of errors */
 #include <errno.h>
 
+/* avr-libc 1.8.1 defines these error codes as ENOERR - not very useful */
+#if __AVR_LIBC_VERSION__ >= 10801UL
+#undef EPERM
+#undef ENOENT
+#undef EIO
+#undef ENXIO
+#undef E2BIG
+#undef EAGAIN
+#undef ENOMEM
+#undef EFAULT
+#undef EBUSY
+#undef EINVAL
+#undef ENOTSUP
+#undef EUNKNOW
+#endif /* __AVR_LIBC_VERSION__ */
+
 /** Operation not permitted */
 #define EPERM    1
 /** No such file or directory */
