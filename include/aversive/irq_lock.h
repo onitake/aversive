@@ -61,6 +61,8 @@
 
 #else
 
+#include <avr/interrupt.h>
+
 #define GLOBAL_IRQ_ARE_MASKED() (!(bit_is_set(SREG,7)))
 
 #define IRQ_LOCK(flags) do {         \
