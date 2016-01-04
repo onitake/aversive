@@ -104,6 +104,30 @@
 
 
 
+// ATMEGA128A ////////////////////////////////////////
+#elif defined (__AVR_ATmega128A__)
+
+// OCR_BITS
+#define OCR0_DDR DDRB
+#define OCR0_BIT 4
+#define OCR1A_DDR DDRB
+#define OCR1A_BIT 5
+#define OCR1B_DDR DDRB
+#define OCR1B_BIT 6
+#define OCR1C_DDR DDRB
+#define OCR1C_BIT 7
+#define OCR2_DDR DDRB
+#define OCR2_BIT 7
+#define OCR3A_DDR DDRE
+#define OCR3A_BIT 3
+#define OCR3B_DDR DDRE
+#define OCR3B_BIT 4
+#define OCR3C_DDR DDRE
+#define OCR3C_BIT 5
+
+
+
+
 // ATMEGA32 ////////////////////////////////////////
 #elif defined (__AVR_ATmega32__) || defined (__AVR_ATmega323__)
 
