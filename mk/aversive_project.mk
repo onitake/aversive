@@ -115,6 +115,8 @@ else
 AVRDUDE_MCU = $(MCU)
 endif
 
+export AVRDUDE_MCU
+
 AVRDUDE_WRITE_FLASH = -U flash:w:$(TARGET).$(FORMAT_EXTENSION)
 #AVRDUDE_WRITE_EEPROM = -U eeprom:w:$(TARGET).eep
 
