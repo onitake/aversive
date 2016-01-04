@@ -140,7 +140,7 @@ for f in ${FUSE_LIST}
 do
 	rm -f $f 2> /dev/null
 	echo 0xff > ${f}_new # default for each bit is 1 (unprogrammed)
-	${AVRDUDE} ${DELAY} -p ${MCU} -P `echo ${AVRDUDE_PORT} | \
+	${AVRDUDE} ${DELAY} -p ${AVRDUDE_MCU} -P `echo ${AVRDUDE_PORT} | \
 		sed 's,",,g'` -c ${AVRDUDE_PROGRAMMER} -U ${f}:r:${f}:i
 	if [ ! -f $f ]; then
 		CANNOT_READ=1
@@ -251,10 +251,10 @@ do
 				echo "$f = $(cat ${f}_new)"
 				hex2intel ${f}_new
 				PORT=`echo ${AVRDUDE_PORT} | sed 's,",,g'`
-				echo -n "${AVRDUDE} -p ${MCU} -P ${PORT} "
+				echo -n "${AVRDUDE} -p ${AVRDUDE_MCU} -P ${PORT} "
 				echo -n "-c ${AVRDUDE_PROGRAMMER} "
 				echo "-U ${f}:w:${f}_new:i ${DELAY}"
-				${AVRDUDE} -p ${MCU} -P ${PORT} \
+				${AVRDUDE} -p ${AVRDUDE_MCU} -P ${PORT} \
 					-c ${AVRDUDE_PROGRAMMER} \
 					-U ${f}:w:${f}_new:i ${DELAY}
 				sleep 1

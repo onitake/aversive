@@ -108,7 +108,12 @@ endif
 LDFLAGS += $(MATH_LIB)
 
 
+# Compatibility for MCUs without part-specific avrdude support
+ifeq ($(MCU),atmega128a)
+AVRDUDE_MCU = atmega128
+else
 AVRDUDE_MCU = $(MCU)
+endif
 
 AVRDUDE_WRITE_FLASH = -U flash:w:$(TARGET).$(FORMAT_EXTENSION)
 #AVRDUDE_WRITE_EEPROM = -U eeprom:w:$(TARGET).eep
