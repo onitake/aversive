@@ -43,12 +43,18 @@ struct pid_filter
 	
 	int32_t max_in; /**<  In saturation levels */
 	int32_t max_I; /**<   Integral saturation levels */
+	int8_t  max_I_percent; /**<   Integral saturation level in percent of the output. */
 	int32_t max_out; /**< Out saturation levels */
 
 	int32_t integral; /**< previous integral parameter */
 	int32_t prev_D;   /**< previous derivate parameter */
 	int32_t prev_out; /**< previous out command (for debug only) */
 };
+
+#define PID_MAX_I_PERCENT_INACTIVE (-1)
+#define PID_MAX_I_PERCENT_AUTO     (-2)
+
+
 
 /** init pid */
 void pid_init(struct pid_filter *p);
@@ -61,6 +67,7 @@ void pid_set_gains(struct pid_filter *p, int16_t gp, int16_t gi, int16_t gd) ;
 void pid_set_maximums(struct pid_filter *p, int32_t max_in, int32_t max_I, int32_t max_out);
 void pid_set_out_shift(struct pid_filter *p, uint8_t out_shift);
 int8_t pid_set_derivate_filter(struct pid_filter *p, uint8_t nb_samples);
+void pid_set_max_I_percent(struct pid_filter *p, int8_t percent);
 
 /* accessors of all parameter of pid structure*/
 int16_t pid_get_gain_P(struct pid_filter *p);
@@ -68,6 +75,7 @@ int16_t pid_get_gain_I(struct pid_filter *p);
 int16_t pid_get_gain_D(struct pid_filter *p);
 int32_t pid_get_max_in(struct pid_filter *p);
 int32_t pid_get_max_I(struct pid_filter *p);
+int8_t  pid_get_max_I_percent(struct pid_filter *p);
 int32_t pid_get_max_out(struct pid_filter *p);
 uint8_t pid_get_out_shift(struct pid_filter *p);
 uint8_t pid_get_derivate_filter(struct pid_filter *p);

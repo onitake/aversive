@@ -23,6 +23,36 @@
 #include <pid.h>
 
 
+/** recalculating the maximum I from a percent value */
+void recalculate_max_I(struct pid_filter *p)
+{
+  int8_t percent = p->max_I_percent;
+  int64_t max_I=0;
+
+  if (percent ==PID_MAX_I_PERCENT_INACTIVE) // function not active
+    return;
+  if (percent ==PID_MAX_I_PERCENT_AUTO) // implicit limit mode
+  {
+    p->max_I =0;
+    return;
+  }
+
+  if (p->gain_I) // avoid divide by 0
+  {
+    max_I = (s64)(p->max_out) * percent;
+    max_I <<= p->out_shift;
+    max_I /= ABS(p->gain_I) * 100;
+  }
+  S_MAX(max_I, S16_MAX);
+
+
+	uint8_t flags;
+	IRQ_LOCK(flags);
+	p->max_I   = max_I;
+	IRQ_UNLOCK(flags);
+}
+
+
 /** this function will initialize all fieds of pid structure to 0 */
 void pid_init(struct pid_filter *p)
 {
@@ -32,6 +62,8 @@ void pid_init(struct pid_filter *p)
 	p->gain_P = 1 ;
 	p->derivate_nb_samples = 1;
 	IRQ_UNLOCK(flags);
+
+	pid_set_max_I_percent(p, PID_MAX_I_PERCENT_INACTIVE);
 }
 
 /** this function will initialize all fieds of pid structure to 0,
@@ -55,6 +87,8 @@ void pid_set_gains(struct pid_filter *p, int16_t gp, int16_t gi, int16_t gd)
 	p->gain_I  = gi;
 	p->gain_D  = gd;
 	IRQ_UNLOCK(flags);
+
+	recalculate_max_I(p);
 }
 
 void pid_set_maximums(struct pid_filter *p, int32_t max_in, int32_t max_I, int32_t max_out)
@@ -65,30 +99,40 @@ void pid_set_maximums(struct pid_filter *p, int32_t max_in, int32_t max_I, int32
 	p->max_I   = max_I;
 	p->max_out = max_out;
 	IRQ_UNLOCK(flags);
+
+	recalculate_max_I(p);
 }
+
+
+/** set a maximum integral in percent of output value
+    percent is 0..127 %
+    This function overrides the (backwards compatible) max_I
+    If percent is set to -1, the function is deactivated
+    If set to -2, the auto limit mode is active
+    */
+void pid_set_max_I_percent(struct pid_filter *p, int8_t percent)
+{
+	p->max_I_percent   = percent; // no protection needed, 8 bit is atomic
+
+  recalculate_max_I(p);
+}
+
 
 void pid_set_out_shift(struct pid_filter *p, uint8_t out_shift)
 {
-	uint8_t flags;
-	IRQ_LOCK(flags);
-	p->out_shift=out_shift;
-	IRQ_UNLOCK(flags);
+	p->out_shift=out_shift; // no protection needed, 8 bit is atomic
+
+ 	recalculate_max_I(p);
 }
 
 int8_t pid_set_derivate_filter(struct pid_filter *p, uint8_t nb_samples)
 {
-	uint8_t flags;
-	int8_t ret;
-	IRQ_LOCK(flags);
-	if (nb_samples > PID_DERIVATE_FILTER_MAX_SIZE) {
-		ret = -1;
-	}
-	else {
-		p->derivate_nb_samples = nb_samples;
-		ret = 0;
-	}
-	IRQ_UNLOCK(flags);
-	return ret;
+	if (nb_samples > PID_DERIVATE_FILTER_MAX_SIZE)
+		return -1;
+	else
+		p->derivate_nb_samples = nb_samples;// no protection needed, 8 bit is atomic
+
+	return 0;
 }
 
 int16_t pid_get_gain_P(struct pid_filter *p)
@@ -115,6 +159,11 @@ int32_t pid_get_max_in(struct pid_filter *p)
 int32_t pid_get_max_I(struct pid_filter *p)
 {
 	return (p->max_I);
+}
+
+int8_t pid_get_max_I_percent(struct pid_filter *p)
+{
+	return (p->max_I_percent);
 }
 
 int32_t pid_get_max_out(struct pid_filter *p)
@@ -222,8 +271,20 @@ int32_t pid_do_filter(void * data, int32_t in)
 		command = command >> p->out_shift ;
 
 	if (p->max_out)
-		S_MAX (command, p->max_out) ;
-
+		{
+		if (command > p->max_out)
+			{
+			if ((p->max_I_percent ==PID_MAX_I_PERCENT_AUTO) && (in * p->gain_I > 0))
+				p->integral -= (( command - p->max_out) << p->out_shift) / p->gain_I; // auto limit removes non-needed integration
+			command= p->max_out;
+			}
+		else if (command < -p->max_out)
+			{
+			if ((p->max_I_percent ==PID_MAX_I_PERCENT_AUTO) && (in * p->gain_I < 0))
+				p->integral += ((-command - p->max_out) << p->out_shift) / p->gain_I; // auto limit removes non-needed integration
+ 			command= -p->max_out;
+			}
+  		}
 
 	/* backup of current error value (for the next calcul of derivate value) */
 	p->prev_samples[p->index] = in ;
