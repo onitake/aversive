@@ -94,7 +94,7 @@ extern int32_t brushless_get_speed(void * );
 
 /** get position function, compatible with control_system.
     argument is unused but should be 0 for compatibility  */
-extern int32_t brushless_get_pos(void * );
+extern int64_t brushless_get_pos(void * );
 
 /** set torque function, compatible with control_system.
     argument is unused but should be 0 for compatibility */

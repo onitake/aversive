@@ -192,7 +192,7 @@ no gain and no differential stages : ATM48 ATM88 ATM168 ATM8
 
 /*   we let a bit more in the config, not a problem, this will just set the reserved bit, with no effect */
 #if ( defined (__AVR_ATmega48__) || defined (__AVR_ATmega88__) || defined (__AVR_ATmega168__)  \
-    || defined (__AVR_ATmega8__) )
+    || defined (__AVR_ATmega8__) || defined (__AVR_ATmega328__) || defined (__AVR_ATmega328P__) )
 
 #  define MUX_NO_GAINS
 #  define MUX_NO_DIFF

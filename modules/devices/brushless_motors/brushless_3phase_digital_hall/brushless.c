@@ -303,7 +303,7 @@ if (--pwm_division_timer != 0)
     {
     interrupt_pwm =1;
 
-    sei();
+    //sei();
     
     /*********** Motor 0 PWM update  **********/
 
@@ -351,6 +351,8 @@ if (--pwm_division_timer != 0)
 
     /*********** END Motor 0 PWM update  **********/
 
+sei();
+
     interrupt_pwm =0;
     }
 
@@ -358,6 +360,7 @@ if (--pwm_division_timer != 0)
 
 #ifndef BRUSHLESS_MANAGE_EXTERNAL
   // speed update variables
+    static volatile uint8_t s_pending = 0;
   static uint16_t speed_division_timer = 1; // only one needed
   // frequency division state machine
   if (--speed_division_timer == 0)
@@ -366,9 +369,22 @@ if (--pwm_division_timer != 0)
     speed_division_timer = BRUSHLESS_SAMPLE_TO_EVENT_DIVISOR;
     // end of frequency division state machine
 
-    brushless_speed_update_manage((void *)0);
+	if (s_pending <255)
+		s_pending ++;
+	}
 
-    }
+	if (s_pending)
+		{
+		static volatile uint8_t in_progress = 0;
+	   if(in_progress ==0)
+			{
+ 			in_progress = 1;
+			s_pending --;
+			
+			brushless_speed_update_manage((void *)0);
+			in_progress = 0;
+			}
+		}
 #endif
 
 }
@@ -389,11 +405,12 @@ void brushless_speed_update_manage(void * dummy)
   // event call, with no imbrication autorized !
     {
     void (*f)(brushless);
-    static volatile uint8_t in_progress = 0;
+/*    static volatile uint8_t in_progress = 0;
     
     if(in_progress ==0)
       {
       in_progress = 1;
+*/
       
       IRQ_LOCK(flags);
       f = periodic_event_0;
@@ -403,8 +420,8 @@ void brushless_speed_update_manage(void * dummy)
         f(g_brushless_0);
         
         
-      in_progress = 0;
-      }
+     /* in_progress = 0;
+      }*/
     }
 }
 
@@ -521,13 +538,13 @@ int32_t brushless_get_speed(void * motor_num)
 }
 
 /** get position function, compatible with control_system. Argument not used. */
-int32_t brushless_get_pos(void * motor_num)
+int64_t brushless_get_pos(void * motor_num)
 {
 	brushless retour;
 
 	retour = brushless_0_get_mesures();
   
-	return (int32_t)(retour.position);
+	return (int64_t)(retour.position);
 }
 
 /** set torque function, compatible with control_system. first argument not used. */

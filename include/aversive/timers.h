@@ -102,7 +102,55 @@
 #define OCR3C_DDR DDRE
 #define OCR3C_BIT 5
 
+// AT90CAN128 ////////////////////////////////////////
+#elif defined (__AVR_AT90CAN128__)
 
+// OCR_BITS
+#define OCR0A_DDR DDRB
+#define OCR0A_BIT 7
+#define OCR1A_DDR DDRB
+#define OCR1A_BIT 5
+#define OCR1B_DDR DDRB
+#define OCR1B_BIT 6
+#define OCR1C_DDR DDRB
+#define OCR1C_BIT 7
+
+#define OCR2A_DDR DDRB
+#define OCR2A_BIT 4
+#define OCR2_DDR DDRB
+#define OCR2_BIT 4
+
+#define OCR3A_DDR DDRE
+#define OCR3A_BIT 3
+#define OCR3B_DDR DDRE
+#define OCR3B_BIT 4
+#define OCR3C_DDR DDRE
+#define OCR3C_BIT 5
+
+// renamed registers on the 90can128
+#ifndef TCCR2
+#define TCCR2 TCCR2A
+#endif
+#ifndef COM20
+#define COM20 COM2A0
+#endif
+
+#ifndef OCIE0_REG
+#define OCIE0_REG TIMSK0
+#endif
+
+#ifndef OCIE0
+#define OCIE0 OCIE0A
+#endif
+#ifndef OCR0
+#define OCR0 OCR0A
+#endif
+#ifndef OCR2
+#define OCR2 OCR2A
+#endif
+#ifndef SFIOR
+#define SFIOR GTCCR
+#endif
 
 // ATMEGA128A ////////////////////////////////////////
 #elif defined (__AVR_ATmega128A__)
@@ -129,7 +177,7 @@
 
 
 // ATMEGA32 ////////////////////////////////////////
-#elif defined (__AVR_ATmega32__) || defined (__AVR_ATmega323__)
+#elif defined (__AVR_ATmega32__) || defined (__AVR_ATmega323__) || defined (__AVR_ATmega328P__)
 
 #ifdef __AVR_ATmega323__
 
@@ -157,6 +205,18 @@
 #define OCR1B_BIT 4
 #define OCR2_DDR DDRD
 #define OCR2_BIT 7
+
+
+// ATMEGA32M1 ////////////////////////////////////////
+#elif defined (__AVR_ATmega32M1__)
+
+// OCR_BITS
+#define OCR0_DDR DDRE
+#define OCR0_BIT 1
+#define OCR1A_DDR DDRD
+#define OCR1A_BIT 2
+#define OCR1B_DDR DDRC
+#define OCR1B_BIT 1
 
 
 // ATMEGA8 ////////////////////////////////////////

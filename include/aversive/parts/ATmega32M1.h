@@ -1360,13 +1360,13 @@
 #define PCINT2_PORT PORTB
 #define PCINT2_BIT 2
 
-#define AMP0-_PORT PORTB
-#define AMP0-_BIT 3
+#define AMP0N_PORT PORTB
+#define AMP0N_BIT 3
 #define PCINT3_PORT PORTB
 #define PCINT3_BIT 3
 
-#define AMP0+_PORT PORTB
-#define AMP0+_BIT 4
+#define AMP0P_PORT PORTB
+#define AMP0P_BIT 4
 #define PCINT4_PORT PORTB
 #define PCINT4_BIT 4
 
@@ -1376,8 +1376,8 @@
 #define INT2_BIT 5
 #define ACMPN1_PORT PORTB
 #define ACMPN1_BIT 5
-#define AMP2-_PORT PORTB
-#define AMP2-_BIT 5
+#define AMP2N_PORT PORTB
+#define AMP2N_BIT 5
 #define PCINT5_PORT PORTB
 #define PCINT5_BIT 5
 
@@ -1431,8 +1431,8 @@
 
 #define ADC8_PORT PORTC
 #define ADC8_BIT 4
-#define AMP1-_PORT PORTC
-#define AMP1-_BIT 4
+#define AMP1N_PORT PORTC
+#define AMP1N_BIT 4
 #define ACMPN3_PORT PORTC
 #define ACMPN3_BIT 4
 #define PCINT12_PORT PORTC
@@ -1440,8 +1440,8 @@
 
 #define ADC9_PORT PORTC
 #define ADC9_BIT 5
-#define AMP1+_PORT PORTC
-#define AMP1+_BIT 5
+#define AMP1P_PORT PORTC
+#define AMP1P_BIT 5
 #define ACMP3_PORT PORTC
 #define ACMP3_BIT 5
 #define PCINT13_PORT PORTC
@@ -1456,8 +1456,8 @@
 
 #define D2A_PORT PORTC
 #define D2A_BIT 7
-#define AMP2+_PORT PORTC
-#define AMP2+_BIT 7
+#define AMP2P_PORT PORTC
+#define AMP2P_BIT 7
 #define PCINT15_PORT PORTC
 #define PCINT15_BIT 7
 
