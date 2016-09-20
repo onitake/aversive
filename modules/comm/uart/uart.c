@@ -83,6 +83,8 @@ const struct regs uart_regs[UART_HW_NUM] = {
  * frame in the transmit shift register has been shifted out and 
  * there is no new data in the transmit buffer.
  */
+#if (UART_TYPE!=UART_TYPE_LIN)
+
 #ifdef UART0_COMPILE
 #ifndef USART0_UDRE_vect
 #if defined(USART_UDRE_vect)
