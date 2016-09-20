@@ -218,6 +218,22 @@ SIGNAL(USART3_RXC_vect)
 #endif
 
 
+
+#else /* UART_TYPE_LIN */
+
+static void uart_recv_next_char(uint8_t num);
+
+SIGNAL(LIN_TC_vect)
+{
+	if (UCSR0A & (1<<UDRE))
+		uart_send_next_char(0);
+	if (UCSR0A & (1<<RXC))
+		uart_recv_next_char(0);
+}
+
+#endif /* UART_TYPE_LIN */
+
+
 /** 
  * transmit next character of fifo if any, and call the event function.
  * This function is executed with intr locked.
@@ -230,7 +246,7 @@ void uart_send_next_char(uint8_t num)
 
 		/* for 9 bits, it uses 2 places in the fifo */
 		if (CIRBUF_GET_LEN(&g_tx_fifo[num]) < 2) {
-			cbi(*uart_regs[num].ucsrb, UDRIE);
+			cbi(*uart_regs[num].REGISTER_FOR_UART_IE, UDRIE);
 			return;
 		}
 
@@ -238,7 +254,7 @@ void uart_send_next_char(uint8_t num)
 		cirbuf_del_buf_tail(&g_tx_fifo[num], 2);
 
 		uart_set_udr_9bits(num, elt);
-		sbi(*uart_regs[num].ucsrb, UDRIE);
+		sbi(*uart_regs[num].REGISTER_FOR_UART_IE, UDRIE);
 	}
 	else /* 5, 6, 7 or 8 bits */
 #endif /* CONFIG_MODULE_UART_9BITS */
@@ -246,14 +262,14 @@ void uart_send_next_char(uint8_t num)
 		char elt = 0;
 
 		if (CIRBUF_IS_EMPTY(&g_tx_fifo[num])) {
-			cbi(*uart_regs[num].ucsrb, UDRIE);
+			cbi(*uart_regs[num].REGISTER_FOR_UART_IE, UDRIE);
 			return;
 		}
 
 		elt = cirbuf_get_tail(&g_tx_fifo[num]);
 		cirbuf_del_tail(&g_tx_fifo[num]);
 		uart_set_udr(num, elt);
-		sbi(*uart_regs[num].ucsrb, UDRIE);
+		sbi(*uart_regs[num].REGISTER_FOR_UART_IE, UDRIE);
 	}
 }
 

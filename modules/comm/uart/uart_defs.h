@@ -26,6 +26,11 @@
 #ifndef _UART_DEFS_H_
 #define _UART_DEFS_H_
 
+#define UART_TYPE_USART 0
+#define UART_TYPE_UART  1
+#define UART_TYPE_LIN   2
+
+
 #define UART_PARTITY_NONE 0
 #define UART_PARTITY_ODD 1
 #define UART_PARTITY_EVEN 2
@@ -43,6 +48,61 @@
 #define UART_HW_NUM 1
 #endif
 
+
+// detect uart type
+#if defined(UART0_RX_vect)
+	#define UART_TYPE UART_TYPE_UART
+#elif defined(UART_RX_vect)
+	#define UART_TYPE UART_TYPE_UART
+#elif defined(LIN_TC_vect)
+	#define UART_TYPE UART_TYPE_LIN
+#endif
+
+
+
+
+
+
+	// specific for LIN (tested on atmega32m1
+#if (UART_TYPE == UART_TYPE_LIN)
+	
+	// interrupts are not remapped
+	
+	// registers renamed / mapped
+	#define UDR0   LINDAT
+	#define UBRR0L LINBRRL
+	#define UBRR0H LINBRRH
+	#define UCSR0A LINSIR
+	#define UCSR0B LINCR
+	#define UCSR0C LINENIR // UCSRC stands for LINENIR
+	
+	// bits renamed / mapped
+	#define RXEN LCMD1
+	#define TXEN LCMD0
+	#define RXC  LRXOK
+	#define TXC  LTXOK
+	#define UDRE LTXOK
+	#define FE   LERR
+	#define DOR  LERR
+	#define PE   LERR
+	#define RXCIE LENRXOK
+	#define TXCIE LENTXOK
+	#define UDRIE LENTXOK
+	
+	#define USBS 0
+	
+	#define UART_HAS_U2X 0
+	
+	#define REGISTER_FOR_UART_IE ucsrc
+#else
+
+
+
+#ifdef UCR
+#define REGISTER_FOR_UART_IE ucsra
+#else
+#define REGISTER_FOR_UART_IE ucsrb
+#endif
 
 #if !defined(UDR0) && defined(UDR)
 #define UDR0 UDR
@@ -178,30 +238,6 @@
 #endif
 
 
-/* workaround for libc incomplete headers when using CAN AVR
- * (avr/iocanxx.h): USART is valid.
- * see http://savannah.nongnu.org/bugs/?18964
- */
-#if defined (__AVR_AT90CAN128__) || defined (__AVR_AT90CAN64__) || defined (__AVR_AT90CAN32__)
-
-#ifndef SIG_USART0_RECV
-#define SIG_USART0_RECV SIG_UART0_RECV
-#define SIG_USART1_RECV SIG_UART1_RECV
-#define SIG_USART0_DATA SIG_UART0_DATA
-#define SIG_USART1_DATA SIG_UART1_DATA
-#define SIG_USART0_TRANS SIG_UART0_TRANS
-#define SIG_USART1_TRANS SIG_UART1_TRANS
-#endif
-
-#endif
-
-
-/* if the signal USART is defined, the uC has a USART. */
-#if defined(UART_TX_vect)
-#define UART_IS_USART 0
-#else
-#define UART_IS_USART 1
-#endif
 
 /* if the U2X macro is defined, the uC has the U2X option. */
 #ifdef U2X
@@ -209,5 +245,7 @@
 #else
 #define UART_HAS_U2X 0
 #endif
+
+#endif /*UART_TYPE!=UART_TYPE_LIN*/
 
 #endif //_UART_DEFS_H_

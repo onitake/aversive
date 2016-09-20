@@ -36,7 +36,7 @@ int uart_send_nowait(uint8_t num, char c)
 
 	/* if uart intrp mode is disabled (note that we look rx */
 	/* intrp -- RXCIE is 0) */
-	if ( !(*uart_regs[num].ucsrb & (1 << RXCIE )) ) {
+	if ( !(*uart_regs[num].REGISTER_FOR_UART_IE & (1 << RXCIE )) ) {
 		/* we have to poll the status register before xmit */
 		if (*uart_regs[num].ucsra & (1<<UDRE)) {
 			uart_set_udr(num, c);
@@ -58,7 +58,7 @@ int uart_send_nowait(uint8_t num, char c)
 	if (CIRBUF_IS_EMPTY(&g_tx_fifo[num]) && 
 	    *uart_regs[num].ucsra & (1<<UDRE)) {
 		uart_set_udr(num, c);
-		sbi(*uart_regs[num].ucsrb, UDRIE); /* XXX */
+		sbi(*uart_regs[num].REGISTER_FOR_UART_IE, UDRIE);
 	}
 	else { /* not ready, put char in fifo */
 		cirbuf_add_head(&g_tx_fifo[num], c);

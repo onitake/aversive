@@ -25,7 +25,7 @@
 #include <uart_defs.h>
 #include <uart_private.h>
 
-#if UART_IS_USART
+#if (UART_TYPE==UART_TYPE_USART)
 
 static inline uint8_t get_ucsrc(uint8_t num)
 {
@@ -81,7 +81,7 @@ uint8_t uart_getconf_nbits(uint8_t num)
 	return nbits;
 }
 
-#else /* UART_IS_USART */
+#elif (UART_TYPE==UART_TYPE_UART)
 
 /* return number of bits in current conf */
 uint8_t uart_getconf_nbits(uint8_t num)
@@ -96,10 +96,19 @@ uint8_t uart_getconf_nbits(uint8_t num)
 #endif
 }
 
-#endif /* UART_IS_USART */
+#elif (UART_TYPE==UART_TYPE_LIN)
+
+/* return number of bits in current conf */
+uint8_t uart_getconf_nbits(uint8_t num)
+{
+	return 8;
+}
+#endif /* UART_TYPE*/
 
 
-#if UART_IS_USART
+
+
+#if ((UART_TYPE==UART_TYPE_USART)  || (UART_TYPE==UART_TYPE_LIN))
 
 /* return number of bits in current conf */
 static inline uint16_t uart_get_baudreg(uint8_t num)
@@ -108,7 +117,7 @@ static inline uint16_t uart_get_baudreg(uint8_t num)
 		(uint16_t)*uart_regs[num].ubrrl;
 }
 
-#else /* UART_IS_USART */
+#elif (UART_TYPE==UART_TYPE_UART)
 
 /* return number of bits in current conf */
 static inline uint16_t uart_get_baudreg(uint8_t num)
@@ -116,18 +125,18 @@ static inline uint16_t uart_get_baudreg(uint8_t num)
 	return (uint16_t)*uart_regs[num].ubrrl;
 }
 
-#endif /* UART_IS_USART */
+#endif /* UART_TYPE */
+
+
 
 
 /* get the running uart configurtion */
 void uart_getconf(uint8_t num, struct uart_config *u)
 {
-	uint8_t tmp;
 	uint8_t flags;
 
 	IRQ_LOCK(flags);
 
-	/* XXX */
 	/* enabled if RXEN is set */
 	if (*uart_regs[num].ucsrb & (1 << RXEN))
 		u->enabled = 1;
@@ -135,20 +144,25 @@ void uart_getconf(uint8_t num, struct uart_config *u)
 		u->enabled = 0;
 
 	/* intrp enabled if RXCIE is set */
-	if (*uart_regs[num].ucsrb & (1 << RXCIE))
+	if (*uart_regs[num].REGISTER_FOR_UART_IE & (1 << RXCIE))
 		u->intr_enabled = 1;
 	else
 		u->intr_enabled = 0;
 
 	/* use double speed */
-	if (UART_HAS_U2X && (*uart_regs[num].ucsra & (1 << U2X)))
+	#if (UART_HAS_U2X)
+	if (*uart_regs[num].ucsra & (1 << U2X))
 		u->use_double_speed = 1;
 	else
 		u->use_double_speed = 0;
+	#else
+	u->use_double_speed = 0;
+	#endif
 
 
 	/* parity */
-	if (UART_IS_USART) {
+	#if (UART_TYPE==UART_TYPE_USART)
+		uint8_t tmp;
 		tmp = get_ucsrc(num) & ((1 << UPM1) | (1 << UPM0));
 		if (tmp == ((1 << UPM1) | (1 << UPM0)))
 			u->parity = UART_PARTITY_ODD;
@@ -156,18 +170,21 @@ void uart_getconf(uint8_t num, struct uart_config *u)
 			u->parity = UART_PARTITY_EVEN;
 		else
 			u->parity = UART_PARTITY_NONE;
-	}
-	else {
+	#else
 		u->parity = UART_PARTITY_NONE;
-	}
+	#endif
 
 	/* stop_bits */
-	if  (UART_IS_USART && (get_ucsrc(num) & (1 << USBS))) {
+	#if (UART_TYPE==UART_TYPE_USART)
+	if  (get_ucsrc(num) & (1 << USBS)) {
 		u->stop_bits = UART_STOP_BITS_2;
 	}
 	else {
 		u->stop_bits = UART_STOP_BITS_1;
 	}
+	#else
+	u->stop_bits = UART_STOP_BITS_1;
+	#endif
 
 	/* nbits */
 	u->nbits = uart_getconf_nbits(num);

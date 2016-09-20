@@ -54,7 +54,7 @@ int uart_send_9bits_nowait(uint8_t num, int c)
 	if (CIRBUF_IS_EMPTY(&g_tx_fifo[num]) && 
 	    *uart_regs[num].ucsra & (1<<UDRE)) {
 		uart_set_udr_9bits(c);
-		sbi(*uart_regs[num].ucsrb, UDRIE); /* XXX */
+		sbi(*uart_regs[num].REGISTER_FOR_UART_IE, UDRIE);
 	}
 	else { /* not ready, put char in fifo */
 		cirbuf_add_buf_head(&g_tx_fifo, (char *)&c, 2);

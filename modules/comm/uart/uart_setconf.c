@@ -43,7 +43,7 @@ char g_tx3_buf[UART3_TX_FIFO_SIZE];
 char g_rx3_buf[UART3_RX_FIFO_SIZE];
 #endif
 
-#if UART_IS_USART
+#if (UART_TYPE==UART_TYPE_USART)
 
 static int8_t uart_set_nbits_parity(uint8_t num, struct uart_config * u)
 {
@@ -92,7 +92,7 @@ static int8_t uart_set_nbits_parity(uint8_t num, struct uart_config * u)
 	return ESUCCESS;
 }
 
-#else /* UART_IS_USART */
+#elif (UART_TYPE==USART_TYPE_UART)
 
 static int8_t uart_set_nbits_parity(int8_t num, struct uart_config * u)
 {
@@ -114,10 +114,31 @@ static int8_t uart_set_nbits_parity(int8_t num, struct uart_config * u)
 
 	return ESUCCESS;
 }
-#endif  /* UART_IS_USART */
+
+#elif (UART_TYPE==UART_TYPE_LIN)
+
+static int8_t uart_set_nbits_parity(int8_t num, struct uart_config * u)
+{
+	/* number of bit in the frame */
+	if (u->nbits == 8)
+		{
+		}
+	else
+		return ENOTSUP;
+
+	/* parity and stop */
+	if (u->parity != UART_PARTITY_NONE ||
+	    u->stop_bits != UART_STOP_BITS_1) {
+		return ENOTSUP;
+	}
+
+	return ESUCCESS;
+}
+
+#endif  /* UART_TYPE */
 
 
-#if UART_IS_USART
+#if ((UART_TYPE==UART_TYPE_USART)  || (UART_TYPE==UART_TYPE_LIN))
 
 static int8_t uart_set_baudreg(uint8_t num, uint16_t baudreg)
 {
@@ -135,7 +156,7 @@ static int8_t uart_set_baudreg(uint8_t num, uint16_t baudreg)
 	return ESUCCESS;
 }
 
-#else /* UART_IS_USART */
+#elif (UART_TYPE==UART_TYPE_UART)
 
 static int8_t uart_set_baudreg(uint8_t num, uint16_t baudreg)
 {
@@ -150,7 +171,7 @@ static int8_t uart_set_baudreg(uint8_t num, uint16_t baudreg)
 
 	return ESUCCESS;
 }
-#endif /* UART_IS_USART */
+#endif  /* UART_TYPE */
 
 /* configuration from uart_config.h */
 #define UART_SET_STATICCONF(x)						\
@@ -198,9 +219,11 @@ int8_t uart_setconf(uint8_t num, struct uart_config *u)
 		}
 	}
 
+	#if (UART_TYPE!=UART_TYPE_LIN)
 	/* wait xmit finished (UDRE = 1) */
 	while( !(*uart_regs[num].ucsra & (1<<UDRE)) );
-
+	#endif
+	
 	switch (num) {
 #ifdef UART0_COMPILE
 	case 0:
@@ -239,21 +262,37 @@ int8_t uart_setconf(uint8_t num, struct uart_config *u)
 		goto out; /* no more conf */
 	}
 
+	#if (UART_TYPE!=UART_TYPE_LIN)
+	*uart_regs[num].ucsrb |= ((1 << TXEN) | (1 << RXEN));
+	
+	#else // special handling for LIN
+	LINCR=0;
+	LINBTR=16+(1<<LDISR);
+	LINCR = (1<<LCMD2) | (1<<LENA) | (1 << TXEN) | (1 << RXEN);
+	
+	// enable TX interrupt and send one char, to set the LTXOK ( this bit is not set at reset on the LIN hardware)
+	if (u->intr_enabled)
+		{
+		*uart_regs[num].REGISTER_FOR_UART_IE |= (1 << UDRIE); // enable TX interrupt
+		LINDAT = 0; // send char 0x00
+		}
+	#endif
+
 	/* we only enable recv interrupt, the xmit intrpt will be
 	 * enabled in the xmit function */
 	if (u->intr_enabled)
-		*uart_regs[num].ucsrb |= (1 << RXCIE);
+		*uart_regs[num].REGISTER_FOR_UART_IE |= (1 << RXCIE);
 
-	if (UART_HAS_U2X) { /* if u2x is supported */
+	#if (UART_HAS_U2X)  /* if u2x is supported */
 		if (u->use_double_speed) /* u2x is enabled */
 			*uart_regs[num].ucsra |= (1 << U2X);
 		else
 			*uart_regs[num].ucsra &= ~(1 << U2X);
+	#else
+	if (u->use_double_speed) {
+		u->use_double_speed=0;
 	}
-	else if (u->use_double_speed) {
-		ret = ENOTSUP;
-		goto out;
-	}
+	#endif
 
 	uart_set_nbits_parity(num, u);
 

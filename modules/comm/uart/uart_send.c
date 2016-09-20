@@ -32,7 +32,7 @@ int uart_send(uint8_t num, char c)
 
 		/* if irq lock are masked and interrupt mode is on, we
 		 * have to poll the status register */
-		if (GLOBAL_IRQ_ARE_MASKED() && (*uart_regs[num].ucsrb & (1 << RXCIE)) ) {
+		if (GLOBAL_IRQ_ARE_MASKED() && (*uart_regs[num].REGISTER_FOR_UART_IE & (1 << RXCIE)) ) {
 			while( !(*uart_regs[num].ucsra & (1 << UDRE)) );
 			/* send the next char in the fifo to free a
 			 * place */
