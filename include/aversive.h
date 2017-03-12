@@ -245,8 +245,15 @@ do {				     \
 
 
 /** DDR and PINS from port adress */
-#define DDR(port) (*(&(port) -1))
-#define PIN(port) (*(&(port) -2))
+#if defined (__AVR_XMEGA__)
+	#define DDR(port) (port.DIR)
+	#define PIN(port) (port.IN)
+	#define OUT(port) (port.OUT)
+#else
+	#define DDR(port) (*(&(port) -1))
+	#define PIN(port) (*(&(port) -2))
+	#define OUT(port) (*(&(port) ))
+#endif
 
 /** open collector simulation macros */
 #define OPEN_CO_INIT(port, bit) sbi(port,bit)

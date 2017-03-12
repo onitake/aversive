@@ -268,6 +268,8 @@
 #include <aversive/parts/ATxmega64A1.h>
 #elif defined (__AVR_ATxmega64A3__)
 #include <aversive/parts/ATxmega64A3.h>
+#elif defined (__AVR_ATxmega32D4__)
+#include <aversive/parts/ATxmega32D4.h>
 #else
 #ifndef HOST_VERSION
 #error "This arch is not implemented yet"
