@@ -114,12 +114,21 @@
 #define UCSR0B UCSRB
 #endif
 #ifndef UCSR0C
+#ifndef UCSRC
+#define UCSRC UCSRB
+#endif
 #define UCSR0C UCSRC
 #endif
 #ifndef UBRR0L
+#ifndef UBRRL
+#define UBRRL UBRR
+#endif
 #define UBRR0L UBRRL
 #endif
 #ifndef UBRR0H
+#ifndef UBRRH
+#define UBRRH UBRRHI
+#endif
 #define UBRR0H UBRRH
 #endif
 #if !defined(U2X) && defined(U2X0)
