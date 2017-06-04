@@ -276,6 +276,12 @@ endmenu
 mainmenu_option next_comment
 comment 'IHM modules'
 
+#### kbd comb.
+bool 'kbd_combination' CONFIG_MODULE_KBD_COMBINATION
+dep_bool '  |-- Create Default kbd_combination config' CONFIG_MODULE_KBD_COMBINATION_CREATE_CONFIG \
+	$CONFIG_MODULE_KBD_COMBINATION
+
+
 #### menu
 bool 'Menu' CONFIG_MODULE_MENU
 

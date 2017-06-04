@@ -5,3 +5,10 @@ on every machine. They make some assemptions about the atmel website
 for documentation downloading... so they could fail tomorrow.
 
 The script expects an 'xml' dir.
+
+to run the complete sequence : 
+
+mkdir docs
+./get_docs.sh docs
+./convert_to_txt.sh docs/
+

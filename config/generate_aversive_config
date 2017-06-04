@@ -11,6 +11,7 @@ MODULES_LIST="CONFIG_MODULE_BRUSHLESS_3PHASE_DIGITAL_HALL,/devices/brushless_mot
               CONFIG_MODULE_BRUSHLESS_3PHASE_DIGITAL_HALL_DOUBLE,/devices/brushless_motors/brushless_3phase_digital_hall_double
               CONFIG_MODULE_HOSTSIM,base/hostsim
               CONFIG_MODULE_MENU,ihm/menu
+              CONFIG_MODULE_KBD_COMBINATION,ihm/kbd/kbd_combination
               CONFIG_MODULE_PARSE,ihm/parse
               CONFIG_MODULE_RDLINE,ihm/rdline
               CONFIG_MODULE_VT100,ihm/vt100

@@ -11,6 +11,6 @@ cd ${OUT_DIR}
 
 for i in *.pdf; do
     echo Converting $i
-    pdftotext $i
+    pdftotext "$i"
 done
 

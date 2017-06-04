@@ -9,9 +9,9 @@ OUT_DIR=$1
 
 URL_BASE=http://www.atmel.com
 FAMILY_PATH=/dyn/products/datasheets.asp?family_id=607
-DOC_PATH=/dyn/resources/prod_documents/
+DOC_PATH=/Images/
 
-DOCS=`wget -O - ${URL_BASE}${FAMILY_PATH} | grep ${DOC_PATH} | sed 's,.*'${DOC_PATH}'\([a-zA-Z0-9\.]*pdf\).*$,\1,' | sort -u | grep ^doc`
+DOCS=`wget -O - ${URL_BASE}${FAMILY_PATH} | grep ${DOC_PATH} | sed 's,.*'${DOC_PATH}'\([a-zA-Z0-9[:space:]\._%\-]*\(pdf\|PDF\)\).*$,\1,' | grep --ignore-case .pdf$ | sort -u`
 
 cd ${OUT_DIR}
 for i in ${DOCS}; do

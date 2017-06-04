@@ -22,6 +22,7 @@ modules/devices/control_system/control_system_manager/test\
 modules/devices/control_system/filters/pid/test\
 modules/devices/control_system/filters/quadramp/test\
 modules/debug/error/test\
+modules/ihm/kbd/kbd_combination\
 projects/example1\
 projects/example2
 
