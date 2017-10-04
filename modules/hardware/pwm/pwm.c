@@ -235,7 +235,7 @@ do {									       \
 		      ( ( prescale  << CS##n##0  ) ) );			       \
 	if(mode & PWM_REVERSE) {					       \
 		TCCR##n = ( ( (TCCR##n) & (~(0x03 << COM##n##0)) ) |	       \
-			    (0x01  << COM##n##0) );			       \
+			    (0x03  << COM##n##0) );			       \
 	}								       \
 	else {								       \
 	TCCR##n = ( ( (TCCR##n) & (~(0x03 << COM##n##0)) ) |		       \
@@ -261,7 +261,7 @@ do {									       \
 	if(mode & PWM_REVERSE) {					       \
 		TCCR##n##A = ( ( (TCCR##n##A) &				       \
 				 (~(0x03 << COM##n##m##0)) ) |		       \
-			       (0x01  << COM##n##m##0) );		       \
+			       (0x03  << COM##n##m##0) );		       \
 	}								       \
 	else {								       \
 		TCCR##n##A = ( ( (TCCR##n##A) &				       \
@@ -659,6 +659,5 @@ void pwm_set(void * data, int32_t value)
     }
 
 }
-
 
 

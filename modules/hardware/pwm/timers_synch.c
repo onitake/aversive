@@ -48,6 +48,15 @@
 
 
 
+#ifndef TCCR0
+#define TCCR0 TCCR0B
+#endif
+#ifndef SFIOR
+#define SFIOR GTCCR
+#endif
+
+
+
 #if ( (defined TIMER0_SYNCH) || (defined TIMER1_SYNCH) || (defined TIMER2_SYNCH) || (defined TIMER3_SYNCH) )
 
 
@@ -100,8 +109,8 @@ void pwm_synch(void)
 
 // step between timer activations
 
-#if (PWM_SYNCH_PRESCALE  == TIMER_8_PRESCALE_1)
-  #define STEP 1
+#if (PWM_SYNCH_PRESCALE  == TIMER0_PRESCALER_DIV_1 ) // TIMER0_PRESCALER_DIV_1 should be the same value for all timers !!
+  #define STEP 2
 #else
   #define STEP 0
 #endif
@@ -170,7 +179,7 @@ void pwm_synch(void)
 #endif
 #ifdef TIMER3_SYNCH
   TCNT3H = 0;
-  TCNT3L = 4l * STEP; // one more, cause TCCR acess takes one instruction more (see TCCR3B acess, down)
+  TCNT3L = 3l * STEP; // one more, cause TCCR acess takes one instruction more (see TCCR3B acess, down)
 #endif
 
   //***************************************************
@@ -194,6 +203,10 @@ void pwm_synch(void)
 #if (defined PSR2) && (defined TIMER2_SYNCH)
   sfior |= (1<<PSR2);
 #endif
+#if (defined PSRSYNC)
+  sfior |= (1<<PSRSYNC);
+#endif
+
 
   //////////////////////////////////////////////////
   // here begins the time critical  section
@@ -209,18 +222,20 @@ void pwm_synch(void)
   //***************************************************
   
 #ifdef TIMER0_SYNCH
-  TCCR0 = tccr0;
+  TCCR0 = tccr0;        // this instruction takes 1 cycle (on ATMEGA128), coz TCCR0 is on a low addr, and can be directly adressed
 #else
   nop();
 #endif
 #ifdef TIMER1_SYNCH
-  TCCR1B = tccr1b;
+  TCCR1B = tccr1b; // this instruction takes 2 cycles (on ATMEGA128)
 #else
+  nop();
   nop();
 #endif
 #ifdef TIMER2_SYNCH
-  TCCR2 = tccr2;
+  TCCR2 = tccr2; // this instruction takes 2 cycles (on ATMEGA128)
 #else
+  nop();
   nop();
 #endif
 #ifdef TIMER3_SYNCH
