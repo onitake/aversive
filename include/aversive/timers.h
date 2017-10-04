@@ -108,6 +108,8 @@
 // OCR_BITS
 #define OCR0A_DDR DDRB
 #define OCR0A_BIT 7
+#define OCR0_DDR DDRB
+#define OCR0_BIT 7
 #define OCR1A_DDR DDRB
 #define OCR1A_BIT 5
 #define OCR1B_DDR DDRB
@@ -130,6 +132,12 @@
 // renamed registers on the 90can128
 #ifndef TCCR2
 #define TCCR2 TCCR2A
+#endif
+#ifndef TCCR0
+#define TCCR0 TCCR0A
+#endif
+#ifndef COM00
+#define COM00 COM0A0
 #endif
 #ifndef COM20
 #define COM20 COM2A0
