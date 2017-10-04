@@ -112,10 +112,12 @@ i2c_init(i2c_mode_t mode, uint8_t add)
 	TWBR = I2C_BITRATE;
 
 	/* prescaler */
-	if (I2C_PRESCALER & 1)
-		sbi(TWSR, TWPS0);
-	if (I2C_PRESCALER & 2)
-		sbi(TWSR, TWPS1);
+	#ifdef TWPS0
+		if (I2C_PRESCALER & 1)
+			sbi(TWSR, TWPS0);
+		if (I2C_PRESCALER & 2)
+			sbi(TWSR, TWPS1);
+	#endif
 
 	/* change for TWAR format */
 	TWAR = add << 1 ;
